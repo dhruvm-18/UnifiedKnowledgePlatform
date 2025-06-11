@@ -183,7 +183,8 @@ def create_session():
         'id': session_id,
         'title': f'New Chat {len(sessions) + 1}',
         'createdAt': datetime.now().isoformat(),
-        'messages': []
+        'messages': [],
+        'agentId': None  # Initialize agentId as None for new sessions
     }
     sessions[session_id] = session
     save_sessions() # Save sessions after creating a new one
@@ -292,11 +293,44 @@ def format_response_with_sources(response, sources):
                 display_text = f"{display_text_content} (PDF Pg {actual_pdf_page})"
 
             # Construct the source link in the format expected by the frontend
-            formatted_source_line = f"- **[{display_text}]** (pdf://{filename}/page/{actual_pdf_page}{'#section=' + section if section else ''})"
+            # The goal is to send only the pdf:// link, and let the frontend format the button text
+            formatted_source_line = f"- (pdf://{filename}/page/{actual_pdf_page}{'#section=' + section if section else ''})"
             formatted_sources.append(formatted_source_line)
         else:
-            # Keep lines that don't match the pattern as is
-            formatted_sources.append(line)
+            # Handle the new pattern: [TEXT1](TEXT2)
+            # Where TEXT2 contains Section/Rule and Page info
+            general_markdown_link_regex = r'\[(.*?)\]\((.*?)\)'
+            general_match = re.search(general_markdown_link_regex, line)
+            if general_match:
+                llm_display_text = general_match.group(1).strip() # e.g., 303(4, Page 111)
+                llm_link_content = general_match.group(2).strip() # e.g., Section 303(4), Page 111
+
+                # Try to extract section and page from llm_link_content
+                section_page_extract_regex = r'(?:Section|Rule)\s*([\d\.\(\)]+),\s*Page\s*(\d+)'
+                section_page_match = re.search(section_page_extract_regex, llm_link_content)
+
+                extracted_section = None
+                extracted_page = None
+
+                if section_page_match:
+                    extracted_section = section_page_match.group(1) # e.g., 303(4)
+                    extracted_page = section_page_match.group(2) # e.g., 111
+                
+                # Determine the filename to use (heuristic: use the first source's filename)
+                filename_to_use = "document.pdf" # Fallback
+                if sources and len(sources) > 0 and 'source' in sources[0].metadata:
+                    filename_to_use = sources[0].metadata['source']
+                
+                if extracted_section and extracted_page:
+                    # Construct the pdf:// link
+                    formatted_source_line = f"- (pdf://{filename_to_use}/page/{extracted_page}#section={extracted_section})"
+                    formatted_sources.append(formatted_source_line)
+                else:
+                    # If parsing from [TEXT](TEXT) failed, append the original line
+                    formatted_sources.append(line)
+            else:
+                # If no pattern matched, append the original line
+                formatted_sources.append(line)
 
     # Reconstruct the response with formatted sources
     formatted_response = f"{content}\n\n**Sources:**\n" + "\n".join(formatted_sources)
@@ -421,16 +455,9 @@ def add_message(session_id):
     user_message = str(data.get('message', '')) if data.get('message') is not None else ''
     user_name = str(data.get('userName', 'User')) if data.get('userName') is not None else 'User'
     agent_id = data.get('agentId', None)
-    pdf_source_from_frontend = data.get('pdfSource', None) # Get pdfSource from request payload
+    pdf_source_from_frontend = data.get('pdfSource', None)
     
     logger.info(f"Processing user message: {user_message} for agent: {agent_id}, pdfSource: {pdf_source_from_frontend}")
-    
-    # Add messages to session with proper string conversion
-    sessions[session_id]['messages'].append({
-        'sender': 'user',
-        'content': str(user_message),  # Ensure content is string
-        'agentId': agent_id # Store the agent ID received from frontend
-    })
     
     # Define keywords for context-aware agent detection
     DPDP_KEYWORDS = ["data protection", "privacy", "dpdp act", "data privacy", "personal data"]
@@ -448,6 +475,18 @@ def add_message(session_id):
         else:
             logger.info(f"No agent inferred based on message keywords. Proceeding with general query.")
 
+    # Update the session's agentId if it was None and we have an inferred agent
+    if sessions[session_id]['agentId'] is None and agent_id is not None:
+        sessions[session_id]['agentId'] = agent_id
+        save_sessions()  # Save the updated session with the inferred agent
+    
+    # Add messages to session with proper string conversion
+    sessions[session_id]['messages'].append({
+        'sender': 'user',
+        'content': str(user_message),  # Ensure content is string
+        'agentId': agent_id  # Store the agent ID received from frontend or inferred
+    })
+    
     # Get relevant context from documents
     all_docs = retriever.get_relevant_documents(user_message)
     logger.info(f"Retrieved {len(all_docs)} documents before agent filtering.")
@@ -559,7 +598,8 @@ def add_message(session_id):
         'response': formatted_response,
         'query_type': prompt_data['query_type'],
         'metadata': prompt_data['metadata'],
-        'session': sessions[session_id]
+        'session': sessions[session_id],
+        'agentId': agent_id
     })
 
 # Add route to serve PDF files

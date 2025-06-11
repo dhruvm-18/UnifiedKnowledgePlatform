@@ -49,7 +49,7 @@ html, body, #root {
   height: 100%;
   min-height: 100%;
   font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-  background: transparent !important;
+  background-color: var(--bg-primary);
   color: var(--text-primary);
   margin: 0;
   padding: 0;
@@ -223,6 +223,7 @@ html, body, #root {
   width: auto;
   align-items: center;
   animation: fadeIn 0.5s ease-out;
+  background-color: var(--bg-primary);
 }
 
 /* Chat window */
@@ -956,6 +957,7 @@ html, body, #root {
   min-height: 0;
   min-width: 0;
   position: relative;
+  background-color: var(--bg-primary);
 }
 .welcome-center-area {
   display: flex;
@@ -1493,7 +1495,7 @@ html, body, #root {
 
 .cta-button {
   background: #377DFF; /* Electric blue */
-  color: var(--text-tertiary); /* White text */
+  color: white; /* Changed from var(--text-tertiary) to white for readability */
   border: none;
   border-radius: 0.5rem; /* Soft corners */
   padding: 1rem 2rem;
@@ -1847,6 +1849,8 @@ html, body, #root {
 .agent-icon svg {
   width: 100%; /* Ensure SVG fills its container */
   height: 100%;
+  display: inline-block; /* Ensure it behaves as a block element */
+  font-family: initial; /* Reset font-family to prevent text rendering */
 }
 
 .agent-name {
@@ -2110,7 +2114,8 @@ html, body, #root {
 .agent-icon svg {
   width: 100%;
   height: 100%;
-  display: block; /* Ensure the SVG behaves as a block element */
+  display: inline-block; /* Ensure it behaves as a block element */
+  font-family: initial; /* Reset font-family to prevent text rendering */
 }
 
 .agent-name {
@@ -2481,6 +2486,8 @@ html, body, #root {
 .agent-icon svg {
   width: 100%;
   height: 100%;
+  display: inline-block; /* Ensure it behaves as a block element */
+  font-family: initial; /* Reset font-family to prevent text rendering */
 }
 
 .agent-name {
@@ -2638,7 +2645,8 @@ html, body, #root {
 .agent-icon svg {
   width: 100%;
   height: 100%;
-  display: block; /* Ensure the SVG behaves as a block element */
+  display: inline-block; /* Ensure the SVG behaves as a block element */
+  font-family: initial; /* Reset font-family to prevent text rendering */
 }
 
 .agent-name {
@@ -3360,4 +3368,13 @@ html, body, #root {
 
 .assistant-text p:not(:last-child) {
   margin-bottom: 8px;
+}
+
+.chat-input[contenteditable=true]:empty:before {
+  content: "Unleash the power of knowledge..."; /* Use \A for line break */
+  color: var(--text-secondary);
+  cursor: text;
+  pointer-events: none;
+  white-space: pre-wrap; /* Preserve whitespace and allow line breaks */
+  display: block;
 }
