@@ -1,0 +1,3363 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+/* Add CSS variables at the root level */
+:root {
+  /* Light theme colors (default) */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #E5E7EB; /* Slightly darker secondary background */
+  --bg-tertiary: #D1D5DB; /* Darker tertiary background */
+  --text-primary: #1F2937;
+  --text-secondary: #374151; /* Slightly darker secondary text for better contrast */
+  --text-tertiary: #111827;
+  --border-color: #D1D5DB; /* Adjusted border color */
+  --shadow-color: rgba(0, 0, 0, 0.15); /* Slightly stronger shadow */
+  --accent-color: #2563EB;
+  --error-color: #DC2626;
+  --success-color: #059669;
+  --scrollbar-bg: #E5E7EB; /* Adjusted scrollbar background */
+  --scrollbar-thumb: #9CA3AF;
+  --scrollbar-thumb-hover: #6B7280; /* Darker scrollbar thumb on hover */
+
+  /* Colors for ChatbotLoader animation */
+  --primary: 222.2 47.4% 48.8%;
+  --secondary: 220 14.3% 95.9%;
+  --accent: 159.0 48.2% 45.1%;
+  --destructive: 0 84.2% 60.2%;
+  --foreground: 0 0% 100%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+}
+
+/* Dark theme colors */
+.dark-mode {
+  --bg-primary: #21262D;
+  --bg-secondary: #374151;
+  --bg-tertiary: #4B5563;
+  --text-primary: #C9D1D9;
+  --text-secondary: #8B949E;
+  --text-tertiary: #F9FAFB;
+  --border-color: #30363D;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --accent-color: #007BFF;
+  --error-color: #EF4444;
+  --success-color: #10B981;
+  --scrollbar-bg: #161B22;
+  --scrollbar-thumb: #374151;
+  --scrollbar-thumb-hover: #21262D;
+}
+
+html, body, #root {
+  height: 100%;
+  min-height: 100%;
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  background: transparent !important;
+  color: var(--text-primary);
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-size: 100%;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 300px;
+  height: 100vh;
+  z-index: 10;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-right: 1px solid var(--border-color);
+  padding: 2.5rem 1.5rem 1.5rem 1.5rem;
+  box-shadow: none; /* Removed box-shadow */
+  border-radius: 0; /* Changed from 0 1.5rem 1.5rem 0 to 0 */
+  backdrop-filter: blur(16px);
+}
+.sidebar-logo {
+  width: 60px;
+  height: 60px;
+  border-radius: 0; /* Changed from 1rem to 0 */
+  margin-bottom: 1.2rem;
+  box-shadow: none;
+  display: block;
+}
+.sidebar-title {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--accent-color);
+  margin-bottom: 1rem;
+  text-align: center;
+  letter-spacing: -0.5px;
+  line-height: 1.2;
+}
+.new-chat-btn {
+  width: 100%;
+  font-size: 1.05rem;
+  padding: 0.8rem 0;
+  margin-bottom: 1.5rem;
+  border-radius: 1.5rem;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  letter-spacing: 0.01em;
+}
+.new-chat-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  box-shadow: 0 4px 16px var(--shadow-color);
+}
+.sidebar-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 2rem 0;
+  border: none;
+  width: 100%;
+  opacity: 0.7;
+  border-bottom: 1px solid var(--border-color);
+}
+.chat-history-list {
+  flex: 1;
+  width: 100%;
+  overflow-y: auto;
+  margin-bottom: 1.5rem;
+  font-size: 1rem;
+}
+.chat-history-item {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: var(--bg-secondary);
+  color: var(--text-tertiary);
+  border-radius: 0.8rem;
+  padding: 0.7rem 1rem;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  transition: background 0.2s, box-shadow 0.2s;
+  animation: fadeIn 0.3s ease-out;
+}
+.chat-history-item.active {
+  background: var(--bg-tertiary);
+  box-shadow: 0 4px 16px var(--shadow-color);
+  color: var(--text-tertiary);
+}
+.chat-history-item:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+}
+.chat-history-item .chat-history-title {
+  flex-grow: 1;
+  margin-right: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1rem;
+}
+.chat-history-item .edit-chat-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.2rem;
+  margin-left: 0.2rem;
+  font-size: 1rem;
+  line-height: 1;
+}
+.chat-history-item .delete-chat-btn {
+  background: none;
+  border: none;
+  color: var(--error-color);
+  cursor: pointer;
+  padding: 0.2rem;
+  margin-left: 0.2rem;
+  font-size: 1rem;
+  line-height: 1;
+}
+.chat-history-date {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  margin-left: 10px;
+}
+
+/* Add a style for the input field when editing chat history titles */
+.chat-history-item .chat-history-input {
+  flex-grow: 1;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-right: 8px;
+  font-size: 1rem;
+  outline: none;
+  box-shadow: inset 0 1px 3px var(--shadow-color);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.chat-history-item .chat-history-input:focus {
+  border-color: var(--bg-tertiary);
+  box-shadow: inset 0 1px 3px var(--shadow-color), 0 0 0 2px rgba(55, 65, 81, 0.5);
+}
+
+/* Main content */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 100vh;
+  position: relative;
+  margin-left: 0;
+  margin-right: 0;
+  width: auto;
+  align-items: center;
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Chat window */
+.chat-window {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: none;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  box-sizing: border-box;
+  background: transparent !important;
+}
+
+/* Chat message alignment */
+.chat-message {
+  padding: 10px 20px; /* Adjust padding as needed */
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: transparent !important; /* Ensure no background on chat message itself */
+  box-shadow: none !important; /* Ensure no shadow */
+}
+
+/* Dedicated agent header styling */
+.dedicated-agent-header {
+  width: 100%;
+  text-align: center;
+  padding: 10px;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: bold;
+  font-size: 1.1em;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 10px;
+  box-sizing: border-box;
+  position: sticky;
+  top: 0;
+  z-index: 1; /* Ensure it stays above chat messages */
+}
+
+.chat-message.assistant {
+  justify-content: flex-start;
+  background: transparent !important; /* Ensure no background */
+  box-shadow: none !important; /* Ensure no shadow */
+}
+
+.chat-message.user {
+  justify-content: flex-end;
+  /* background: transparent !important; */ /* Reverted for user bubble visibility */
+  /* box-shadow: none !important; */ /* Reverted for user bubble visibility */
+}
+
+/* Bubble */
+.bubble {
+  max-width: 70%; /* Adjust max-width as needed */
+  /* padding: 0; */ /* Reverted for user bubble visibility */
+  /* border-radius: 0; */ /* Reverted for user bubble visibility */
+  /* box-shadow: none !important; */ /* Reverted for user bubble visibility */
+  /* background: transparent !important; */ /* Reverted for user bubble visibility */
+  color: var(--text-primary); /* Ensure text color is correct */
+}
+
+.bubble.assistant {
+  background: transparent !important; /* Ensure transparent background */
+  color: var(--text-primary);
+  padding: 0;
+  border-radius: 0;
+  max-width: 85%;
+  position: relative;
+  margin-right: 25px;
+  box-shadow: none !important; /* Remove shadow */
+}
+
+.bubble.user {
+  background: var(--bg-secondary); /* Give it a subtle background */
+  color: var(--text-primary);
+  border-radius: 18px; /* Give it a rounded bubble shape */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Add a subtle shadow for depth */
+  padding: 10px 15px; /* Add internal padding */
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: left;
+  display: flex; /* Make it a flex container */
+  flex-direction: column; /* Stack children vertically */
+  align-items: flex-start; /* Align content to the left */
+}
+
+.bubble:hover {
+  box-shadow: 0 4px 16px var(--shadow-color);
+}
+
+/* Avatar */
+.avatar {
+  margin: 0; /* Remove default margin */
+  background: none;
+  box-shadow: none;
+  border-radius: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: auto;
+  height: auto;
+  padding: 0;
+}
+.avatar.assistant {
+  order: 0;
+  /* margin handled by gap on chat-message.assistant */
+}
+.avatar.user {
+  order: 1;
+  /* margin handled by general .chat-message padding */
+}
+.avatar img {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: none;
+  box-shadow: none;
+  object-fit: cover;
+}
+.avatar.user {
+  background: var(--accent-color); /* Use accent color for background */
+  color: var(--text-tertiary);
+  font-weight: 700;
+  font-size: 1rem; /* Keep font size for initial */
+  border-radius: 50%; /* Make it circular */
+  box-shadow: none;
+  width: 40px; /* Fixed width */
+  height: 40px; /* Fixed height */
+  padding: 0;
+  display: flex; /* Ensure flex properties apply */
+  align-items: center; /* Center content */
+  justify-content: center; /* Center content */
+}
+.chat-message.user .avatar {
+  background: var(--bg-primary);
+}
+
+/* Input bar */
+.floating-input-row {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 0 auto 1.5rem auto;
+  padding: 0 1.5rem;
+  box-sizing: border-box;
+}
+.floating-input-inner {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: var(--bg-primary);
+  border-radius: 2rem;
+  padding: 0.7rem 1.5rem;
+  border: 1px solid var(--border-color);
+  box-shadow: 0 0 10px var(--accent-color), 0 4px 12px var(--shadow-color);
+}
+
+.chat-input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  flex: 1;
+  outline: none;
+  border-radius: 0;
+  padding: 0.7rem 0;
+  transition: none;
+  font-family: inherit; /* Use the same font as the rest of the app */
+  height: auto; /* Allow vertical expansion based on content */
+  resize: none; /* Disable manual resizing */
+}
+.chat-input:focus {
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+.send-btn.send-arrow {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  margin-left: 0.5rem;
+  transition: background 0.2s, color 0.2s;
+  outline: none;
+  box-shadow: none;
+}
+.send-btn.send-arrow:hover:not(:disabled) {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+.send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.voice-btn {
+  margin-top: auto; /* Push to the bottom */
+  align-self: flex-end; /* Align to the right */
+  margin-left: 0 !important; /* Remove inline style margin */
+  /* Keep other styles */
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  transition: color 0.2s;
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+.voice-btn[disabled] {
+  color: var(--text-secondary) !important;
+  cursor: not-allowed;
+}
+.voice-btn:hover:not(:disabled) {
+   color: var(--text-primary) !important;
+}
+
+.voice-input-btn {
+  background: none;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: 0;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-left: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: none;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+.voice-input-btn:active, .voice-input-btn[aria-pressed="true"] {
+  background: none;
+  color: var(--text-primary);
+  box-shadow: none;
+}
+.voice-input-btn:hover:not(:disabled) {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+.voice-input-btn[disabled] {
+  color: var(--text-secondary);
+  cursor: not-allowed;
+}
+
+::-webkit-scrollbar {
+  width: 0.5rem;
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 0.25rem;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-bg);
+  border-radius: 0.25rem;
+}
+
+.welcome-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  z-index: 1;
+  pointer-events: none;
+  text-align: center;
+  padding: 3rem 0 2rem 0;
+  animation: fadeIn 0.5s ease-out;
+}
+.welcome-logo, .welcome-headline, .welcome-subtitle {
+  pointer-events: auto;
+}
+
+.media-upload-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.5rem;
+  transition: color 0.2s;
+  color: var(--text-secondary);
+}
+.media-upload-btn:hover svg {
+  color: var(--text-primary) !important;
+}
+.media-upload-btn svg {
+  width: 1.3rem;
+  height: 1.3rem;
+}
+
+.voice-stop-btn {
+  margin-top: auto; /* Push to the bottom */
+  align-self: flex-end; /* Align to the right */
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--error-color);
+  cursor: pointer;
+  margin-left: 0.6rem; /* Add some space between buttons */
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+.voice-stop-btn:hover {
+  color: var(--success-color) !important;
+}
+
+.app-layout {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  width: 100%;
+  background: transparent !important;
+}
+.left-sidebar {
+  width: 245px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.5rem calc(1rem + 1.75rem + 0.5rem) 1.5rem 1rem;
+  border-right: 1px solid var(--border-color);
+  box-shadow: none;
+  z-index: 10;
+  position: relative;
+  animation: fadeIn 0.5s ease-out;
+}
+.right-sidebar {
+  width: 245px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 1.5rem 1rem 1.5rem 1rem;
+  border-left: 1px solid var(--border-color);
+  box-shadow: -2px 0 5px var(--shadow-color);
+  z-index: 10;
+  overflow-y: auto;
+  animation: fadeIn 0.5s ease-out;
+}
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-height: 100vh;
+  position: relative;
+  margin-left: 0;
+  margin-right: 0;
+  width: auto;
+  align-items: center;
+}
+.chat-window {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: none;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.lang-toggle-btn {
+  background: none;
+  color: var(--text-secondary);
+  border: none;
+  border-radius: 0.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-left: 0.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.8rem;
+  transition: background 0.2s, color 0.2s;
+}
+.lang-toggle-btn:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+.welcome-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  z-index: 1;
+  pointer-events: none;
+  min-height: 400px;
+}
+.welcome-logo, .welcome-headline, .welcome-subtitle {
+  pointer-events: auto;
+}
+
+.welcome-logo {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 0.2rem;
+  animation: scaleIn 0.5s ease-out;
+}
+.welcome-logo-img {
+  width: 80px;
+  height: auto;
+  border-radius: 1.25rem;
+  box-shadow: none;
+  display: block;
+  margin: 0 auto;
+}
+.welcome-headline {
+  font-size: 3.5rem; /* Larger and more impactful headline */
+  font-weight: 900;
+  color: var(--text-tertiary); /* White color */
+  margin-bottom: 0.5rem; /* Reduced space below headline */
+  line-height: 1.2;
+}
+.welcome-greeting {
+  color: var(--text-tertiary);
+}
+.welcome-subtitle {
+  color: var(--text-tertiary);
+  font-size: 1rem;
+  font-weight: 500;
+  margin-bottom: 0;
+  animation: slideInFromBottom 0.5s ease-out 0.4s both;
+}
+
+.welcome-app-name {
+  color: var(--accent-color);
+}
+
+.sidebar-toggle-btn {
+  position: absolute;
+  top: 0.8rem;
+  right: 0.5rem;
+  left: unset;
+  background: var(--bg-secondary);
+  color: var(--text-tertiary);
+  border: none;
+  border-radius: 0.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 20;
+  transition: background 0.2s, color 0.2s;
+}
+.sidebar-toggle-btn.right {
+  left: 8px;
+  right: unset;
+}
+.sidebar-toggle-btn:hover {
+  background: var(--bg-primary);
+  color: var(--text-tertiary);
+}
+.left-sidebar.collapsed {
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  padding: 0 !important;
+  align-items: flex-start;
+  position: relative;
+}
+.left-sidebar.collapsed .sidebar-logo,
+.left-sidebar.collapsed .sidebar-title,
+.left-sidebar.collapsed .other-models-btn {
+  display: none !important;
+}
+.right-sidebar.collapsed {
+  width: 32px !important;
+  min-width: 32px !important;
+  max-width: 32px !important;
+  padding: 0 !important;
+  align-items: flex-end;
+  position: relative;
+}
+.right-sidebar.collapsed .chat-history-list,
+.right-sidebar.collapsed .sidebar-title,
+.right-sidebar.collapsed .other-models-btn {
+  display: none !important;
+}
+.app-layout.left-collapsed .main-content,
+.app-layout.right-collapsed .main-content {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+.app-layout.left-collapsed .center-row,
+.app-layout.right-collapsed .center-row {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+.app-layout.left-collapsed .floating-input-inner,
+.app-layout.right-collapsed .floating-input-inner {
+  max-width: none !important;
+  width: 100% !important;
+}
+.left-sidebar, .right-sidebar {
+  transition: width 0.2s, min-width 0.2s, max-width 0.2s, padding 0.2s;
+  position: relative;
+}
+.main-content {
+  transition: margin 0.2s, width 0.2s;
+}
+
+.quick-options-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 18px;
+  margin: 24px 0 0 0;
+}
+.quick-option-btn {
+  width: 100%;
+  max-width: 300px;
+  text-align: center;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 1.5rem;
+  padding: 0.8rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  margin-bottom: 0;
+  animation: slideInFromBottom 0.5s ease-out 0.6s both;
+}
+.quick-option-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  box-shadow: 0 4px 16px var(--shadow-color);
+  transform: translateY(-2px);
+}
+.anchored-bottom {
+  position: sticky;
+  bottom: 0;
+  background: transparent;
+  z-index: 2;
+  margin-top: auto;
+}
+.right-sidebar .new-chat-btn {
+  margin-bottom: 24px !important;
+}
+.right-sidebar .sidebar-toggle-btn.right {
+  margin-bottom: 0;
+}
+
+.main-content.chatbot-full {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  background: transparent !important;
+  height: 100%;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+.chat-window.chatbot-full-window {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  background: transparent !important;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  max-width: none;
+  box-sizing: border-box;
+}
+.quick-options-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 18px;
+  margin: 24px 0 0 0;
+}
+.center-row {
+ flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  max-height: none;
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.quick-option-btn {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 24px;
+  padding: 0.7rem 1.4rem;
+  font-size: 1.08rem;
+  font-weight: 600;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  margin-bottom: 0;
+}
+.quick-option-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-tertiary);
+  box-shadow: 0 4px 16px var(--shadow-color);
+}
+.anchored-bottom {
+  position: sticky;
+  bottom: 0;
+  background: transparent;
+  z-index: 2;
+  width: 100%;
+  padding: 10px 24px;
+  height: auto;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.quick-options-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem;
+  margin: 1.5rem 0 0 0;
+  width: 100%;
+  max-width: 400px;
+  animation: slideInFromBottom 0.5s ease-out 0.6s both;
+}
+.quick-options-col.center-col {
+  align-items: center;
+  justify-content: center;
+}
+.bot-answer-area {
+  display: flex; /* Make it a flex container */
+  flex-direction: column; /* Stack message content and buttons vertically */
+  align-items: flex-start; /* Align content to the left */
+  flex-grow: 1; /* Allow to grow and take space */
+  padding-right: 1.5rem; /* Keep padding on the right for spacing from edge */
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.bubble.assistant {
+  display: block; /* Revert to block display */
+  background: transparent !important; /* Ensure transparent background */
+  color: var(--text-primary);
+  border-radius: 0;
+  box-shadow: none !important; /* Remove shadow */
+  padding: 0 !important; /* Force remove padding */
+  margin: 0 !important; /* Force remove margin */
+  font-size: 1rem;
+  font-weight: 500;
+  transition: none;
+  text-align: left;
+  max-width: none !important; /* Ensure no max-width */
+  width: 100%; /* Ensure full width within parent */
+  flex-grow: 1; /* Allow text content to grow */
+}
+.bubble.user {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-radius: 18px;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  padding: 1.2rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: left;
+}
+.avatar.assistant {
+  order: 0;
+  /* margin-right handled by gap on chat-message.assistant */
+}
+.avatar.user {
+  order: 1;
+  /* margin handled by general .chat-message padding */
+}
+
+.welcome-center-outer {
+  display: flex;
+  flex: 1 1 0;
+  height: 100%;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  min-width: 0;
+  position: relative;
+}
+.welcome-center-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  margin: 0;
+  max-width: none;
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Remove max-width on chat area and bubbles for full width */
+@media (max-width: 900px) {
+  .bubble.assistant, .bubble.user {
+    max-width: 90vw;
+  }
+}
+
+#middle-chatbox-container {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  max-width: none;
+}
+
+/* Hide elements with the 'hidden' class */
+.hidden {
+  display: none !important;
+  visibility: hidden;
+}
+
+/* Style for welcome screen when active */
+.welcome-center-outer:not(.hidden) {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* Updated Welcome Headline Styling */
+.welcome-greeting-area {
+  text-align: center;
+  margin-bottom: 1.5rem; /* Space between greeting area and description */
+  animation: slideInFromBottom 0.5s ease-out 0.2s both;
+}
+
+.welcome-hi-user {
+  font-size: 1.1rem; /* Smaller font size */
+  color: var(--text-secondary); /* Subtle color */
+  margin-bottom: 0.5rem; /* Space below the greeting */
+  font-weight: 400; /* Regular weight */
+}
+
+.welcome-headline {
+  font-size: 2rem; /* Keep headline size */
+  font-weight: 900;
+  color: var(--text-tertiary); /* Color for "Welcome to" */
+  margin-bottom: 0;
+  display: inline-block; /* Allow span to be on the same line */
+}
+
+.welcome-headline span {
+  color: var(--accent-color); /* Blue color for App Name (if needed, currently handled in JSX) */
+}
+
+.welcome-app-name {
+  color: var(--accent-color); /* Electric blue color for App Name */
+}
+
+/* Ensure welcome content doesn't get cut off */
+.welcome-center-area {
+  max-height: 100%;
+  overflow-y: auto;
+  margin: 0;
+}
+
+/* Ensure welcome screen and chat container don't affect each other's space when hidden */
+.welcome-center-outer.hidden,
+#middle-chatbox-container.hidden {
+    display: none !important;
+    visibility: hidden;
+    overflow: hidden;
+}
+
+/* New rule to make chat messages fill space correctly */
+.main-content.chatbot-full > .chat-window.chatbot-full-window {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Adjustments for full chatbot layout */
+.main-content.chatbot-full {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  background: transparent !important;
+  height: 100%;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.chat-window.chatbot-full-window {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  background: transparent !important;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  max-width: none;
+  box-sizing: border-box;
+}
+
+/* Add a specific max-width to the chat bubbles area within full window */
+.chatbot-full-window #middle-chatbox-container {
+  max-width: none;
+  margin: 0;
+  padding-bottom: 1.5rem;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Adjust spacing for bubbles in full width mode */
+.chatbot-full-window .chat-message {
+   margin: 1rem 0;
+   width: 100%;
+   padding: 0;
+   box-sizing: border-box;
+}
+
+.chatbot-full-window .bubble {
+  max-width: 60%;
+  padding: 1rem 1.2rem;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  box-sizing: border-box;
+}
+
+/* Style for the right sidebar heading */
+.right-sidebar-heading {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 1rem 1rem;
+  padding-top: 0;
+  margin-left: 2.5rem;
+}
+
+/* Sidebar nav item style (for Chats and Other Models buttons) */
+.sidebar-nav-item {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.8rem 1rem; /* Adjust padding */
+  margin-bottom: 0.5rem; /* Space between items */
+  background: none; /* Ensure no background */
+  border: none; /* Remove default button border */
+  border-radius: 0.5rem; /* Rounded corners */
+  color: var(--text-primary); /* Default text color */
+  font-size: 1.05rem; /* Adjust font size */
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  text-align: left; /* Align text to the left */
+}
+
+.sidebar-nav-item:hover {
+  background: var(--bg-secondary); /* Keep hover background slightly darker for interaction feedback */
+  color: var(--text-tertiary); /* Hover text color */
+}
+
+.sidebar-nav-item.active {
+  background: var(--bg-secondary); /* Keep active background consistent with hover */
+  color: var(--text-tertiary);
+}
+
+.sidebar-nav-item svg {
+  margin-right: 10px; /* Space between icon and text */
+  color: var(--text-secondary); /* Icon color */
+  font-size: 1.2rem; /* Adjust icon size */
+  background: none !important; /* Ensure no background */
+  border: none !important; /* Ensure no border */
+  box-shadow: none !important; /* Ensure no box-shadow */
+  padding: 0 !important; /* Remove any padding */
+  display: block !important; /* Ensure it behaves as a block element */
+  overflow: visible !important; /* Prevent clipping */
+}
+
+.sidebar-nav-item svg * {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.sidebar-nav-item span,
+.sidebar-nav-item div {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.sidebar-nav-item:hover svg {
+  color: var(--text-tertiary); /* Icon color on hover */
+}
+
+/* Style for the left sidebar header section */
+.left-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Distribute space between items */
+  width: 100%; /* Take full width */
+  padding: 0 1rem; /* Add some padding */
+  margin-bottom: 2rem; /* Space below the header */
+  cursor: pointer; /* Add cursor pointer */
+}
+
+.left-sidebar-header .sidebar-logo {
+  width: 50px; /* Increased size */
+  height: 50px; /* Increased size */
+  margin-right: 10px; /* Space between logo and text */
+  margin-bottom: 0; /* Remove bottom margin */
+  border-radius: 0; /* Changed from 0.8rem to 0 */
+  box-shadow: none; /* Removed box-shadow */
+}
+
+.left-sidebar-header .sidebar-title-short {
+  flex-grow: 1; /* Allow text to take up available space */
+  font-size: 1.2rem; /* Adjust font size */
+  font-weight: 700; /* Make it bold */
+  color: var(--accent-color); /* Text color */
+  margin-right: 10px; /* Space between text and toggle button */
+}
+
+.left-sidebar-header .sidebar-toggle-btn.left {
+  position: static; /* Remove absolute positioning */
+  top: unset;
+  left: unset;
+  margin: 0; /* Remove any default margin */
+  width: 24px; /* Adjust size */
+  height: 24px; /* Adjust size */
+  font-size: 1rem; /* Adjust icon size */
+  background: none; /* Ensure no background */
+  color: var(--text-secondary); /* Icon color */
+}
+
+.left-sidebar-header .sidebar-toggle-btn.left:hover {
+  background: none; /* Ensure no background on hover */
+  color: var(--text-tertiary); /* Icon color on hover */
+}
+
+/* Style for welcome screen buttons */
+.welcome-option-btn {
+  display: flex;
+  align-items: center;
+  width: 100%; /* Take full width of container */
+  max-width: 300px; /* Keep max-width consistent with previous quick options */
+  padding: 0.8rem 1rem; /* Adjust padding */
+  margin-bottom: 0.5rem; /* Space between buttons */
+  background: var(--bg-tertiary); /* Changed from --bg-secondary for darker shade */
+  border: none; /* Remove default border */
+  border-radius: 0.5rem; /* Rounded corners */
+  color: var(--text-primary); /* Text color */
+  font-size: 1rem; /* Font size */
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  text-align: left; /* Align text to the left */
+  box-shadow: 0 2px 8px var(--shadow-color); /* Add subtle shadow */
+}
+
+.welcome-option-btn:hover {
+  background: var(--bg-tertiary); /* Hover background color */
+  color: var(--text-primary); /* Hover text color */
+}
+
+.welcome-option-btn svg {
+  margin-right: 10px; /* Space between icon and text */
+  color: var(--text-secondary); /* Icon color */
+  font-size: 1.2rem; /* Adjust icon size */
+}
+
+.welcome-option-btn:hover svg {
+  color: var(--text-tertiary); /* Icon color on hover */
+}
+
+/* Adjust spacing for .quick-options-col if needed */
+.quick-options-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.8rem; /* Space between buttons now handled by button margin-bottom */
+  margin: 1.5rem 0 0 0;
+  width: 100%;
+  max-width: 400px;
+}
+
+/* User Details Section */
+.user-details {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.6rem 0.8rem; /* Reduced padding */
+  margin-top: auto; /* Push to the bottom */
+  /* Remove default background, border-radius, and box-shadow */
+  background: none;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--text-primary);
+  cursor: pointer; /* Indicate it might be clickable */
+  /* Add border for hover state transition */
+  border: 1px solid transparent;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s ease-in-out, border-radius 0.2s;
+  position: relative; /* Needed for absolute positioning of the menu */
+  overflow: visible; /* Ensure menu is not clipped */
+}
+
+.user-details:hover {
+  background: var(--bg-secondary); /* Apply background on hover */
+  border-radius: 0.6rem; /* Apply border-radius on hover */
+  box-shadow: 0 4px 12px var(--shadow-color); /* Apply shadow on hover */
+  transform: translateY(-1px); /* Subtle lift on hover */
+}
+
+.user-avatar {
+  width: 48px; /* Reduced size */
+  height: 48px; /* Reduced size */
+  border-radius: 50%;
+  background: var(--accent-color); /* A default background color */
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1rem; /* Adjusted font size for initial */
+  font-weight: bold;
+  margin-right: 10px; /* Adjusted space */
+  flex-shrink: 0; /* Prevent shrinking */
+  overflow: hidden; /* Hide overflow for image */
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Cover the area without distorting aspect ratio */
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Allow info to take up remaining space */
+  min-width: 0; /* Prevent overflow issues in flex container */
+}
+
+.user-name {
+  font-size: 0.95rem; /* Slightly smaller name */
+  font-weight: 600;
+  color: var(--text-tertiary);
+  white-space: nowrap; /* Prevent name from wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis; /* Add ellipsis if name is too long */
+}
+
+.user-name-input {
+  font-size: 0.95rem; /* Match user-name font size */
+  font-weight: 600;
+  color: var(--text-tertiary);
+  background: none; /* No background */
+  border: none; /* No border */
+  outline: none; /* No outline on focus */
+  padding: 0;
+  margin: 0;
+  width: 100%; /* Take full width */
+}
+
+.user-email {
+  font-size: 0.75rem; /* Slightly smaller email */
+  color: var(--text-secondary);
+  white-space: nowrap; /* Prevent email from wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis; /* Add ellipsis if email is too long */
+}
+
+/* User Details Menu */
+.user-details-menu {
+  position: absolute;
+  bottom: calc(100% + 10px); /* Position above the user-details box with some gap */
+  left: 0;
+  width: 100%; /* Match the width of the user-details box */
+  background: var(--bg-secondary); /* Darker background for the menu */
+  border-radius: 0.5rem;
+  box-shadow: 0 -4px 12px var(--shadow-color); /* Shadow above the menu */
+  padding: 0.5rem 0;
+  z-index: 20; /* Ensure it's above other content */
+  list-style: none; /* Remove default list styling if using ul */
+  margin: 0; /* Remove default margin if using ul */
+}
+
+.user-details-menu .menu-item {
+  padding: 0.6rem 1.5rem;
+  color: var(--text-primary);
+  font-size: 0.95rem; /* Slightly smaller menu items */
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.user-details-menu .menu-item:hover {
+  background: var(--bg-tertiary); /* Highlight on hover */
+  color: var(--text-tertiary);
+}
+
+.user-avatar-initial {
+  font-size: 1rem; /* Adjusted font size */
+  font-weight: bold;
+  color: white;
+}
+
+/* --- Home View Styles --- */
+
+.home-view-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  color: var(--text-primary);
+  width: 100%;
+  max-width: 1200px; /* Increase max-width for a slightly wider layout */
+  margin: 0 auto;
+  overflow-y: auto; /* Enable scrolling if content overflows */
+}
+
+.app-layout.left-collapsed .main-content .home-view-container {
+  max-width: none;
+  padding: 2rem; /* Adjust padding if necessary */
+}
+
+.home-hero,
+.how-it-works-section,
+.core-features-section {
+  /* Initial state for scroll animation */
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+
+.home-hero.is-visible,
+.how-it-works-section.is-visible,
+.core-features-section.is-visible {
+  /* Final state when element is visible */
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.home-hero {
+  display: flex;
+  flex-direction: row; /* Two columns */
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 1; /* Removed vertical padding */
+  margin-bottom: 6rem; /* More space below the hero */
+  /* Optional: Add a subtle background or border */
+  /* border-bottom: 1px solid var(--border-color); */
+  animation: slideInFromBottom 0.5s ease-out;
+}
+
+.home-hero-left {
+  flex: 1; /* Take up available space */
+  padding-right: 3rem; /* Increased space between columns */
+  max-width: 600px; /* Limit width for text block */
+  animation: slideInFromRight 0.5s ease-out 0.2s both;
+}
+
+.home-hero-right {
+  flex: 1; /* Take up available space */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden; /* Hide overflowing parts of the image */
+  animation: slideInFromRight 0.5s ease-out 0.4s both;
+}
+
+.home-headline {
+  font-size: 3.5rem; /* Larger and more impactful headline */
+  font-weight: 900;
+  color: var(--text-tertiary); /* White color */
+  margin-bottom: 0.5rem; /* Reduced space below headline */
+  line-height: 1.2;
+}
+
+.home-subheadline {
+  font-size: 1.3rem; /* Slightly larger subheadline */
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 3rem; /* More space below subheadline */
+}
+
+.home-cta-area {
+  display: flex;
+  flex-direction: row; /* Arrange CTA button and description in a row */
+  align-items: center;
+  gap: 1.5rem; /* Space between button and description */
+}
+
+.cta-button {
+  background: #377DFF; /* Electric blue */
+  color: var(--text-tertiary); /* White text */
+  border: none;
+  border-radius: 0.5rem; /* Soft corners */
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+  box-shadow: 0 4px 12px rgba(55, 125, 255, 0.4); /* Blue shadow */
+  display: flex; /* Enable flexbox for icon alignment */
+  align-items: center; /* Vertically align content */
+  gap: 0.5rem; /* Space between text and icon */
+}
+
+.cta-button:hover {
+  background: #2a64d1; /* Slightly darker blue on hover */
+  box-shadow: 0 6px 16px rgba(55, 125, 255, 0.6); /* More prominent shadow on hover */
+  transform: translateY(-2px); /* Subtle upward motion */
+}
+
+.cta-description {
+  font-size: 1rem; /* Slightly larger description text */
+  color: var(--text-secondary);
+}
+
+/* Style for the actual illustration image */
+.home-illustration {
+  display: block; /* Ensure it behaves like a block element */
+  width: 100%; /* Make it fill the width of its container */
+  height: auto; /* Maintain aspect ratio */
+  object-fit: cover; /* Cover the area, cropping if necessary */
+  border-radius: 0.8rem; /* Match border-radius of the old placeholder */
+}
+
+/* How It Works Section */
+.how-it-works-section {
+  width: 100%;
+  margin-bottom: 6rem; /* More space below */
+  animation: fadeIn 0.5s ease-out;
+}
+
+.how-it-works-section h2 {
+  text-align: center;
+  font-size: 2.5rem; /* Slightly larger heading */
+  font-weight: 700;
+  color: var(--text-tertiary);
+  margin-bottom: 3rem; /* More space below heading */
+}
+
+.how-it-works-steps {
+  display: flex;
+  justify-content: center; /* Center the steps */
+  gap: 3rem; /* Increased space between steps */
+  flex-wrap: wrap;
+  padding: 0 2rem;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1; /* Allow steps to grow */
+  min-width: 200px; /* Increase minimum width */
+  max-width: 250px; /* Increase maximum width */
+  padding: 2rem; /* Increased padding */
+  background: var(--bg-secondary); /* Background */
+  border-radius: 0.8rem; /* Soft corners */
+  box-shadow: 0 4px 12px var(--shadow-color); /* Subtle shadow */
+  transition: transform 0.3s ease; /* Add transition for hover */
+  animation: scaleIn 0.5s ease-out;
+}
+
+.step:hover {
+    transform: translateY(-5px); /* Subtle lift on hover */
+}
+
+.step svg {
+  font-size: 3.5rem; /* Larger icons */
+  color: #377DFF; /* Electric blue icon color */
+  margin-bottom: 1.5rem; /* More space below icon */
+}
+
+.step h3 {
+  font-size: 1.3rem; /* Slightly larger step title */
+  font-weight: 600;
+  color: var(--text-tertiary); /* White color */
+  margin-bottom: 0.8rem;
+}
+
+.step p {
+  font-size: 1rem; /* Standard paragraph text size */
+  color: var(--text-secondary);
+}
+
+/* Trust Section */
+.trust-section {
+  width: 100%;
+  margin-bottom: 4rem; /* Space below */
+  text-align: center;
+}
+
+.trust-section h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  margin-bottom: 2rem; /* Space below heading */
+}
+
+.trust-logos-placeholder {
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  /* Add styling for logos here when available */
+}
+
+/* Core Features Section (Refining existing styles) */
+.core-features-section {
+  width: 100%;
+  margin-bottom: 6rem; /* More space below */
+  animation: fadeIn 0.5s ease-out;
+}
+
+.core-features-section h2 {
+  text-align: center;
+  font-size: 2.5rem; /* Slightly larger heading */
+  font-weight: 700;
+  color: var(--text-tertiary);
+  margin-bottom: 3rem; /* More space below heading */
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Increase minmax for larger feature items */
+  gap: 2rem; /* Space between features */
+  padding: 0 2rem;
+}
+
+.feature-item {
+  background: var(--bg-secondary); /* Background */
+  padding: 2rem; /* Increased padding */
+  border-radius: 0.8rem; /* Soft corners */
+  box-shadow: 0 4px 12px var(--shadow-color); /* Subtle shadow */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: transform 0.3s ease; /* Add transition for hover */
+  animation: scaleIn 0.5s ease-out;
+}
+
+.feature-item:hover {
+  transform: translateY(-5px); /* Subtle lift on hover */
+}
+
+.feature-icon svg {
+  font-size: 4rem; /* Larger icons */
+  color: #377DFF; /* Electric blue */
+  margin-bottom: 1.5rem; /* More space below icon */
+}
+
+.feature-item h3 {
+  font-size: 1.3rem; /* Slightly larger feature title */
+  font-weight: 600;
+  color: var(--text-tertiary); /* White color */
+  margin-bottom: 0.8rem;
+}
+
+.feature-item p {
+  font-size: 1rem; /* Standard paragraph text size */
+  color: var(--text-secondary);
+}
+
+/* Responsive adjustments for Home View */
+@media (max-width: 768px) {
+  .home-hero {
+    flex-direction: column; /* Stack columns on smaller screens */
+    padding: 2rem 0; /* Adjust padding */
+  }
+
+  .home-hero-left {
+    padding-right: 0;
+    margin-bottom: 2rem; /* Space below text when stacked */
+  }
+
+  .home-cta-area {
+      flex-direction: column; /* Stack CTA elements */
+      align-items: center; /* Center stacked items */
+      gap: 1rem; /* Adjust gap */
+  }
+
+  .home-headline {
+      font-size: 2.5rem; /* Adjust headline size */
+  }
+
+  .home-subheadline {
+      font-size: 1.1rem; /* Adjust subheadline size */
+  }
+
+  .how-it-works-steps {
+      gap: 2rem; /* Adjust gap for smaller screens */
+  }
+
+  .step {
+      min-width: 180px; /* Adjust min width */
+      max-width: 220px; /* Adjust max width */
+  }
+
+  .features-grid {
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Adjust minmax */
+      gap: 1.5rem; /* Adjust gap */
+  }
+
+  .core-features-section h2,
+  .how-it-works-section h2 {
+      font-size: 2rem; /* Adjust heading size */
+  }
+}
+
+@media (max-width: 480px) {
+  .home-headline {
+    font-size: 2rem; /* Further adjust headline size */
+  }
+
+  .home-subheadline {
+      font-size: 1rem; /* Further adjust subheadline size */
+  }
+
+  .how-it-works-section h2,
+  .core-features-section h2 {
+      font-size: 1.8rem; /* Further adjust heading size */
+  }
+
+  .cta-button {
+      font-size: 1rem; /* Adjust button font size */
+      padding: 0.8rem 1.5rem; /* Adjust button padding */
+  }
+}
+
+.home-section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  margin-bottom: 2rem;
+}
+
+.home-app-logo {
+  width: 60px;
+  height: 60px;
+  margin-right: 1rem;
+}
+
+.home-header-area {
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center the header content */
+  margin-bottom: 1rem; /* Reduced space below header area */
+  width: 100%; /* Ensure header takes full width */
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Add style for agent cards grid when searching */
+/* Ensure agent cards maintain their size and layout when searching */
+.agent-cards-grid--searching {
+  /* Set a grid definition that results in cards matching the image size */
+  /* Use a fixed column width for consistent size */
+  grid-template-columns: repeat(auto-fit, 280px); /* Adjusted width based on visual estimation from image */
+  gap: 1rem; /* Keep the same gap as the default grid */
+  justify-content: center; /* Center the grid within its container */
+  /* Ensure no conflicting styles from the searching state */
+}
+
+.agent-cards-grid--searching .agent-card {
+  /* Explicitly set styles to match the desired size and padding from the image */
+  padding: 1.5rem; /* Match the default padding which looks similar to the image */
+  width: 280px; /* Explicitly set width to match the grid column */
+  max-width: 280px; /* Ensure max-width is consistent */
+  box-sizing: border-box;
+  /* Ensure other visual styles are consistent with the default .agent-card */
+  background: var(--bg-secondary);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  height: auto; /* Allow height to adjust based on content */
+  justify-content: space-between;
+}
+
+.agent-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); /* More compact columns */
+  gap: 15px; /* Reduced uniform gap between cards */
+  padding: 15px 0;
+  justify-content: center; /* Center cards in the grid */
+  align-items: stretch; /* Ensure cards have equal height */
+  width: 100%;
+  max-width: 1000px; /* Adjusted overall width */
+  margin: 0 auto; /* Center the grid */
+}
+
+.agent-cards-grid--searching {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); /* More compact columns */
+  gap: 15px; /* Reduced uniform gap between cards */
+  padding: 15px 0;
+  justify-content: center; /* Center cards in the grid */
+  align-items: stretch; /* Ensure cards have equal height */
+  width: 100%;
+  max-width: 1000px; /* Adjusted overall width */
+  margin: 0 auto; /* Center the grid */
+}
+
+/* Agent Card */
+.agent-card {
+  background: var(--bg-secondary); /* Use secondary background for card */
+  border-radius: 14px; /* Slightly less pronounced rounded corners */
+  padding: 20px; /* Reduced padding */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Lighter, more subtle shadow */
+  transition: transform 0.2s ease, box-shadow 0.2s ease; /* Faster hover effects */
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden; /* Ensure content stays within borders */
+  position: relative;
+  min-height: 180px; /* More compact minimum height */
+  border: 1px solid var(--border-color); /* Subtle border */
+}
+
+.agent-card:hover {
+  transform: translateY(-6px); /* Lift effect on hover */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); /* Stronger shadow on hover */
+}
+
+.agent-icon {
+  font-size: 3rem; /* Slightly smaller icon size */
+  color: var(--accent-color); /* Use accent color for icons */
+  margin-bottom: 12px; /* Adjusted space below icon */
+  background: var(--bg-tertiary); /* Background for icon circle */
+  border-radius: 50%; /* Make it a circle */
+  padding: 12px; /* Padding inside the icon circle */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 60px; /* Fixed width */
+  height: 60px; /* Fixed height */
+}
+
+.agent-icon svg {
+  width: 100%; /* Ensure SVG fills its container */
+  height: 100%;
+}
+
+.agent-name {
+  font-size: 1.4rem; /* Slightly smaller name */
+  font-weight: 700;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+
+.agent-description {
+  font-size: 0.95rem; /* Slightly smaller description font */
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 15px;
+  flex-grow: 1; /* Allows description to take available space */
+}
+
+.agent-tag {
+  background: var(--accent-color); /* Use accent color for tag */
+  color: white;
+  padding: 4px 10px;
+  border-radius: 18px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+}
+
+.agent-card-footer {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end; /* Align button to the right */
+  align-items: center;
+}
+
+.agent-start-chat-button {
+  background: var(--accent-color); /* Accent color for button */
+  color: white;
+  padding: 8px 18px;
+  border-radius: 20px; /* More rounded button */
+  border: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s ease, transform 0.15s ease; /* Smooth transition */
+}
+
+.agent-start-chat-button:hover {
+  background: #1a4dbe; /* Slightly darker accent on hover */
+  transform: translateX(4px); /* Slight slide effect on hover */
+}
+
+.agent-start-chat-button::after {
+  content: '\2192'; /* Unicode right arrow */
+  font-size: 1.1rem;
+  margin-left: 4px;
+  transition: margin-left 0.15s ease; /* Smooth transition for arrow */
+}
+
+.agent-start-chat-button:hover::after {
+  margin-left: 8px;
+}
+
+@media (max-width: 768px) {
+  .agent-cards-grid {
+    grid-template-columns: 1fr; /* Single column on small screens */
+    padding: 10px;
+  }
+  .agent-card {
+    padding: 15px;
+  }
+  .agent-icon {
+    font-size: 2.5rem;
+    width: 50px;
+    height: 50px;
+    padding: 10px;
+  }
+  .agent-name {
+    font-size: 1.2rem;
+  }
+  .agent-description {
+    font-size: 0.9rem;
+  }
+  .agent-start-chat-button {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Style for the search panel */
+.search-panel {
+  width: 100%;
+  max-width: 450px;
+  margin: 0.5rem auto 3rem auto; /* Centered horizontally, increased bottom margin */
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--border-color);
+  border-radius: 2rem;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  animation: slideInFromBottom 0.3s ease-out;
+}
+
+.search-panel:focus-within { /* Apply styles when input inside is focused */
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(55, 125, 255, 0.2);
+}
+
+.search-icon {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+  flex-shrink: 0; /* Prevent icon from shrinking */
+}
+
+.agent-search-input {
+  flex-grow: 1;
+  width: auto;
+  padding: 0; /* No padding here, handled by container */
+  font-size: 1rem;
+  border: none;
+  border-radius: 0;
+  background: none;
+  color: var(--text-primary);
+  outline: none;
+  transition: none;
+  box-sizing: border-box;
+}
+
+/* --- Knowledge Sources View Styles (Marketplace Look) --- */
+
+.knowledge-sources-container {
+  padding: 1rem 1.5rem; /* Reduced top padding to move content up */
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  text-align: center;
+  animation: fadeIn 0.5s ease-out;
+}
+
+.knowledge-sources-container h2 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  margin-bottom: 0rem; /* Reduced margin-bottom to move it up */
+}
+
+.knowledge-sources-description {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.search-panel {
+  width: 100%;
+  max-width: 450px;
+  margin: 0.5rem auto 3rem auto; /* Centered horizontally, increased bottom margin */
+  padding: 0.6rem 1.2rem;
+  border: 1px solid var(--border-color);
+  border-radius: 2rem;
+  background: var(--bg-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  animation: slideInFromBottom 0.3s ease-out;
+}
+
+.search-panel:focus-within {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(55, 125, 255, 0.2);
+}
+
+.search-icon {
+  color: var(--text-secondary);
+  font-size: 1.2rem;
+}
+
+.agent-search-input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1rem;
+  flex: 1;
+  outline: none;
+  padding: 0.2rem 0;
+}
+
+/* Agent Cards Grid */
+.agent-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Adjusted min width for more compact columns */
+  gap: 15px; /* Consistent gap between cards */
+  padding: 0 20px; /* Add horizontal padding to the grid container */
+  justify-content: flex-start; /* Align to the start */
+  align-items: stretch;
+  width: 100%;
+  max-width: 1200px; /* Re-introduced max-width to control overall spread */
+  margin: 0 auto; /* Center the grid within the knowledge-sources-container */
+}
+
+.agent-cards-grid--searching {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Adjusted min width */
+  gap: 15px;
+  padding: 0 20px;
+  justify-content: flex-start;
+  align-items: stretch;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Agent Card */
+.agent-card {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  min-height: 160px;
+  border: 1px solid var(--border-color);
+  box-sizing: border-box; /* Ensure padding and border are included in total width/height */
+}
+
+.agent-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+.agent-icon {
+  font-size: 2.8rem;
+  color: var(--accent-color);
+  margin-bottom: 10px;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 55px;
+  height: 55px;
+  flex-shrink: 0; /* Prevent icon from shrinking */
+}
+
+.agent-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block; /* Ensure the SVG behaves as a block element */
+}
+
+.agent-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+
+.agent-description {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 12px;
+  flex-grow: 1;
+}
+
+.agent-tag {
+  background: var(--accent-color);
+  color: white;
+  padding: 3px 9px;
+  border-radius: 16px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 10px;
+}
+
+.agent-card-footer {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.agent-start-chat-button {
+  background: var(--accent-color);
+  color: white;
+  padding: 7px 16px;
+  border-radius: 18px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.agent-start-chat-button:hover {
+  background: #1a4dbe;
+  transform: translateX(3px);
+}
+
+.agent-start-chat-button::after {
+  content: '\2192';
+  font-size: 1rem;
+  margin-left: 3px;
+  transition: margin-left 0.15s ease;
+}
+
+.agent-start-chat-button:hover::after {
+  margin-left: 6px;
+}
+
+@media (max-width: 768px) {
+  .agent-cards-grid {
+    grid-template-columns: 1fr;
+    padding: 8px;
+  }
+  .agent-card {
+    padding: 12px;
+  }
+  .agent-icon {
+    font-size: 2.2rem;
+    width: 45px;
+    height: 45px;
+    padding: 8px;
+  }
+  .agent-name {
+    font-size: 1.1rem;
+  }
+  .agent-description {
+    font-size: 0.85rem;
+  }
+  .agent-start-chat-button {
+    padding: 5px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Animation Keyframes */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInFromBottom {
+  from { transform: translateY(20px); }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideInFromRight {
+  from { transform: translateX(20px); }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Chat Message Animations */
+.chat-message {
+  animation: slideInFromBottom 0.3s ease-out;
+}
+
+.chat-message.user {
+  animation: slideInFromRight 0.3s ease-out;
+}
+
+/* Welcome Screen Animations */
+.welcome-center-area {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.welcome-logo {
+  animation: scaleIn 0.5s ease-out;
+}
+
+.welcome-greeting-area {
+  animation: slideInFromBottom 0.5s ease-out 0.2s both;
+}
+
+.welcome-subtitle {
+  animation: slideInFromBottom 0.5s ease-out 0.4s both;
+}
+
+.quick-options-col {
+  animation: slideInFromBottom 0.5s ease-out 0.6s both;
+}
+
+/* Home View Animations */
+.home-header-area {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.home-hero {
+  animation: slideInFromBottom 0.5s ease-out;
+}
+
+.home-hero-left {
+  animation: slideInFromRight 0.5s ease-out 0.2s both;
+}
+
+.home-hero-right {
+  animation: slideInFromRight 0.5s ease-out 0.4s both;
+}
+
+.how-it-works-section {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.step {
+  animation: scaleIn 0.5s ease-out;
+}
+
+.core-features-section {
+  animation: fadeIn 0.5s ease-out;
+}
+
+.feature-item {
+  animation: scaleIn 0.5s ease-out;
+}
+
+/* Navigation Transitions */
+.left-sidebar, .right-sidebar {
+  transition: all 0.3s ease-out;
+}
+
+.main-content {
+  transition: all 0.3s ease-out;
+}
+
+/* Chat History Item Animations */
+.chat-history-item {
+  animation: fadeIn 0.3s ease-out;
+  transition: all 0.2s ease-out;
+}
+
+/* Quick Options Button Animations */
+.quick-option-btn {
+  transition: all 0.2s ease-out;
+}
+
+.quick-option-btn:hover {
+  transform: translateY(-2px);
+}
+
+/* Agent Card Animations */
+.agent-card {
+  animation: scaleIn 0.3s ease-out;
+  transition: all 0.2s ease-out;
+}
+
+.agent-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Search Panel Animations */
+.search-panel {
+  animation: slideInFromBottom 0.3s ease-out;
+  transition: all 0.2s ease-out;
+}
+
+/* Chat Message Animations */
+@keyframes slideInFromBottom {
+  from { transform: translateY(20px); }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Add typing indicator animation */
+@keyframes typing-dots {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+  100% { transform: translateY(0); }
+}
+
+/* Add styling for the typing indicator */
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px; /* Space between dots */
+  font-size: 1rem; /* Match message font size */
+  color: var(--text-secondary); /* Use secondary text color */
+}
+
+.typing-indicator span {
+  display: inline-block;
+  width: 6px; /* Size of the dots */
+  height: 6px; /* Size of the dots */
+  background-color: var(--text-secondary); /* Color of the dots */
+  border-radius: 50%; /* Make them circular */
+  animation: typing-dots 1s infinite ease-in-out;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.15s; /* Stagger the animation */
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.3s; /* Stagger the animation */
+}
+
+/* Add styling for the typing indicator container with text */
+.processing-message-content {
+  display: flex; /* Arrange text and dots horizontally */
+  align-items: center; /* Vertically align items */
+  gap: 8px; /* Space between text and dots */
+  font-size: 1rem; /* Match message font size */
+  color: var(--text-secondary); /* Use secondary text color */
+}
+
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* Increased space between larger dots */
+  font-size: 1rem; /* Match message font size */
+  color: var(--text-secondary); /* Use secondary text color */
+}
+
+.typing-indicator span {
+  display: inline-block;
+  width: 8px; /* Increased size of the dots */
+  height: 8px; /* Increased size of the dots */
+  background-color: var(--text-secondary); /* Color of the dots */
+  border-radius: 50%; /* Keep them circular */
+  animation: typing-dots 1s infinite ease-in-out;
+}
+
+/* Styles for the Close PDF button in App.js */
+.close-pdf-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent dark background */
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 1001; /* Ensure it's above the PDF viewer content and controls */
+    transition: background-color 0.2s ease;
+}
+
+.close-pdf-button:hover {
+    background-color: rgba(0, 0, 0, 0.7); /* Darker on hover */
+}
+
+/* Agent Cards Grid */
+.agent-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  padding: 5px 0;
+  justify-content: flex-start; /* Align to the start */
+  align-items: stretch;
+  width: 100%;
+  max-width: none; /* Allow grid to expand fully */
+  margin: 0; /* Remove auto margin */
+}
+
+.agent-cards-grid--searching {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  padding: 5px 0;
+  justify-content: flex-start; /* Align to the start */
+  align-items: stretch;
+  width: 100%;
+  max-width: none; /* Allow grid to expand fully */
+  margin: 0; /* Remove auto margin */
+}
+
+/* Agent Card */
+.agent-card {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  min-height: 160px;
+  border: 1px solid var(--border-color);
+}
+
+.agent-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+.agent-icon {
+  font-size: 2.8rem;
+  color: var(--accent-color);
+  margin-bottom: 10px;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 55px;
+  height: 55px;
+}
+
+.agent-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.agent-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+
+.agent-description {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 12px;
+  flex-grow: 1;
+}
+
+.agent-tag {
+  background: var(--accent-color);
+  color: white;
+  padding: 3px 9px;
+  border-radius: 16px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 10px;
+}
+
+.agent-card-footer {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.agent-start-chat-button {
+  background: var(--accent-color);
+  color: white;
+  padding: 7px 16px;
+  border-radius: 18px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.agent-start-chat-button:hover {
+  background: #1a4dbe;
+  transform: translateX(3px);
+}
+
+.agent-start-chat-button::after {
+  content: '\2192';
+  font-size: 1rem;
+  margin-left: 3px;
+  transition: margin-left 0.15s ease;
+}
+
+.agent-start-chat-button:hover::after {
+  margin-left: 6px;
+}
+
+@media (max-width: 768px) {
+  .agent-cards-grid {
+    grid-template-columns: 1fr;
+    padding: 8px;
+  }
+  .agent-card {
+    padding: 12px;
+  }
+  .agent-icon {
+    font-size: 2.2rem;
+    width: 45px;
+    height: 45px;
+    padding: 8px;
+  }
+  .agent-name {
+    font-size: 1.1rem;
+  }
+  .agent-description {
+    font-size: 0.85rem;
+  }
+  .agent-start-chat-button {
+    padding: 5px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+.agent-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Adjusted for more space */
+  gap: 20px; /* Increased gap for better separation */
+  padding: 0 20px; /* Add horizontal padding to the grid container */
+  justify-content: center; /* Center the grid items */
+  align-items: stretch;
+  width: 100%;
+  max-width: 1200px; /* Control overall spread */
+  margin: 0 auto; /* Center the grid within the knowledge-sources-container */
+}
+
+.agent-cards-grid--searching {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Adjusted for more space */
+  gap: 20px;
+  padding: 0 20px;
+  justify-content: center;
+  align-items: stretch;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.agent-card {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  min-height: 160px;
+  border: 1px solid var(--border-color);
+  box-sizing: border-box; /* Ensure padding and border are included in total width/height */
+}
+
+.agent-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+.agent-icon {
+  font-size: 2.8rem;
+  color: var(--accent-color);
+  margin-bottom: 10px;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 55px;
+  height: 55px;
+  flex-shrink: 0; /* Prevent icon from shrinking */
+}
+
+.agent-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block; /* Ensure the SVG behaves as a block element */
+}
+
+.agent-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+
+.agent-description {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 12px;
+  flex-grow: 1;
+}
+
+.agent-tag {
+  background: var(--accent-color);
+  color: white;
+  padding: 3px 9px;
+  border-radius: 16px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 10px;
+}
+
+.agent-card-footer {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.agent-start-chat-button {
+  background: var(--accent-color);
+  color: white;
+  padding: 7px 16px;
+  border-radius: 18px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.agent-start-chat-button:hover {
+  background: #1a4dbe;
+  transform: translateX(3px);
+}
+
+.agent-start-chat-button::after {
+  content: '\2192';
+  font-size: 1rem;
+  margin-left: 3px;
+  transition: margin-left 0.15s ease;
+}
+
+.agent-start-chat-button:hover::after {
+  margin-left: 6px;
+}
+
+@media (max-width: 768px) {
+  .agent-cards-grid {
+    grid-template-columns: 1fr;
+    padding: 8px;
+  }
+  .agent-card {
+    padding: 12px;
+  }
+  .agent-icon {
+    font-size: 2.2rem;
+    width: 45px;
+    height: 45px;
+    padding: 8px;
+  }
+  .agent-name {
+    font-size: 1.1rem;
+  }
+  .agent-description {
+    font-size: 0.85rem;
+  }
+  .agent-start-chat-button {
+    padding: 5px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Agent Mention Dropdown */
+.agent-dropdown {
+  position: absolute;
+  bottom: 60px; /* Adjust as needed to be above the input */
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 8px 0;
+  margin: 0 12px; /* Align with input padding */
+}
+
+.agent-dropdown-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.agent-dropdown-item:hover {
+  background: var(--bg-tertiary);
+}
+
+/* Agent Mention Highlight */
+.agent-mention {
+  background-color: #e0f2fe; /* Light blue background */
+  color: #1a73e8; /* Darker blue text */
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* Agent Indicator */
+.agent-indicator {
+  position: absolute;
+  bottom: -8px; /* Adjust as needed */
+  right: -8px; /* Adjust as needed */
+  background-color: var(--accent-color); /* Use a suitable color, e.g., blue */
+  color: white;
+  font-size: 0.7em;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 30px; /* Make it circular */
+  height: 30px; /* Make it circular */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  padding: 2px;
+  text-transform: uppercase; /* Ensure text is uppercase */
+}
+
+.chat-message.assistant .bubble {
+  position: relative; /* Ensure the bubble is the positioning context for the indicator */
+  margin-right: 25px; /* Add some space for the indicator */
+}
+
+/* Agent Badge Styles */
+.agent-badge {
+  display: inline-flex;
+  background: none; /* No background for subtle look */
+  color: var(--text-primary); /* Use primary text color */
+  padding: 0px; /* No padding for a more integrated look */
+  border-radius: 0px; /* No border-radius */
+  margin-bottom: 0px; /* Reduced margin */
+  font-size: 0.9em; /* Slightly larger font size, adjust as needed */
+  font-weight: 600; /* Medium font weight */
+  text-transform: none; /* No uppercase, match example */
+  box-shadow: none; /* No shadow */
+  align-items: center;
+  justify-content: flex-start; /* Align text to start */
+  height: auto; /* Auto height */
+  min-width: unset; /* Remove min-width */
+  box-sizing: border-box;
+  gap: 6px; /* Space between icon and text if icon is added */
+}
+
+.agent-badge-text {
+  display: flex;
+  align-items: center;
+  gap: 0px; /* Remove gap, as we'll handle gap in agent-badge */
+}
+
+/* Ensure the agent indicator in App.js matches this styling */
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bubble.assistant {
+  background: none; /* Make background transparent */
+  color: var(--text-primary);
+  padding: 16px;
+  border-radius: 12px;
+  max-width: 85%;
+  position: relative;
+  margin-right: 25px;
+  box-shadow: none; /* Remove shadow */
+}
+
+/* Ensure chat window background is transparent */
+.chat-window.chatbot-full-window {
+  background: transparent; /* Make background transparent */
+}
+
+/* Ensure main content background is transparent */
+.main-content.chatbot-full {
+  background: transparent; /* Make background transparent */
+}
+
+/* Remove the old agent indicator styles since we're using the new badge */
+.agent-indicator {
+  display: none;
+}
+
+/* Agent Info Display Styles */
+.agent-info-display {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Space between icon and text */
+  margin-bottom: 8px; /* Space below the agent info */
+  color: var(--text-secondary); /* Subtle color for agent name */
+}
+
+.agent-info-icon {
+  width: 28px; /* Size of the circular icon */
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--bg-tertiary); /* Subtle grey circle background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em; /* Adjust icon size if needed */
+  color: var(--text-primary); /* Icon color */
+}
+
+.agent-info-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.agent-info-name {
+  font-size: 0.95em; /* Slightly larger than before, subtle */
+  font-weight: 500; /* Regular font weight */
+  color: var(--text-secondary); /* Consistent subtle text color */
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: transparent !important; /* Remove background from message-content */
+  padding: 0 !important; /* Remove padding from message-content */
+  border-radius: 0 !important; /* Remove border-radius from message-content */
+  box-shadow: none !important; /* Remove shadow from message-content */
+}
+
+/* Ensure chat window background is transparent */
+.chat-window.chatbot-full-window {
+  background: transparent !important; /* Make background transparent */
+  box-shadow: none !important; /* Remove any shadow from chat window */
+}
+
+/* Ensure main content background is transparent */
+.main-content.chatbot-full {
+  background: transparent !important; /* Make background transparent */
+  box-shadow: none !important; /* Remove any shadow from main content */
+}
+
+/* Remove the old agent indicator styles since we're using the new badge */
+.agent-indicator {
+  display: none;
+}
+
+/* Old agent badge styles - ensure these are hidden */
+.agent-badge {
+  display: none !important; 
+}
+
+.agent-badge-text {
+  display: none !important;
+}
+
+/* Agent Edit Fields */
+.agent-edit-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.agent-edit-name-input,
+.agent-edit-description-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.agent-edit-description-input {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.edit-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.edit-controls button {
+  background-color: var(--accent-color);
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background-color 0.2s ease;
+}
+
+.edit-controls button:hover {
+  background-color: #1a4dbe; /* Darker accent */
+}
+
+.agent-edit-button {
+  background: none;
+  border: none;
+  color: var(--text-secondary); /* Subtle color for edit icon */
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 5px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  position: absolute; /* Position relative to agent-card */
+  top: 10px;
+  right: 10px;
+}
+
+.agent-edit-button:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.agent-pdf-source {
+  font-size: 0.85rem;
+  color: var(--text-secondary); /* Subtle color */
+  margin-top: 10px; /* Space from description */
+  margin-bottom: 10px; /* Space before tag/footer */
+  font-style: italic;
+}
+
+.bubble.user {
+  background: var(--bg-secondary); /* Give it a subtle background */
+  color: var(--text-primary);
+  border-radius: 18px; /* Give it a rounded bubble shape */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Add a subtle shadow for depth */
+  padding: 10px 15px; /* Add internal padding */
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: left;
+  display: flex; /* Make it a flex container */
+  flex-direction: column; /* Stack children vertically */
+  align-items: flex-start; /* Align content to the left */
+}
+
+.bubble:hover {
+  box-shadow: 0 4px 16px var(--shadow-color);
+}
+
+.avatar.user {
+  background: var(--accent-color); /* Use accent color for background */
+  color: var(--text-tertiary);
+  font-weight: 700;
+  font-size: 1rem; /* Keep font size for initial */
+  border-radius: 50%; /* Make it circular */
+  box-shadow: none;
+  width: 40px; /* Fixed width */
+  height: 40px; /* Fixed height */
+  padding: 0;
+  display: flex; /* Ensure flex properties apply */
+  align-items: center; /* Center content */
+  justify-content: center; /* Center content */
+}
+
+.chat-message.user .avatar {
+  background: var(--bg-primary);
+}
+
+.agent-info-display-user {
+  justify-content: flex-end;
+  margin-left: auto; /* Push to the right */
+  margin-bottom: 5px; /* Add some space below the indicator */
+}
+
+.agent-info-icon {
+  width: 28px; /* Size of the circular icon */
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--bg-tertiary); /* Subtle grey circle background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em; /* Adjust icon size if needed */
+  color: var(--text-primary); /* Icon color */
+}
+
+.agent-info-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.agent-info-name {
+  font-size: 0.95em; /* Slightly larger than before, subtle */
+  font-weight: 500; /* Regular font weight */
+  color: var(--text-secondary); /* Consistent subtle text color */
+}
+
+.user-message {
+  background-color: #f0f2f5;
+  margin-left: auto;
+  margin-right: 0;
+  max-width: 80%;
+}
+
+.user-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.user-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #e4e6eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.user-text {
+  background-color: #0084ff;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.user-agent-mention {
+  background-color: #e6f0ff; /* Light blue background */
+  color: #0056b3; /* Darker blue text */
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.assistant-message {
+  background-color: white;
+  margin-right: auto;
+  margin-left: 0;
+  max-width: 80%;
+}
+
+.assistant-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.assistant-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #f0f2f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  color: #1a73e8;
+}
+
+.assistant-text {
+  background-color: #f0f2f5;
+  color: #1c1e21;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-text p {
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-text p:not(:last-child) {
+  margin-bottom: 8px;
+}
+
+.message {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.user-message {
+  align-self: flex-end;
+  margin-left: auto;
+  margin-right: 0;
+  max-width: 80%;
+}
+
+.user-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.user-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #e4e6eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.user-text {
+  background-color: #0084ff;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-message {
+  align-self: flex-start;
+  margin-right: auto;
+  margin-left: 0;
+  max-width: 80%;
+}
+
+.assistant-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.assistant-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #f0f2f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  color: #1a73e8;
+}
+
+.assistant-text {
+  background-color: #f0f2f5;
+  color: #1c1e21;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-text p {
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-text p:not(:last-child) {
+  margin-bottom: 8px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.user-message {
+  align-self: flex-end;
+  margin-left: auto;
+  margin-right: 0;
+  max-width: 80%;
+}
+
+.user-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.user-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #e4e6eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.user-text {
+  background-color: #0084ff;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-message {
+  align-self: flex-start;
+  margin-right: auto;
+  margin-left: 0;
+  max-width: 80%;
+}
+
+.assistant-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.assistant-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #f0f2f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  color: #1a73e8;
+}
+
+.assistant-text {
+  background-color: #f0f2f5;
+  color: #1c1e21;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-text p {
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-text p:not(:last-child) {
+  margin-bottom: 8px;
+}

@@ -1,0 +1,42 @@
+# Core Dependencies
+langchain>=0.1.0
+langchain-community>=0.0.10
+langchain-core>=0.1.0
+langchain-google-genai>=0.0.5
+langchain-openai>=0.0.5
+
+# AI/ML Dependencies
+openai>=1.0.0
+google-generativeai>=0.3.0
+faiss-cpu>=1.7.4
+
+# PDF Processing
+PyPDF2>=3.0.0
+PyMuPDF>=1.23.8
+pdf2image>=1.16.3
+pytesseract>=0.3.10
+unstructured>=0.10.30
+
+# Web Framework
+flask>=3.0.0
+flask-cors>=4.0.0
+requests>=2.31.0
+
+# Data Processing
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Image Processing
+pillow>=10.0.0
+python-magic>=0.4.27
+python-magic-bin>=0.4.14
+
+# Environment & Type Checking
+python-dotenv>=1.0.0
+pydantic>=2.5.2
+typing-extensions>=4.8.0
+
+# Development Dependencies
+pytest>=7.4.0
+black>=23.7.0
+flake8>=6.1.0

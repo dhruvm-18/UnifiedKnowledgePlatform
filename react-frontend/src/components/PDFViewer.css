@@ -1,0 +1,123 @@
+/* Styles for PDFViewer component */
+
+/* Main container */
+.pdf-viewer-container {
+    height: 100vh;
+    width: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Add background and text colors that match your theme */
+    background-color: var(--background-color-dark);
+    color: var(--text-color-light);
+}
+
+/* Error message style */
+.pdf-error-message {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    background-color: #ffebee; /* Reddish background */
+    color: #c62828; /* Dark red text */
+    padding: 10px;
+    border-radius: 4px;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Loading indicator container */
+.pdf-loading-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    z-index: 500;
+}
+
+/* Controls container (Prev, Next, Zoom buttons) */
+.pdf-controls {
+    margin-bottom: 10px;
+    padding: 10px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    /* Add background color if needed, considering dark mode */
+    /* background-color: var(--background-color-card); */
+    border-radius: 8px;
+}
+
+/* Style for buttons in controls (basic example) */
+.pdf-controls button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    color: white; /* Default text color */
+    /* Default button styles */
+    background-color: #007bff; /* Blue */
+}
+
+.pdf-controls button:disabled {
+    background-color: #ccc; /* Grey when disabled */
+    cursor: not-allowed;
+}
+
+/* Specific styles for zoom buttons */
+.pdf-controls button.zoom-btn {
+    background-color: #6c757d; /* Greyish */
+}
+
+/* Page number display */
+.pdf-page-info {
+    margin-left: 20px;
+    /* Add text color if needed */
+    color: var(--text-color-light);
+}
+
+/* Canvas container */
+.pdf-canvas-container {
+    flex-grow: 1;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    overflow: auto;
+}
+
+/* Canvas element style */
+.pdf-canvas {
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    max-width: 100%;
+    height: auto;
+    /* Background for the canvas itself if PDF doesn't fill */
+    background-color: white;
+}
+
+/* Hide canvas when loading or no document */
+.pdf-canvas:not([style*="display: block"]) {
+    display: none !important;
+}
+
+/* Optional: Style for highlight overlay if implemented differently */
+/*
+.pdf-highlight-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; 
+}
+
+.pdf-highlight-rect {
+    position: absolute;
+    background-color: rgba(255, 255, 0, 0.4);
+}
+*/ 
