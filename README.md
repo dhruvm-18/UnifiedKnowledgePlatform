@@ -74,6 +74,25 @@ EY_RAG_Project/
 └── app.py                 # Backend server
 ```
 
+## Version Control
+
+This project uses Git for version control. Here are some common commands:
+
+```bash
+# Check status of changes
+git status
+
+# Stage changes
+git add <file>  # Stage specific file
+git add .       # Stage all changes
+
+# Commit changes
+git commit -m "Your commit message"
+
+# Push changes to remote
+git push origin main
+```
+
 ## Contributing
 
 1. Create a new branch for your feature
