@@ -766,6 +766,10 @@ function App() {
         contextualAgentAssignment = true;
       } else if (activeAgentDetails) {
         // Keep using the current activeAgentDetails
+        agentIdToSend = activeAgentDetails.id;
+        agentFullNameToSend = activeAgentDetails.fullName;
+        agentIconToSend = activeAgentDetails.iconType;
+        pdfSourceToSend = activeAgentDetails.pdfSource;
       } else {
         agentIdToSend = null;
         agentFullNameToSend = null;
@@ -809,12 +813,22 @@ function App() {
           const assistantContent = data && data.response !== undefined ? String(data.response) : 'Error: Could not retrieve response from backend.';
           const assistantAgentId = data.metadata && data.metadata.agent_id ? data.metadata.agent_id : null;
           
+          console.log('Backend response data:', data); // DEBUG LOG
+          console.log('Assistant Agent ID from backend:', assistantAgentId); // DEBUG LOG
+
           if (assistantAgentId && (!activeAgentDetails || activeAgentDetails.id !== assistantAgentId)) {
             const assignedAgent = currentAgents.find(agent => agent.id === assistantAgentId);
+            
+            console.log('Attempting to assign agent. Assigned agent:', assignedAgent); // DEBUG LOG
+            console.log('Current activeAgentDetails before update:', activeAgentDetails); // DEBUG LOG
+
             if (assignedAgent) {
               setActiveAgentDetails(assignedAgent);
-              localStorage.setItem('activeAgentId', assignedAgent.id);
-              console.log('Active agent assigned/updated:', assignedAgent.fullName);
+              localStorage.setItem(`sessionAgent_${sessionId}`, assignedAgent.id);
+              console.log('Active agent assigned/updated:', assignedAgent.fullName); // DEBUG LOG
+              console.log('New activeAgentDetails after update:', assignedAgent); // DEBUG LOG
+            } else {
+              console.warn('Assigned agent not found in currentAgents list:', assistantAgentId); // DEBUG LOG
             }
           }
 

@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, g, session
 from flask_cors import CORS
 import google.generativeai as genai
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
@@ -136,9 +136,12 @@ retriever = vectorstore.as_retriever(
 )
 
 app = Flask(__name__)
+CORS(app) # Enable CORS for all routes
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.config['TEMPLATES_AUTO_RELOAD'] = False  # Disable template auto-reloading
 app.config['DEBUG'] = True  # Keep debug mode for development
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
+app.config['SESSION_COOKIE_NAME'] = 'rag_chatbot_session_id'
 
 # Configure logging to reduce noise
 logging.getLogger('werkzeug').setLevel(logging.ERROR)  # Reduce werkzeug logging
@@ -149,6 +152,8 @@ sessions = {}
 
 # Session file path
 SESSIONS_FILE = 'sessions.json'
+
+MAX_CONVERSATION_HISTORY = int(os.getenv('MAX_CONVERSATION_HISTORY', 10))
 
 def save_sessions():
     """Save sessions to a JSON file."""
@@ -278,7 +283,6 @@ def format_response_with_sources(response, sources):
             filename = match.group(2).strip() 
             page_number = match.group(3) # This is the page number captured by regex
             section = match.group(4) # This is the section fragment captured by regex
-            context = match.group(5) 
             
             # Get the actual physical PDF page
             actual_pdf_page = None
