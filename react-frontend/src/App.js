@@ -129,29 +129,29 @@ function renderAssistantContent(content) {
     }
 
     // Regex to find lines containing PDF links in either format:
-    // (pdf://filename.pdf/page/N) or (pdf://filename.pdf/page/N#section=Section)
-    // It also captures optional text before and after the link.
-    const pdfLinkMatch = line.match(/^(.*)\(pdf:\/\/([^/]+)\/page\/(\d+)(?:#section=([^)]+))?\)(.*)$/);
+    // 1. (pdf://filename.pdf/page/N) or (pdf://filename.pdf/page/N#section=Section)
+    // 2. (pdf://filename.pdf) - new format
+    const pdfLinkMatch = line.match(/^(.*)\(pdf:\/\/([^/]+)(?:\/page\/(\d+)(?:#section=([^)]+))?)?\)(.*)$/);
 
     if (pdfLinkMatch) {
-      // Destructure the match results without unused variable
+      // Destructure the match results
       const [, beforeText, filename, page, section] = pdfLinkMatch;
 
       // Determine the section name to use in the link text
       let displaySection = section;
       if (!displaySection) {
-         // If #section= was not present, try to extract section from beforeText
-         const sectionFromBeforeText = beforeText ? beforeText.match(/\[([^\]]+)\]/) : null;
-         displaySection = sectionFromBeforeText ? sectionFromBeforeText[1].trim() : 'Document'; // Default
+        // If #section= was not present, try to extract section from beforeText
+        const sectionFromBeforeText = beforeText ? beforeText.match(/\[([^\]]+)\]/) : null;
+        displaySection = sectionFromBeforeText ? sectionFromBeforeText[1].trim() : 'Document'; // Default
       }
 
       // Clean up the section/rule string for display
       const cleanedSection = formatSectionOrRule(displaySection);
 
       // Create the markdown link text
-      const linkText = `${cleanedSection}, Page ${page}`;
+      const linkText = page ? `${cleanedSection}, Page ${page}` : cleanedSection;
       // Create the actual URL with fragment for page navigation
-      const linkUrl = `${BACKEND_BASE}/pdfs/${filename}#page=${page}`;
+      const linkUrl = `${BACKEND_BASE}/pdfs/${filename}${page ? `#page=${page}` : ''}${section ? `&section=${encodeURIComponent(section)}` : ''}`;
 
       // Return only the markdown link, replacing the entire line that matched
       return `[${linkText}](${linkUrl})`;
@@ -264,6 +264,8 @@ function App() {
       pdfSource: agent.pdfSource
     }));
   });
+
+  const [lastMentionedAgent, setLastMentionedAgent] = useState(null); // NEW: sticky agent for general chat
 
   const fetchSessions = useCallback(async () => {
     try {
@@ -703,8 +705,8 @@ function App() {
     let agentIcon = activeAgentDetails?.icon || null;
     let pdfSourceToSend = activeAgentDetails?.pdfSource || null;
 
-    // Only apply agent mention regex if not in a dedicated agent chat (i.e., activeAgentDetails is null)
-    if (!activeAgentDetails) { 
+    // Only apply agent mention logic if not in a dedicated agent chat (i.e., activeAgentDetails is null)
+    if (!activeAgentDetails) {
       const agentMentionRegex = /^@([^\s]+(?:\s[^\s]+)*)\s*(.*)$/;
       const agentMentionMatch = messageToSend.match(agentMentionRegex);
 
@@ -718,9 +720,22 @@ function App() {
           agentFullName = matchedAgent.fullName;
           agentIcon = matchedAgent.icon;
           pdfSourceToSend = matchedAgent.pdfSource;
+          setLastMentionedAgent(matchedAgent); // Update sticky agent
         } else {
           console.warn(`Unknown agent mentioned: @${mentionedAgentName}`);
         }
+      } else if (lastMentionedAgent) {
+        // No mention, but we have a sticky agent from previous message
+        agentId = lastMentionedAgent.id;
+        agentFullName = lastMentionedAgent.fullName;
+        agentIcon = lastMentionedAgent.icon;
+        pdfSourceToSend = lastMentionedAgent.pdfSource;
+      } else {
+        // No mention and no sticky agent: fallback to default (no agent)
+        agentId = null;
+        agentFullName = null;
+        agentIcon = null;
+        pdfSourceToSend = null;
       }
     }
 
