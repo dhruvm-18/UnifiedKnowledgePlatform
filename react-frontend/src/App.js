@@ -1114,26 +1114,36 @@ function App() {
     setCurrentAgents(newAgentList);
   }, []);
 
-  const handleStartChatWithAgent = async (agentId) => {
-    // Find the agent in the potentially updated list
+  // Dedicated agent chat creation for Knowledge Source
+  const startDedicatedAgentChat = async (agentId) => {
+    // Start a new session
+    const res = await fetch(`${BACKEND_BASE}/sessions`, { method: 'POST' });
+    const session = await res.json();
+    setSessions(sessions => [session, ...sessions]);
+    setCurrentSessionId(session.id);
+    setChatStarted(false);
+    setShowWelcome(true);
+    setCurrentView('chat');
+
+    // Set dedicated agent details and lock the chat
     const agent = currentAgents.find(a => a.id === agentId);
     if (agent) {
-      setCurrentView('chat');
-      // Start a new session with the specified agent. startNewSession handles resetting states.
-      const newSessionId = await startNewSession(); // newSessionId will now be used for localStorage
-
-      // Explicitly set activeAgentDetails and persist agentId for the new dedicated session
-      setActiveAgentDetails(agent); // Set the full agent object
-      localStorage.setItem(`sessionAgent_${newSessionId}`, agentId); // Persist agent ID with new session ID
-
-      // Clear input as it's a dedicated chat, no need for @mention prefix
-      if (inputRef.current) {
-        inputRef.current.innerText = '';
-        inputRef.current.focus();
-      }
-    } else {
-      console.error("Agent not found:", agentId);
+      setActiveAgentDetails(agent);
+      localStorage.setItem(`sessionAgent_${session.id}`, agentId);
+      localStorage.setItem('activeAgentId', agentId);
+      localStorage.setItem('isDedicatedChat', 'true');
     }
+    // Clear input as it's a dedicated chat, no need for @mention prefix
+    if (inputRef.current) {
+      inputRef.current.innerText = '';
+      inputRef.current.focus();
+    }
+    return session.id;
+  };
+
+  // Update Knowledge Source Start Chat to use dedicated chat logic
+  const handleStartChatWithAgent = async (agentId) => {
+    await startDedicatedAgentChat(agentId);
   };
 
   // Function to handle opening a PDF link
