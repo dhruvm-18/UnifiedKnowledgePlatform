@@ -1,14 +1,16 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import './App.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaFileAlt, FaListUl, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel } from 'react-icons/fa';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl } from 'react-icons/fa';
 import HomeView from './components/HomeView';
 import KnowledgeSourcesView from './components/KnowledgeSourcesView';
 import PDFViewer from './components/PDFViewer';
 import remarkGfm from 'remark-gfm';
 import DigitalBrainLoader from './components/AnimatedLogo';
 import DOMPurify from 'dompurify';
-import { KNOWLEDGE_AGENT_CONST } from './components/KnowledgeSourcesView'; // Corrected import
+import { getIconComponent } from './utils/iconUtils';
+import { useSpeechRecognition } from './hooks/useSpeechRecognition';
+import { useSpeechSynthesis } from './hooks/useSpeechSynthesis';
 
 // Helper to save current cursor selection
 function saveSelection(element) {
@@ -75,20 +77,6 @@ const QUICK_OPTIONS = [
   { label: 'Show key points', value: 'Show key points of the document.', icon: <FaListUl /> },
   { label: 'Highlight important sections', value: 'Highlight important sections of the document.', icon: <FaHighlighter /> },
 ];
-
-// Helper function to get icon component
-const getIconComponent = (iconType) => {
-  switch (iconType) {
-    case 'FaShieldAlt':
-      return <FaShieldAlt />;
-    case 'FaGavel':
-      return <FaGavel />;
-    case 'FaFileAlt':
-      return <FaFileAlt />;
-    default:
-      return <FaShieldAlt />;
-  }
-};
 
 function groupSessionsByDate(sessions) {
   const today = new Date();
@@ -284,18 +272,31 @@ function App() {
   const [chatHistory, setChatHistory] = useState([]);
   const [activeAgentDetails, setActiveAgentDetails] = useState(null);
 
-  const [currentAgents, setCurrentAgents] = useState(() => {
-    // Always initialize currentAgents from KNOWLEDGE_AGENT_CONST as the baseline.
-    // KnowledgeSourcesView will manage localStorage and pass updates via onAgentDataChange.
-    return KNOWLEDGE_AGENT_CONST.map(agent => ({
-      id: agent.agentId,
-      name: agent.agentId,
-      fullName: agent.name,
-      iconType: agent.iconType,
-      icon: getIconComponent(agent.iconType),
-      pdfSource: agent.pdfSource
-    }));
-  });
+  // Initialize currentAgents by fetching from backend on mount
+  const [currentAgents, setCurrentAgents] = useState([]);
+  const fetchInitialAgents = useCallback(async () => {
+    try {
+      const response = await fetch(`${BACKEND_BASE}/agents`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch initial agents: ${response.statusText}`);
+      }
+      const data = await response.json();
+      const agentsWithIcons = data.map(agent => ({
+        ...agent,
+        icon: getIconComponent(agent.iconType),
+      }));
+      setCurrentAgents(agentsWithIcons);
+    } catch (error) {
+      console.error('Error fetching initial agents in App.js:', error);
+      // Fallback to empty array if backend is not available or errors
+      setCurrentAgents([]);
+    }
+  }, [BACKEND_BASE]);
+
+  // Call fetchInitialAgents on component mount
+  useEffect(() => {
+    fetchInitialAgents();
+  }, [fetchInitialAgents]);
 
   const [lastMentionedAgent, setLastMentionedAgent] = useState(null); // NEW: sticky agent for general chat
 
@@ -304,7 +305,6 @@ function App() {
       const res = await fetch(`${BACKEND_BASE}/sessions`);
       if (!res.ok) throw new Error(`Failed to fetch sessions: ${res.status}`);
       const data = await res.json();
-      // Ensure session titles are always strings
       const processedSessions = data.map(session => ({
         ...session,
         title: String(session.title)
@@ -314,9 +314,7 @@ function App() {
       const lastSessionId = localStorage.getItem('lastSessionId');
 
       if (lastSessionId && data.some(session => session.id === lastSessionId)) {
-        // If lastSessionId exists and is in the fetched sessions, use it
         setCurrentSessionId(lastSessionId);
-        // Also try to restore activeAgentDetails for the session
         const lastActiveAgentId = localStorage.getItem(`sessionAgent_${lastSessionId}`);
         if (lastActiveAgentId && currentAgents.length > 0) {
           const agent = currentAgents.find(a => a.id === lastActiveAgentId);
@@ -325,9 +323,7 @@ function App() {
           setActiveAgentDetails(null);
         }
       } else if (data.length > 0) {
-        // If lastSessionId is invalid or null, but there are sessions, use the first one
         setCurrentSessionId(data[0].id);
-        // Also try to restore activeAgentDetails for the session
         const firstActiveAgentId = localStorage.getItem(`sessionAgent_${data[0].id}`);
         if (firstActiveAgentId && currentAgents.length > 0) {
           const agent = currentAgents.find(a => a.id === firstActiveAgentId);
@@ -336,7 +332,6 @@ function App() {
           setActiveAgentDetails(null);
         }
       } else {
-        // If no sessions exist, set currentSessionId to null
         setCurrentSessionId(null);
         setActiveAgentDetails(null);
       }
@@ -346,7 +341,7 @@ function App() {
       setCurrentSessionId(null);
       setActiveAgentDetails(null);
     }
-  }, [setCurrentSessionId, setSessions]);
+  }, [setCurrentSessionId, setSessions, currentAgents]); // Added currentAgents as dependency
 
   // Initial mount effect
   useEffect(() => {
@@ -354,13 +349,11 @@ function App() {
     const link = document.querySelector("link[rel~='icon']");
     if (link) link.href = FAVICON_URL;
 
-    // Load last viewed session and tab from localStorage
     const lastSessionId = localStorage.getItem('lastSessionId');
     const lastView = localStorage.getItem('lastView');
     
     if (lastSessionId) {
       setCurrentSessionId(lastSessionId);
-      // Also try to restore activeAgentDetails for the session
       const lastActiveAgentId = localStorage.getItem(`sessionAgent_${lastSessionId}`);
       if (lastActiveAgentId && currentAgents.length > 0) {
         const agent = currentAgents.find(a => a.id === lastActiveAgentId);
@@ -374,7 +367,7 @@ function App() {
     }
 
     fetchSessions();
-  }, [fetchSessions]); // Only depend on fetchSessions
+  }, [fetchSessions, currentAgents]); // Added currentAgents as dependency
 
   // Separate theme effect
   useEffect(() => {
@@ -975,7 +968,9 @@ function App() {
   };
 
   // Voice input functionality
-  const [interimTranscript, setInterimTranscript] = useState('');
+  const { interimTranscript, setInterimTranscript } = useState('');
+  const { startListening, stopListening } = useSpeechRecognition({ lang: voiceLang });
+  const { speak, cancelSpeak } = useSpeechSynthesis();
 
   useEffect(() => {
     if ('webkitSpeechRecognition' in window) {
@@ -1022,21 +1017,18 @@ function App() {
     }
   }, [voiceLang]); // Re-initialize if voiceLang changes
 
-  const startListening = () => {
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.start();
-      } catch (e) {
-        console.error('Error starting speech recognition:', e);
-      }
-    }
-  };
-
-  const stopListening = () => {
-    if (recognitionRef.current) {
-      recognitionRef.current.stop();
-    }
-  };
+  const handleAgentDataChange = useCallback((updatedAgentsData) => {
+    // This function is called by KnowledgeSourcesView when agents are updated (added, edited, deleted)
+    const newAgentList = updatedAgentsData.map(agent => ({
+      id: agent.agentId, // Use agentId as id
+      name: agent.name,
+      fullName: agent.name, // Assuming name is full name for display
+      iconType: agent.iconType,
+      icon: getIconComponent(agent.iconType),
+      pdfSource: agent.pdfSource
+    }));
+    setCurrentAgents(newAgentList);
+  }, []);
 
   const groupedSessions = groupSessionsByDate(sessions);
 
@@ -1096,51 +1088,6 @@ function App() {
     setViewedHighlightText(null);
   };
 
-  const handleAgentDataChange = useCallback((updatedAgentsData) => {
-    // Update the currentAgents state with the new data
-    const newAgentList = updatedAgentsData.map(agent => ({
-      id: agent.agentId,
-      name: agent.agentId,
-      fullName: agent.name,
-      iconType: agent.iconType,
-      icon: getIconComponent(agent.iconType),
-      pdfSource: agent.pdfSource
-    }));
-    setCurrentAgents(newAgentList);
-  }, []);
-
-  // Dedicated agent chat creation for Knowledge Source
-  const startDedicatedAgentChat = async (agentId) => {
-    // Start a new session
-    const res = await fetch(`${BACKEND_BASE}/sessions`, { method: 'POST' });
-    const session = await res.json();
-    setSessions(sessions => [session, ...sessions]);
-    setCurrentSessionId(session.id);
-    setChatStarted(false);
-    setShowWelcome(true);
-    setCurrentView('chat');
-
-    // Set dedicated agent details and lock the chat
-    const agent = currentAgents.find(a => a.id === agentId);
-    if (agent) {
-      setActiveAgentDetails(agent);
-      localStorage.setItem(`sessionAgent_${session.id}`, agentId);
-      localStorage.setItem('activeAgentId', agentId);
-      localStorage.setItem('isDedicatedChat', 'true');
-    }
-    // Clear input as it's a dedicated chat, no need for @mention prefix
-    if (inputRef.current) {
-      inputRef.current.innerText = '';
-      inputRef.current.focus();
-    }
-    return session.id;
-  };
-
-  // Update Knowledge Source Start Chat to use dedicated chat logic
-  const handleStartChatWithAgent = async (agentId) => {
-    await startDedicatedAgentChat(agentId);
-  };
-
   // Function to handle opening a PDF link
   const handleOpenPdfLink = (e, href) => {
     e.preventDefault();
@@ -1179,6 +1126,38 @@ function App() {
     setViewedHighlightText(null);
     setCurrentView('chat'); // Return to chat view (or a previous view if you track history)
     setRightCollapsed(false); // Open right sidebar when returning to chat
+  };
+
+  // Dedicated agent chat creation for Knowledge Source
+  const startDedicatedAgentChat = async (agentId) => {
+    // Start a new session
+    const res = await fetch(`${BACKEND_BASE}/sessions`, { method: 'POST' });
+    const session = await res.json();
+    setSessions(sessions => [session, ...sessions]);
+    setCurrentSessionId(session.id);
+    setChatStarted(false);
+    setShowWelcome(true);
+    setCurrentView('chat');
+
+    // Set dedicated agent details and lock the chat
+    const agent = currentAgents.find(a => a.id === agentId);
+    if (agent) {
+      setActiveAgentDetails(agent);
+      localStorage.setItem(`sessionAgent_${session.id}`, agentId);
+      localStorage.setItem('activeAgentId', agentId);
+      localStorage.setItem('isDedicatedChat', 'true');
+    }
+    // Clear input as it's a dedicated chat, no need for @mention prefix
+    if (inputRef.current) {
+      inputRef.current.innerText = '';
+      inputRef.current.focus();
+    }
+    return session.id;
+  };
+
+  // Update Knowledge Source Start Chat to use dedicated chat logic
+  const handleStartChatWithAgent = async (agentId) => {
+    await startDedicatedAgentChat(agentId);
   };
 
   return (

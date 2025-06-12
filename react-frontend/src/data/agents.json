@@ -1,0 +1,44 @@
+{
+  "agents": [
+    {
+      "iconType": "FaShieldAlt",
+      "name": "DPDP Compliance",
+      "description": "Get insights from the Digital Personal Data Protection Act. Ask about user rights, data fiduciaries, and obligations.",
+      "buttonText": "Start Chat",
+      "agentId": "DPDP",
+      "pdfSource": "DPDP_act.pdf"
+    },
+    {
+      "iconType": "FaGavel",
+      "name": "Parliamentary Rules",
+      "description": "Access information on the Rules of Procedure and Conduct of Business in Lok Sabha.",
+      "buttonText": "Start Chat",
+      "agentId": "Parliament",
+      "pdfSource": "Rules_of_Procedures_Lok_Sabha.pdf"
+    },
+    {
+      "iconType": "FaFileAlt",
+      "name": "IT Act Agent",
+      "description": "Get insights into the Information Technology (IT) Act, 2000, India's key legislation governing cyber law, digital transactions, data protection, and online regulations.",
+      "buttonText": "Start Chat",
+      "agentId": "agent_1749736096843",
+      "pdfSource": "IT_act_2000.pdf"
+    },
+    {
+      "iconType": "FaFileAlt",
+      "name": "National Security Policy Agent",
+      "description": " bleh",
+      "buttonText": "Start Chat",
+      "agentId": "agent_1749746194823",
+      "pdfSource": "National_Cyber_Secruity.pdf"
+    },
+    {
+      "iconType": "FaFileAlt",
+      "name": "National Security Policy Agent",
+      "description": " bleh",
+      "buttonText": "Start Chat",
+      "agentId": "agent_1749746207703",
+      "pdfSource": "National_Cyber_Secruity.pdf"
+    }
+  ]
+}

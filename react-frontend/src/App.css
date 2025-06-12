@@ -221,7 +221,8 @@ html, body, #root {
   margin-left: 0;
   margin-right: 0;
   width: auto;
-  align-items: center;
+  align-items: flex-start; /* Align content to the start (top) */
+  justify-content: flex-start; /* Align content to the start (top) */
   animation: fadeIn 0.5s ease-out;
   background-color: var(--bg-primary);
 }
@@ -596,7 +597,8 @@ html, body, #root {
   margin-left: 0;
   margin-right: 0;
   width: auto;
-  align-items: center;
+  align-items: flex-start; /* Align content to the start (top) */
+  justify-content: flex-start; /* Align content to the start (top) */
 }
 .chat-window {
   flex: 1;
@@ -817,7 +819,7 @@ html, body, #root {
   overflow: hidden;
   box-sizing: border-box;
   align-items: flex-start;
-  justify-content: flex-start;
+  justify-content: flex-start; /* Ensure content starts from the top */
 }
 .chat-window.chatbot-full-window {
   flex: 1;
@@ -1081,7 +1083,7 @@ html, body, #root {
   overflow: hidden;
   box-sizing: border-box;
   align-items: flex-start;
-  justify-content: flex-start;
+  justify-content: flex-start; /* Ensure content starts from the top */
 }
 
 .chat-window.chatbot-full-window {
@@ -1759,20 +1761,19 @@ html, body, #root {
 /* Ensure agent cards maintain their size and layout when searching */
 .agent-cards-grid--searching {
   /* Set a grid definition that results in cards matching the image size */
-  /* Use a fixed column width for consistent size */
-  grid-template-columns: repeat(auto-fit, 280px); /* Adjusted width based on visual estimation from image */
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Use minmax for flexible column width */
   gap: 1rem; /* Keep the same gap as the default grid */
   justify-content: center; /* Center the grid within its container */
-  /* Ensure no conflicting styles from the searching state */
+  width: 100%; /* Ensure the grid takes full width */
+  overflow: hidden; /* Prevent grid overflow */
 }
 
 .agent-cards-grid--searching .agent-card {
   /* Explicitly set styles to match the desired size and padding from the image */
   padding: 1.5rem; /* Match the default padding which looks similar to the image */
-  width: 280px; /* Explicitly set width to match the grid column */
+  width: 100%; /* Ensure the card takes full width of the grid column */
   max-width: 280px; /* Ensure max-width is consistent */
   box-sizing: border-box;
-  /* Ensure other visual styles are consistent with the default .agent-card */
   background: var(--bg-secondary);
   border-radius: 0.5rem;
   box-shadow: 0 2px 8px var(--shadow-color);
@@ -1783,101 +1784,100 @@ html, body, #root {
   cursor: pointer;
   height: auto; /* Allow height to adjust based on content */
   justify-content: space-between;
+  overflow: hidden; /* Ensure content stays within borders */
 }
 
 .agent-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); /* More compact columns */
-  gap: 15px; /* Reduced uniform gap between cards */
-  padding: 15px 0;
-  justify-content: center; /* Center cards in the grid */
-  align-items: stretch; /* Ensure cards have equal height */
+  grid-template-columns: repeat(3, 1fr); /* Adjusted to show 3 tiles per row */
+  gap: 15px;
+  justify-content: flex-start;
   width: 100%;
-  max-width: 1000px; /* Adjusted overall width */
-  margin: 0 auto; /* Center the grid */
+  margin: 0 auto;
+  overflow: visible;
 }
 
 .agent-cards-grid--searching {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); /* More compact columns */
-  gap: 15px; /* Reduced uniform gap between cards */
-  padding: 15px 0;
-  justify-content: center; /* Center cards in the grid */
-  align-items: stretch; /* Ensure cards have equal height */
+  grid-template-columns: repeat(3, 1fr); /* Adjusted to show 3 tiles per row */
+  gap: 15px;
+  justify-content: flex-start;
   width: 100%;
-  max-width: 1000px; /* Adjusted overall width */
-  margin: 0 auto; /* Center the grid */
+  margin: 0 auto;
+  overflow: visible;
 }
 
 /* Agent Card */
 .agent-card {
-  background: var(--bg-secondary); /* Use secondary background for card */
-  border-radius: 14px; /* Slightly less pronounced rounded corners */
-  padding: 20px; /* Reduced padding */
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Lighter, more subtle shadow */
-  transition: transform 0.2s ease, box-shadow 0.2s ease; /* Faster hover effects */
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   text-align: left;
   cursor: pointer;
-  overflow: hidden; /* Ensure content stays within borders */
+  overflow: visible; /* Ensure content within the card is not hidden */
   position: relative;
-  min-height: 180px; /* More compact minimum height */
-  border: 1px solid var(--border-color); /* Subtle border */
+  min-height: 160px;
+  border: 1px solid var(--border-color);
+  box-sizing: border-box; /* Ensure padding and border are included in total width/height */
 }
 
 .agent-card:hover {
-  transform: translateY(-6px); /* Lift effect on hover */
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12); /* Stronger shadow on hover */
+  transform: translateY(-5px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
 }
 
 .agent-icon {
-  font-size: 3rem; /* Slightly smaller icon size */
-  color: var(--accent-color); /* Use accent color for icons */
-  margin-bottom: 12px; /* Adjusted space below icon */
-  background: var(--bg-tertiary); /* Background for icon circle */
-  border-radius: 50%; /* Make it a circle */
-  padding: 12px; /* Padding inside the icon circle */
+  font-size: 2.8rem;
+  color: var(--accent-color);
+  margin-bottom: 10px;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  padding: 10px;
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 60px; /* Fixed width */
-  height: 60px; /* Fixed height */
+  width: 55px;
+  height: 55px;
+  flex-shrink: 0; /* Prevent icon from shrinking */
 }
 
 .agent-icon svg {
-  width: 100%; /* Ensure SVG fills its container */
+  width: 100%;
   height: 100%;
   display: inline-block; /* Ensure it behaves as a block element */
   font-family: initial; /* Reset font-family to prevent text rendering */
 }
 
 .agent-name {
-  font-size: 1.4rem; /* Slightly smaller name */
+  font-size: 1.3rem;
   font-weight: 700;
   color: var(--text-tertiary);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .agent-description {
-  font-size: 0.95rem; /* Slightly smaller description font */
+  font-size: 0.9rem;
   color: var(--text-secondary);
-  line-height: 1.5;
-  margin-bottom: 15px;
-  flex-grow: 1; /* Allows description to take available space */
+  line-height: 1.4;
+  margin-bottom: 12px;
+  flex-grow: 1;
 }
 
 .agent-tag {
-  background: var(--accent-color); /* Use accent color for tag */
+  background: var(--accent-color);
   color: white;
-  padding: 4px 10px;
-  border-radius: 18px;
-  font-size: 0.7rem;
+  padding: 3px 9px;
+  border-radius: 16px;
+  font-size: 0.65rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 12px;
+  letter-spacing: 0.03em;
+  margin-bottom: 10px;
 }
 
 .agent-card-footer {
@@ -1989,12 +1989,12 @@ html, body, #root {
 /* --- Knowledge Sources View Styles (Marketplace Look) --- */
 
 .knowledge-sources-container {
-  padding: 1rem 1.5rem; /* Reduced top padding to move content up */
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  text-align: center;
-  animation: fadeIn 0.5s ease-out;
+  padding: 0px 20px 20px 20px;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  overflow-y: auto;
+  overflow-x: visible;
 }
 
 .knowledge-sources-container h2 {
@@ -2002,6 +2002,8 @@ html, body, #root {
   font-weight: 700;
   color: var(--text-tertiary);
   margin-bottom: 0rem; /* Reduced margin-bottom to move it up */
+  margin-top: 0rem; /* Removed top margin */
+  text-align: center;
 }
 
 .knowledge-sources-description {
@@ -2051,25 +2053,27 @@ html, body, #root {
 /* Agent Cards Grid */
 .agent-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Adjusted min width for more compact columns */
-  gap: 15px; /* Consistent gap between cards */
-  padding: 0 20px; /* Add horizontal padding to the grid container */
+  grid-template-columns: repeat(3, 1fr); /* Adjusted to show 3 tiles per row */
+  gap: 8px; /* Consistent gap between cards */
+  /* padding: 5px 0; */ /* Removed horizontal padding to the grid container */
   justify-content: flex-start; /* Align to the start */
   align-items: stretch;
   width: 100%;
-  max-width: 1200px; /* Re-introduced max-width to control overall spread */
+  /* max-width: 1200px; */ /* Removed max width for the grid */
   margin: 0 auto; /* Center the grid within the knowledge-sources-container */
+  overflow: visible; /* Ensure content is not hidden by overflow */
 }
 
 .agent-cards-grid--searching {
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Adjusted min width */
-  gap: 15px;
-  padding: 0 20px;
-  justify-content: flex-start;
+  grid-template-columns: repeat(3, 1fr); /* Adjusted to show 3 tiles per row */
+  gap: 8px; /* Reduced gap */
+  /* padding: 5px 0; */ /* Removed padding */
+  justify-content: flex-start; /* Align to the start */
   align-items: stretch;
   width: 100%;
-  max-width: 1200px;
+  /* max-width: 1200px; */ /* Removed max-width */
   margin: 0 auto;
+  overflow: visible; /* Ensure content is not hidden by overflow */
 }
 
 /* Agent Card */
@@ -2084,7 +2088,7 @@ html, body, #root {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   text-align: left;
   cursor: pointer;
-  overflow: hidden;
+  overflow: visible; /* Ensure content within the card is not hidden */
   position: relative;
   min-height: 160px;
   border: 1px solid var(--border-color);
@@ -2424,26 +2428,22 @@ html, body, #root {
 /* Agent Cards Grid */
 .agent-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 8px;
-  padding: 5px 0;
-  justify-content: flex-start; /* Align to the start */
-  align-items: stretch;
+  grid-template-columns: repeat(3, 1fr); /* Adjusted to show 3 tiles per row */
+  gap: 15px;
+  justify-content: flex-start;
   width: 100%;
-  max-width: none; /* Allow grid to expand fully */
-  margin: 0; /* Remove auto margin */
+  margin: 0 auto;
+  overflow: visible;
 }
 
 .agent-cards-grid--searching {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 8px;
-  padding: 5px 0;
-  justify-content: flex-start; /* Align to the start */
-  align-items: stretch;
+  grid-template-columns: repeat(3, 1fr); /* Adjusted to show 3 tiles per row */
+  gap: 15px;
+  justify-content: flex-start;
   width: 100%;
-  max-width: none; /* Allow grid to expand fully */
-  margin: 0; /* Remove auto margin */
+  margin: 0 auto;
+  overflow: visible;
 }
 
 /* Agent Card */
@@ -2583,27 +2583,30 @@ html, body, #root {
 
 .agent-cards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Adjusted for more space */
-  gap: 20px; /* Increased gap for better separation */
-  padding: 0 20px; /* Add horizontal padding to the grid container */
-  justify-content: center; /* Center the grid items */
+  grid-template-columns: repeat(3, 1fr); /* Adjusted to show 3 tiles per row */
+  gap: 15px; /* Consistent gap between cards */
+  padding: 0; /* Remove horizontal padding from the grid container itself */
+  justify-content: flex-start; /* Align to the start */
   align-items: stretch;
   width: 100%;
-  max-width: 1200px; /* Control overall spread */
+  max-width: none; /* Remove max-width to allow grid to fill container */
   margin: 0 auto; /* Center the grid within the knowledge-sources-container */
+  overflow: visible; /* Ensure content is not hidden by overflow */
 }
 
 .agent-cards-grid--searching {
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); /* Adjusted for more space */
-  gap: 20px;
-  padding: 0 20px;
-  justify-content: center;
+  grid-template-columns: repeat(3, 1fr); /* Adjusted to show 3 tiles per row */
+  gap: 15px; /* Consistent gap */
+  padding: 0; /* Remove horizontal padding */
+  justify-content: flex-start; /* Align to the start */
   align-items: stretch;
   width: 100%;
-  max-width: 1200px;
+  max-width: none; /* Remove max-width */
   margin: 0 auto;
+  overflow: visible; /* Ensure content is not hidden by overflow */
 }
 
+/* Agent Card */
 .agent-card {
   background: var(--bg-secondary);
   border-radius: 12px;
@@ -2645,7 +2648,7 @@ html, body, #root {
 .agent-icon svg {
   width: 100%;
   height: 100%;
-  display: inline-block; /* Ensure the SVG behaves as a block element */
+  display: inline-block; /* Ensure it behaves as a block element */
   font-family: initial; /* Reset font-family to prevent text rendering */
 }
 
@@ -3378,7 +3381,6 @@ html, body, #root {
   white-space: pre-wrap; /* Preserve whitespace and allow line breaks */
   display: block;
 }
-
 /* New Agent Card Styles */
 .new-agent-card {
   background: var(--bg-secondary);
@@ -3499,3 +3501,2810 @@ html, body, #root {
   background: var(--bg-hover);
   color: var(--text-primary);
 }
+
+.agent-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* Adjusted to show 3 tiles per row */
+  gap: 15px; /* Consistent gap between cards */
+  padding: 0; /* Remove horizontal padding from the grid container itself */
+  justify-content: flex-start; /* Align to the start */
+  align-items: stretch;
+  width: 100%;
+  max-width: none; /* Remove max-width to allow grid to fill container */
+  margin: 0 auto; /* Center the grid within the knowledge-sources-container */
+  overflow: visible; /* Ensure content is not hidden by overflow */
+}
+
+.agent-cards-grid--searching {
+  grid-template-columns: repeat(3, 1fr); /* Adjusted to show 3 tiles per row */
+  gap: 15px; /* Consistent gap */
+  padding: 0; /* Remove horizontal padding */
+  justify-content: flex-start; /* Align to the start */
+  align-items: stretch;
+  width: 100%;
+  max-width: none; /* Remove max-width */
+  margin: 0 auto;
+  overflow: visible; /* Ensure content is not hidden by overflow */
+}
+
+/* Agent Card */
+.agent-card {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  min-height: 160px;
+  border: 1px solid var(--border-color);
+  box-sizing: border-box; /* Ensure padding and border are included in total width/height */
+}
+
+.agent-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+.agent-icon {
+  font-size: 2.8rem;
+  color: var(--accent-color);
+  margin-bottom: 10px;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 55px;
+  height: 55px;
+  flex-shrink: 0; /* Prevent icon from shrinking */
+}
+
+.agent-icon svg {
+  width: 100%;
+  height: 100%;
+  display: inline-block; /* Ensure it behaves as a block element */
+  font-family: initial; /* Reset font-family to prevent text rendering */
+}
+
+.agent-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+
+.agent-description {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 12px;
+  flex-grow: 1;
+}
+
+.agent-tag {
+  background: var(--accent-color);
+  color: white;
+  padding: 3px 9px;
+  border-radius: 16px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 10px;
+}
+
+.agent-card-footer {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.agent-start-chat-button {
+  background: var(--accent-color);
+  color: white;
+  padding: 7px 16px;
+  border-radius: 18px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.agent-start-chat-button:hover {
+  background: #1a4dbe;
+  transform: translateX(3px);
+}
+
+.agent-start-chat-button::after {
+  content: '\2192';
+  font-size: 1rem;
+  margin-left: 3px;
+  transition: margin-left 0.15s ease;
+}
+
+.agent-start-chat-button:hover::after {
+  margin-left: 6px;
+}
+
+@media (max-width: 768px) {
+  .agent-cards-grid {
+    grid-template-columns: 1fr;
+    padding: 8px;
+  }
+  .agent-card {
+    padding: 12px;
+  }
+  .agent-icon {
+    font-size: 2.2rem;
+    width: 45px;
+    height: 45px;
+    padding: 8px;
+  }
+  .agent-name {
+    font-size: 1.1rem;
+  }
+  .agent-description {
+    font-size: 0.85rem;
+  }
+  .agent-start-chat-button {
+    padding: 5px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Agent Mention Dropdown */
+.agent-dropdown {
+  position: absolute;
+  bottom: 60px; /* Adjust as needed to be above the input */
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 8px 0;
+  margin: 0 12px; /* Align with input padding */
+}
+
+.agent-dropdown-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.agent-dropdown-item:hover {
+  background: var(--bg-tertiary);
+}
+
+/* Agent Mention Highlight */
+.agent-mention {
+  background-color: #e0f2fe; /* Light blue background */
+  color: #1a73e8; /* Darker blue text */
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* Agent Indicator */
+.agent-indicator {
+  position: absolute;
+  bottom: -8px; /* Adjust as needed */
+  right: -8px; /* Adjust as needed */
+  background-color: var(--accent-color); /* Use a suitable color, e.g., blue */
+  color: white;
+  font-size: 0.7em;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 30px; /* Make it circular */
+  height: 30px; /* Make it circular */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  padding: 2px;
+  text-transform: uppercase; /* Ensure text is uppercase */
+}
+
+.chat-message.assistant .bubble {
+  position: relative; /* Ensure the bubble is the positioning context for the indicator */
+  margin-right: 25px; /* Add some space for the indicator */
+}
+
+/* Agent Badge Styles */
+.agent-badge {
+  display: inline-flex;
+  background: none; /* No background for subtle look */
+  color: var(--text-primary); /* Use primary text color */
+  padding: 0px; /* No padding for a more integrated look */
+  border-radius: 0px; /* No border-radius */
+  margin-bottom: 0px; /* Reduced margin */
+  font-size: 0.9em; /* Slightly larger font size, adjust as needed */
+  font-weight: 600; /* Medium font weight */
+  text-transform: none; /* No uppercase, match example */
+  box-shadow: none; /* No shadow */
+  align-items: center;
+  justify-content: flex-start; /* Align text to start */
+  height: auto; /* Auto height */
+  min-width: unset; /* Remove min-width */
+  box-sizing: border-box;
+  gap: 6px; /* Space between icon and text if icon is added */
+}
+
+.agent-badge-text {
+  display: flex;
+  align-items: center;
+  gap: 0px; /* Remove gap, as we'll handle gap in agent-badge */
+}
+
+/* Ensure the agent indicator in App.js matches this styling */
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bubble.assistant {
+  background: none; /* Make background transparent */
+  color: var(--text-primary);
+  padding: 16px;
+  border-radius: 12px;
+  max-width: 85%;
+  position: relative;
+  margin-right: 25px;
+  box-shadow: none; /* Remove shadow */
+}
+
+/* Ensure chat window background is transparent */
+.chat-window.chatbot-full-window {
+  background: transparent; /* Make background transparent */
+}
+
+/* Ensure main content background is transparent */
+.main-content.chatbot-full {
+  background: transparent; /* Make background transparent */
+}
+
+/* Remove the old agent indicator styles since we're using the new badge */
+.agent-indicator {
+  display: none;
+}
+
+/* Agent Info Display Styles */
+.agent-info-display {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Space between icon and text */
+  margin-bottom: 8px; /* Space below the agent info */
+  color: var(--text-secondary); /* Subtle color for agent name */
+}
+
+.agent-info-icon {
+  width: 28px; /* Size of the circular icon */
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--bg-tertiary); /* Subtle grey circle background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em; /* Adjust icon size if needed */
+  color: var(--text-primary); /* Icon color */
+}
+
+.agent-info-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.agent-info-name {
+  font-size: 0.95em; /* Slightly larger than before, subtle */
+  font-weight: 500; /* Regular font weight */
+  color: var(--text-secondary); /* Consistent subtle text color */
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: transparent !important; /* Remove background from message-content */
+  padding: 0 !important; /* Remove padding from message-content */
+  border-radius: 0 !important; /* Remove border-radius from message-content */
+  box-shadow: none !important; /* Remove shadow from message-content */
+}
+
+/* Ensure chat window background is transparent */
+.chat-window.chatbot-full-window {
+  background: transparent !important; /* Make background transparent */
+  box-shadow: none !important; /* Remove any shadow from chat window */
+}
+
+/* Ensure main content background is transparent */
+.main-content.chatbot-full {
+  background: transparent !important; /* Make background transparent */
+  box-shadow: none !important; /* Remove any shadow from main content */
+}
+
+/* Remove the old agent indicator styles since we're using the new badge */
+.agent-indicator {
+  display: none;
+}
+
+/* Old agent badge styles - ensure these are hidden */
+.agent-badge {
+  display: none !important; 
+}
+
+.agent-badge-text {
+  display: none !important;
+}
+
+/* Agent Edit Fields */
+.agent-edit-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.agent-edit-name-input,
+.agent-edit-description-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.agent-edit-description-input {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.edit-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.edit-controls button {
+  background-color: var(--accent-color);
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background-color 0.2s ease;
+}
+
+.edit-controls button:hover {
+  background-color: #1a4dbe; /* Darker accent */
+}
+
+.agent-edit-button {
+  background: none;
+  border: none;
+  color: var(--text-secondary); /* Subtle color for edit icon */
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 5px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  position: absolute; /* Position relative to agent-card */
+  top: 10px;
+  right: 10px;
+}
+
+.agent-edit-button:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.agent-pdf-source {
+  font-size: 0.85rem;
+  color: var(--text-secondary); /* Subtle color */
+  margin-top: 10px; /* Space from description */
+  margin-bottom: 10px; /* Space before tag/footer */
+  font-style: italic;
+}
+
+.bubble.user {
+  background: var(--bg-secondary); /* Give it a subtle background */
+  color: var(--text-primary);
+  border-radius: 18px; /* Give it a rounded bubble shape */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Add a subtle shadow for depth */
+  padding: 10px 15px; /* Add internal padding */
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: left;
+  display: flex; /* Make it a flex container */
+  flex-direction: column; /* Stack children vertically */
+  align-items: flex-start; /* Align content to the left */
+}
+
+.bubble:hover {
+  box-shadow: 0 4px 16px var(--shadow-color);
+}
+
+.avatar.user {
+  background: var(--accent-color); /* Use accent color for background */
+  color: var(--text-tertiary);
+  font-weight: 700;
+  font-size: 1rem; /* Keep font size for initial */
+  border-radius: 50%; /* Make it circular */
+  box-shadow: none;
+  width: 40px; /* Fixed width */
+  height: 40px; /* Fixed height */
+  padding: 0;
+  display: flex; /* Ensure flex properties apply */
+  align-items: center; /* Center content */
+  justify-content: center; /* Center content */
+}
+
+.chat-message.user .avatar {
+  background: var(--bg-primary);
+}
+
+.agent-info-display-user {
+  justify-content: flex-end;
+  margin-left: auto; /* Push to the right */
+  margin-bottom: 5px; /* Add some space below the indicator */
+}
+
+.agent-info-icon {
+  width: 28px; /* Size of the circular icon */
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--bg-tertiary); /* Subtle grey circle background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em; /* Adjust icon size if needed */
+  color: var(--text-primary); /* Icon color */
+}
+
+.agent-info-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.agent-info-name {
+  font-size: 0.95em; /* Slightly larger than before, subtle */
+  font-weight: 500; /* Regular font weight */
+  color: var(--text-secondary); /* Consistent subtle text color */
+}
+
+.user-message {
+  background-color: #f0f2f5;
+  margin-left: auto;
+  margin-right: 0;
+  max-width: 80%;
+}
+
+.user-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.user-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #e4e6eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.user-text {
+  background-color: #0084ff;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.user-agent-mention {
+  background-color: #e6f0ff; /* Light blue background */
+  color: #0056b3; /* Darker blue text */
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.assistant-message {
+  background-color: white;
+  margin-right: auto;
+  margin-left: 0;
+  max-width: 80%;
+}
+
+.assistant-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.assistant-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #f0f2f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  color: #1a73e8;
+}
+
+.assistant-text {
+  background-color: #f0f2f5;
+  color: #1c1e21;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-text p {
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-text p:not(:last-child) {
+  margin-bottom: 8px;
+}
+
+.message {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.user-message {
+  align-self: flex-end;
+  margin-left: auto;
+  margin-right: 0;
+  max-width: 80%;
+}
+
+.user-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.user-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #e4e6eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.user-text {
+  background-color: #0084ff;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-message {
+  align-self: flex-start;
+  margin-right: auto;
+  margin-left: 0;
+  max-width: 80%;
+}
+
+.assistant-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.assistant-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #f0f2f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  color: #1a73e8;
+}
+
+.assistant-text {
+  background-color: #f0f2f5;
+  color: #1c1e21;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-text p {
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-text p:not(:last-child) {
+  margin-bottom: 8px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.user-message {
+  align-self: flex-end;
+  margin-left: auto;
+  margin-right: 0;
+  max-width: 80%;
+}
+
+.user-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.user-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #e4e6eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.user-text {
+  background-color: #0084ff;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-message {
+  align-self: flex-start;
+  margin-right: auto;
+  margin-left: 0;
+  max-width: 80%;
+}
+
+.assistant-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.assistant-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #f0f2f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  color: #1a73e8;
+}
+
+.assistant-text {
+  background-color: #f0f2f5;
+  color: #1c1e21;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-text p {
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-text p:not(:last-child) {
+  margin-bottom: 8px;
+}
+
+.chat-input[contenteditable=true]:empty:before {
+  content: "Unleash the power of knowledge..."; /* Use \A for line break */
+  color: var(--text-secondary);
+  cursor: text;
+  pointer-events: none;
+  white-space: pre-wrap; /* Preserve whitespace and allow line breaks */
+  display: block;
+}
+/* New Agent Card Styles */
+.new-agent-card {
+  background: var(--bg-secondary);
+  border: 2px dashed var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 200px;
+}
+
+.new-agent-card:hover {
+  border-color: var(--accent-color);
+  background: var(--bg-hover);
+}
+
+.new-agent-card .agent-icon {
+  background: var(--bg-primary);
+  color: var(--accent-color);
+  margin-bottom: 1rem;
+}
+
+.new-agent-card .agent-name {
+  color: var(--accent-color);
+  margin-bottom: 0.5rem;
+}
+
+.new-agent-card .agent-description {
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* New Agent Form Styles */
+.new-agent-form {
+  background: var(--bg-secondary);
+  padding: 1.5rem;
+}
+
+.new-agent-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.new-agent-form input[type="text"],
+.new-agent-form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.new-agent-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.pdf-upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pdf-upload-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.selected-pdf {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.edit-controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.save-button,
+.cancel-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-button {
+  background: var(--accent-color);
+  color: white;
+}
+
+.save-button:hover {
+  background: var(--accent-hover);
+}
+
+.cancel-button {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+}
+
+.cancel-button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.agent-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* Adjusted to show 3 tiles per row */
+  gap: 15px; /* Consistent gap between cards */
+  padding: 0; /* Remove horizontal padding from the grid container itself */
+  justify-content: flex-start; /* Align to the start */
+  align-items: stretch;
+  width: 100%;
+  max-width: none; /* Remove max-width to allow grid to fill container */
+  margin: 0 auto; /* Center the grid within the knowledge-sources-container */
+  overflow: visible; /* Ensure content is not hidden by overflow */
+}
+
+.agent-cards-grid--searching {
+  grid-template-columns: repeat(3, 1fr); /* Adjusted to show 3 tiles per row */
+  gap: 15px; /* Consistent gap */
+  padding: 0; /* Remove horizontal padding */
+  justify-content: flex-start; /* Align to the start */
+  align-items: stretch;
+  width: 100%;
+  max-width: none; /* Remove max-width */
+  margin: 0 auto;
+  overflow: visible; /* Ensure content is not hidden by overflow */
+}
+
+/* Agent Card */
+.agent-card {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  min-height: 160px;
+  border: 1px solid var(--border-color);
+  box-sizing: border-box; /* Ensure padding and border are included in total width/height */
+}
+
+.agent-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+.agent-icon {
+  font-size: 2.8rem;
+  color: var(--accent-color);
+  margin-bottom: 10px;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 55px;
+  height: 55px;
+  flex-shrink: 0; /* Prevent icon from shrinking */
+}
+
+.agent-icon svg {
+  width: 100%;
+  height: 100%;
+  display: inline-block; /* Ensure it behaves as a block element */
+  font-family: initial; /* Reset font-family to prevent text rendering */
+}
+
+.agent-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+
+.agent-description {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 12px;
+  flex-grow: 1;
+}
+
+.agent-tag {
+  background: var(--accent-color);
+  color: white;
+  padding: 3px 9px;
+  border-radius: 16px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 10px;
+}
+
+.agent-card-footer {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.agent-start-chat-button {
+  background: var(--accent-color);
+  color: white;
+  padding: 7px 16px;
+  border-radius: 18px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.agent-start-chat-button:hover {
+  background: #1a4dbe;
+  transform: translateX(3px);
+}
+
+.agent-start-chat-button::after {
+  content: '\2192';
+  font-size: 1rem;
+  margin-left: 3px;
+  transition: margin-left 0.15s ease;
+}
+
+.agent-start-chat-button:hover::after {
+  margin-left: 6px;
+}
+
+@media (max-width: 768px) {
+  .agent-cards-grid {
+    grid-template-columns: 1fr;
+    padding: 8px;
+  }
+  .agent-card {
+    padding: 12px;
+  }
+  .agent-icon {
+    font-size: 2.2rem;
+    width: 45px;
+    height: 45px;
+    padding: 8px;
+  }
+  .agent-name {
+    font-size: 1.1rem;
+  }
+  .agent-description {
+    font-size: 0.85rem;
+  }
+  .agent-start-chat-button {
+    padding: 5px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Agent Mention Dropdown */
+.agent-dropdown {
+  position: absolute;
+  bottom: 60px; /* Adjust as needed to be above the input */
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 8px 0;
+  margin: 0 12px; /* Align with input padding */
+}
+
+.agent-dropdown-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.agent-dropdown-item:hover {
+  background: var(--bg-tertiary);
+}
+
+/* Agent Mention Highlight */
+.agent-mention {
+  background-color: #e0f2fe; /* Light blue background */
+  color: #1a73e8; /* Darker blue text */
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* Agent Indicator */
+.agent-indicator {
+  position: absolute;
+  bottom: -8px; /* Adjust as needed */
+  right: -8px; /* Adjust as needed */
+  background-color: var(--accent-color); /* Use a suitable color, e.g., blue */
+  color: white;
+  font-size: 0.7em;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 30px; /* Make it circular */
+  height: 30px; /* Make it circular */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  padding: 2px;
+  text-transform: uppercase; /* Ensure text is uppercase */
+}
+
+.chat-message.assistant .bubble {
+  position: relative; /* Ensure the bubble is the positioning context for the indicator */
+  margin-right: 25px; /* Add some space for the indicator */
+}
+
+/* Agent Badge Styles */
+.agent-badge {
+  display: inline-flex;
+  background: none; /* No background for subtle look */
+  color: var(--text-primary); /* Use primary text color */
+  padding: 0px; /* No padding for a more integrated look */
+  border-radius: 0px; /* No border-radius */
+  margin-bottom: 0px; /* Reduced margin */
+  font-size: 0.9em; /* Slightly larger font size, adjust as needed */
+  font-weight: 600; /* Medium font weight */
+  text-transform: none; /* No uppercase, match example */
+  box-shadow: none; /* No shadow */
+  align-items: center;
+  justify-content: flex-start; /* Align text to start */
+  height: auto; /* Auto height */
+  min-width: unset; /* Remove min-width */
+  box-sizing: border-box;
+  gap: 6px; /* Space between icon and text if icon is added */
+}
+
+.agent-badge-text {
+  display: flex;
+  align-items: center;
+  gap: 0px; /* Remove gap, as we'll handle gap in agent-badge */
+}
+
+/* Ensure the agent indicator in App.js matches this styling */
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bubble.assistant {
+  background: none; /* Make background transparent */
+  color: var(--text-primary);
+  padding: 16px;
+  border-radius: 12px;
+  max-width: 85%;
+  position: relative;
+  margin-right: 25px;
+  box-shadow: none; /* Remove shadow */
+}
+
+/* Ensure chat window background is transparent */
+.chat-window.chatbot-full-window {
+  background: transparent; /* Make background transparent */
+}
+
+/* Ensure main content background is transparent */
+.main-content.chatbot-full {
+  background: transparent; /* Make background transparent */
+}
+
+/* Remove the old agent indicator styles since we're using the new badge */
+.agent-indicator {
+  display: none;
+}
+
+/* Agent Info Display Styles */
+.agent-info-display {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Space between icon and text */
+  margin-bottom: 8px; /* Space below the agent info */
+  color: var(--text-secondary); /* Subtle color for agent name */
+}
+
+.agent-info-icon {
+  width: 28px; /* Size of the circular icon */
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--bg-tertiary); /* Subtle grey circle background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em; /* Adjust icon size if needed */
+  color: var(--text-primary); /* Icon color */
+}
+
+.agent-info-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.agent-info-name {
+  font-size: 0.95em; /* Slightly larger than before, subtle */
+  font-weight: 500; /* Regular font weight */
+  color: var(--text-secondary); /* Consistent subtle text color */
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: transparent !important; /* Remove background from message-content */
+  padding: 0 !important; /* Remove padding from message-content */
+  border-radius: 0 !important; /* Remove border-radius from message-content */
+  box-shadow: none !important; /* Remove shadow from message-content */
+}
+
+/* Ensure chat window background is transparent */
+.chat-window.chatbot-full-window {
+  background: transparent !important; /* Make background transparent */
+  box-shadow: none !important; /* Remove any shadow from chat window */
+}
+
+/* Ensure main content background is transparent */
+.main-content.chatbot-full {
+  background: transparent !important; /* Make background transparent */
+  box-shadow: none !important; /* Remove any shadow from main content */
+}
+
+/* Remove the old agent indicator styles since we're using the new badge */
+.agent-indicator {
+  display: none;
+}
+
+/* Old agent badge styles - ensure these are hidden */
+.agent-badge {
+  display: none !important; 
+}
+
+.agent-badge-text {
+  display: none !important;
+}
+
+/* Agent Edit Fields */
+.agent-edit-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.agent-edit-name-input,
+.agent-edit-description-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.agent-edit-description-input {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.edit-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.edit-controls button {
+  background-color: var(--accent-color);
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background-color 0.2s ease;
+}
+
+.edit-controls button:hover {
+  background-color: #1a4dbe; /* Darker accent */
+}
+
+.agent-edit-button {
+  background: none;
+  border: none;
+  color: var(--text-secondary); /* Subtle color for edit icon */
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 5px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  position: absolute; /* Position relative to agent-card */
+  top: 10px;
+  right: 10px;
+}
+
+.agent-edit-button:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.agent-pdf-source {
+  font-size: 0.85rem;
+  color: var(--text-secondary); /* Subtle color */
+  margin-top: 10px; /* Space from description */
+  margin-bottom: 10px; /* Space before tag/footer */
+  font-style: italic;
+}
+
+.bubble.user {
+  background: var(--bg-secondary); /* Give it a subtle background */
+  color: var(--text-primary);
+  border-radius: 18px; /* Give it a rounded bubble shape */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Add a subtle shadow for depth */
+  padding: 10px 15px; /* Add internal padding */
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: left;
+  display: flex; /* Make it a flex container */
+  flex-direction: column; /* Stack children vertically */
+  align-items: flex-start; /* Align content to the left */
+}
+
+.bubble:hover {
+  box-shadow: 0 4px 16px var(--shadow-color);
+}
+
+.avatar.user {
+  background: var(--accent-color); /* Use accent color for background */
+  color: var(--text-tertiary);
+  font-weight: 700;
+  font-size: 1rem; /* Keep font size for initial */
+  border-radius: 50%; /* Make it circular */
+  box-shadow: none;
+  width: 40px; /* Fixed width */
+  height: 40px; /* Fixed height */
+  padding: 0;
+  display: flex; /* Ensure flex properties apply */
+  align-items: center; /* Center content */
+  justify-content: center; /* Center content */
+}
+
+.chat-message.user .avatar {
+  background: var(--bg-primary);
+}
+
+.agent-info-display-user {
+  justify-content: flex-end;
+  margin-left: auto; /* Push to the right */
+  margin-bottom: 5px; /* Add some space below the indicator */
+}
+
+.agent-info-icon {
+  width: 28px; /* Size of the circular icon */
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--bg-tertiary); /* Subtle grey circle background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em; /* Adjust icon size if needed */
+  color: var(--text-primary); /* Icon color */
+}
+
+.agent-info-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.agent-info-name {
+  font-size: 0.95em; /* Slightly larger than before, subtle */
+  font-weight: 500; /* Regular font weight */
+  color: var(--text-secondary); /* Consistent subtle text color */
+}
+
+.user-message {
+  background-color: #f0f2f5;
+  margin-left: auto;
+  margin-right: 0;
+  max-width: 80%;
+}
+
+.user-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.user-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #e4e6eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.user-text {
+  background-color: #0084ff;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.user-agent-mention {
+  background-color: #e6f0ff; /* Light blue background */
+  color: #0056b3; /* Darker blue text */
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.assistant-message {
+  background-color: white;
+  margin-right: auto;
+  margin-left: 0;
+  max-width: 80%;
+}
+
+.assistant-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.assistant-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #f0f2f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  color: #1a73e8;
+}
+
+.assistant-text {
+  background-color: #f0f2f5;
+  color: #1c1e21;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-text p {
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-text p:not(:last-child) {
+  margin-bottom: 8px;
+}
+
+.message {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.user-message {
+  align-self: flex-end;
+  margin-left: auto;
+  margin-right: 0;
+  max-width: 80%;
+}
+
+.user-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.user-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #e4e6eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.user-text {
+  background-color: #0084ff;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-message {
+  align-self: flex-start;
+  margin-right: auto;
+  margin-left: 0;
+  max-width: 80%;
+}
+
+.assistant-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.assistant-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #f0f2f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  color: #1a73e8;
+}
+
+.assistant-text {
+  background-color: #f0f2f5;
+  color: #1c1e21;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-text p {
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-text p:not(:last-child) {
+  margin-bottom: 8px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.user-message {
+  align-self: flex-end;
+  margin-left: auto;
+  margin-right: 0;
+  max-width: 80%;
+}
+
+.user-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.user-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #e4e6eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.user-text {
+  background-color: #0084ff;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-message {
+  align-self: flex-start;
+  margin-right: auto;
+  margin-left: 0;
+  max-width: 80%;
+}
+
+.assistant-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.assistant-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #f0f2f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  color: #1a73e8;
+}
+
+.assistant-text {
+  background-color: #f0f2f5;
+  color: #1c1e21;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-text p {
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-text p:not(:last-child) {
+  margin-bottom: 8px;
+}
+
+.chat-input[contenteditable=true]:empty:before {
+  content: "Unleash the power of knowledge..."; /* Use \A for line break */
+  color: var(--text-secondary);
+  cursor: text;
+  pointer-events: none;
+  white-space: pre-wrap; /* Preserve whitespace and allow line breaks */
+  display: block;
+}
+/* New Agent Card Styles */
+.new-agent-card {
+  background: var(--bg-secondary);
+  border: 2px dashed var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 200px;
+}
+
+.new-agent-card:hover {
+  border-color: var(--accent-color);
+  background: var(--bg-hover);
+}
+
+.new-agent-card .agent-icon {
+  background: var(--bg-primary);
+  color: var(--accent-color);
+  margin-bottom: 1rem;
+}
+
+.new-agent-card .agent-name {
+  color: var(--accent-color);
+  margin-bottom: 0.5rem;
+}
+
+.new-agent-card .agent-description {
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* New Agent Form Styles */
+.new-agent-form {
+  background: var(--bg-secondary);
+  padding: 1.5rem;
+}
+
+.new-agent-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.new-agent-form input[type="text"],
+.new-agent-form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.new-agent-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.pdf-upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pdf-upload-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.selected-pdf {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.edit-controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.save-button,
+.cancel-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-button {
+  background: var(--accent-color);
+  color: white;
+}
+
+.save-button:hover {
+  background: var(--accent-hover);
+}
+
+.cancel-button {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+}
+
+.cancel-button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.agent-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* Adjusted to show 3 tiles per row */
+  gap: 15px; /* Consistent gap between cards */
+  padding: 0; /* Remove horizontal padding from the grid container itself */
+  justify-content: flex-start; /* Align to the start */
+  align-items: stretch;
+  width: 100%;
+  max-width: none; /* Remove max-width to allow grid to fill container */
+  margin: 0 auto; /* Center the grid within the knowledge-sources-container */
+  overflow: visible; /* Ensure content is not hidden by overflow */
+}
+
+.agent-cards-grid--searching {
+  grid-template-columns: repeat(3, 1fr); /* Adjusted to show 3 tiles per row */
+  gap: 15px; /* Consistent gap */
+  padding: 0; /* Remove horizontal padding */
+  justify-content: flex-start; /* Align to the start */
+  align-items: stretch;
+  width: 100%;
+  max-width: none; /* Remove max-width */
+  margin: 0 auto;
+  overflow: visible; /* Ensure content is not hidden by overflow */
+}
+
+/* Agent Card */
+.agent-card {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+  position: relative;
+  min-height: 160px;
+  border: 1px solid var(--border-color);
+  box-sizing: border-box; /* Ensure padding and border are included in total width/height */
+}
+
+.agent-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+.agent-icon {
+  font-size: 2.8rem;
+  color: var(--accent-color);
+  margin-bottom: 10px;
+  background: var(--bg-tertiary);
+  border-radius: 50%;
+  padding: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 55px;
+  height: 55px;
+  flex-shrink: 0; /* Prevent icon from shrinking */
+}
+
+.agent-icon svg {
+  width: 100%;
+  height: 100%;
+  display: inline-block; /* Ensure it behaves as a block element */
+  font-family: initial; /* Reset font-family to prevent text rendering */
+}
+
+.agent-name {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+
+.agent-description {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 12px;
+  flex-grow: 1;
+}
+
+.agent-tag {
+  background: var(--accent-color);
+  color: white;
+  padding: 3px 9px;
+  border-radius: 16px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 10px;
+}
+
+.agent-card-footer {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.agent-start-chat-button {
+  background: var(--accent-color);
+  color: white;
+  padding: 7px 16px;
+  border-radius: 18px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+
+.agent-start-chat-button:hover {
+  background: #1a4dbe;
+  transform: translateX(3px);
+}
+
+.agent-start-chat-button::after {
+  content: '\2192';
+  font-size: 1rem;
+  margin-left: 3px;
+  transition: margin-left 0.15s ease;
+}
+
+.agent-start-chat-button:hover::after {
+  margin-left: 6px;
+}
+
+@media (max-width: 768px) {
+  .agent-cards-grid {
+    grid-template-columns: 1fr;
+    padding: 8px;
+  }
+  .agent-card {
+    padding: 12px;
+  }
+  .agent-icon {
+    font-size: 2.2rem;
+    width: 45px;
+    height: 45px;
+    padding: 8px;
+  }
+  .agent-name {
+    font-size: 1.1rem;
+  }
+  .agent-description {
+    font-size: 0.85rem;
+  }
+  .agent-start-chat-button {
+    padding: 5px 12px;
+    font-size: 0.8rem;
+  }
+}
+
+/* Agent Mention Dropdown */
+.agent-dropdown {
+  position: absolute;
+  bottom: 60px; /* Adjust as needed to be above the input */
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  padding: 8px 0;
+  margin: 0 12px; /* Align with input padding */
+}
+
+.agent-dropdown-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  color: var(--text-primary);
+  text-align: left;
+}
+
+.agent-dropdown-item:hover {
+  background: var(--bg-tertiary);
+}
+
+/* Agent Mention Highlight */
+.agent-mention {
+  background-color: #e0f2fe; /* Light blue background */
+  color: #1a73e8; /* Darker blue text */
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+/* Agent Indicator */
+.agent-indicator {
+  position: absolute;
+  bottom: -8px; /* Adjust as needed */
+  right: -8px; /* Adjust as needed */
+  background-color: var(--accent-color); /* Use a suitable color, e.g., blue */
+  color: white;
+  font-size: 0.7em;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 30px; /* Make it circular */
+  height: 30px; /* Make it circular */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  padding: 2px;
+  text-transform: uppercase; /* Ensure text is uppercase */
+}
+
+.chat-message.assistant .bubble {
+  position: relative; /* Ensure the bubble is the positioning context for the indicator */
+  margin-right: 25px; /* Add some space for the indicator */
+}
+
+/* Agent Badge Styles */
+.agent-badge {
+  display: inline-flex;
+  background: none; /* No background for subtle look */
+  color: var(--text-primary); /* Use primary text color */
+  padding: 0px; /* No padding for a more integrated look */
+  border-radius: 0px; /* No border-radius */
+  margin-bottom: 0px; /* Reduced margin */
+  font-size: 0.9em; /* Slightly larger font size, adjust as needed */
+  font-weight: 600; /* Medium font weight */
+  text-transform: none; /* No uppercase, match example */
+  box-shadow: none; /* No shadow */
+  align-items: center;
+  justify-content: flex-start; /* Align text to start */
+  height: auto; /* Auto height */
+  min-width: unset; /* Remove min-width */
+  box-sizing: border-box;
+  gap: 6px; /* Space between icon and text if icon is added */
+}
+
+.agent-badge-text {
+  display: flex;
+  align-items: center;
+  gap: 0px; /* Remove gap, as we'll handle gap in agent-badge */
+}
+
+/* Ensure the agent indicator in App.js matches this styling */
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bubble.assistant {
+  background: none; /* Make background transparent */
+  color: var(--text-primary);
+  padding: 16px;
+  border-radius: 12px;
+  max-width: 85%;
+  position: relative;
+  margin-right: 25px;
+  box-shadow: none; /* Remove shadow */
+}
+
+/* Ensure chat window background is transparent */
+.chat-window.chatbot-full-window {
+  background: transparent; /* Make background transparent */
+}
+
+/* Ensure main content background is transparent */
+.main-content.chatbot-full {
+  background: transparent; /* Make background transparent */
+}
+
+/* Remove the old agent indicator styles since we're using the new badge */
+.agent-indicator {
+  display: none;
+}
+
+/* Agent Info Display Styles */
+.agent-info-display {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Space between icon and text */
+  margin-bottom: 8px; /* Space below the agent info */
+  color: var(--text-secondary); /* Subtle color for agent name */
+}
+
+.agent-info-icon {
+  width: 28px; /* Size of the circular icon */
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--bg-tertiary); /* Subtle grey circle background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em; /* Adjust icon size if needed */
+  color: var(--text-primary); /* Icon color */
+}
+
+.agent-info-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.agent-info-name {
+  font-size: 0.95em; /* Slightly larger than before, subtle */
+  font-weight: 500; /* Regular font weight */
+  color: var(--text-secondary); /* Consistent subtle text color */
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: transparent !important; /* Remove background from message-content */
+  padding: 0 !important; /* Remove padding from message-content */
+  border-radius: 0 !important; /* Remove border-radius from message-content */
+  box-shadow: none !important; /* Remove shadow from message-content */
+}
+
+/* Ensure chat window background is transparent */
+.chat-window.chatbot-full-window {
+  background: transparent !important; /* Make background transparent */
+  box-shadow: none !important; /* Remove any shadow from chat window */
+}
+
+/* Ensure main content background is transparent */
+.main-content.chatbot-full {
+  background: transparent !important; /* Make background transparent */
+  box-shadow: none !important; /* Remove any shadow from main content */
+}
+
+/* Remove the old agent indicator styles since we're using the new badge */
+.agent-indicator {
+  display: none;
+}
+
+/* Old agent badge styles - ensure these are hidden */
+.agent-badge {
+  display: none !important; 
+}
+
+.agent-badge-text {
+  display: none !important;
+}
+
+/* Agent Edit Fields */
+.agent-edit-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+.agent-edit-name-input,
+.agent-edit-description-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
+
+.agent-edit-description-input {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.edit-controls {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.edit-controls button {
+  background-color: var(--accent-color);
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: background-color 0.2s ease;
+}
+
+.edit-controls button:hover {
+  background-color: #1a4dbe; /* Darker accent */
+}
+
+.agent-edit-button {
+  background: none;
+  border: none;
+  color: var(--text-secondary); /* Subtle color for edit icon */
+  cursor: pointer;
+  font-size: 1.1rem;
+  padding: 5px;
+  border-radius: 50%;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  position: absolute; /* Position relative to agent-card */
+  top: 10px;
+  right: 10px;
+}
+
+.agent-edit-button:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.agent-pdf-source {
+  font-size: 0.85rem;
+  color: var(--text-secondary); /* Subtle color */
+  margin-top: 10px; /* Space from description */
+  margin-bottom: 10px; /* Space before tag/footer */
+  font-style: italic;
+}
+
+.bubble.user {
+  background: var(--bg-secondary); /* Give it a subtle background */
+  color: var(--text-primary);
+  border-radius: 18px; /* Give it a rounded bubble shape */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Add a subtle shadow for depth */
+  padding: 10px 15px; /* Add internal padding */
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: left;
+  display: flex; /* Make it a flex container */
+  flex-direction: column; /* Stack children vertically */
+  align-items: flex-start; /* Align content to the left */
+}
+
+.bubble:hover {
+  box-shadow: 0 4px 16px var(--shadow-color);
+}
+
+.avatar.user {
+  background: var(--accent-color); /* Use accent color for background */
+  color: var(--text-tertiary);
+  font-weight: 700;
+  font-size: 1rem; /* Keep font size for initial */
+  border-radius: 50%; /* Make it circular */
+  box-shadow: none;
+  width: 40px; /* Fixed width */
+  height: 40px; /* Fixed height */
+  padding: 0;
+  display: flex; /* Ensure flex properties apply */
+  align-items: center; /* Center content */
+  justify-content: center; /* Center content */
+}
+
+.chat-message.user .avatar {
+  background: var(--bg-primary);
+}
+
+.agent-info-display-user {
+  justify-content: flex-end;
+  margin-left: auto; /* Push to the right */
+  margin-bottom: 5px; /* Add some space below the indicator */
+}
+
+.agent-info-icon {
+  width: 28px; /* Size of the circular icon */
+  height: 28px;
+  border-radius: 50%;
+  background-color: var(--bg-tertiary); /* Subtle grey circle background */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em; /* Adjust icon size if needed */
+  color: var(--text-primary); /* Icon color */
+}
+
+.agent-info-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.agent-info-name {
+  font-size: 0.95em; /* Slightly larger than before, subtle */
+  font-weight: 500; /* Regular font weight */
+  color: var(--text-secondary); /* Consistent subtle text color */
+}
+
+.user-message {
+  background-color: #f0f2f5;
+  margin-left: auto;
+  margin-right: 0;
+  max-width: 80%;
+}
+
+.user-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.user-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #e4e6eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.user-text {
+  background-color: #0084ff;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.user-agent-mention {
+  background-color: #e6f0ff; /* Light blue background */
+  color: #0056b3; /* Darker blue text */
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.assistant-message {
+  background-color: white;
+  margin-right: auto;
+  margin-left: 0;
+  max-width: 80%;
+}
+
+.assistant-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.assistant-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #f0f2f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  color: #1a73e8;
+}
+
+.assistant-text {
+  background-color: #f0f2f5;
+  color: #1c1e21;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-text p {
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-text p:not(:last-child) {
+  margin-bottom: 8px;
+}
+
+.message {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.user-message {
+  align-self: flex-end;
+  margin-left: auto;
+  margin-right: 0;
+  max-width: 80%;
+}
+
+.user-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.user-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #e4e6eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.user-text {
+  background-color: #0084ff;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-message {
+  align-self: flex-start;
+  margin-right: auto;
+  margin-left: 0;
+  max-width: 80%;
+}
+
+.assistant-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.assistant-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #f0f2f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  color: #1a73e8;
+}
+
+.assistant-text {
+  background-color: #f0f2f5;
+  color: #1c1e21;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-text p {
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-text p:not(:last-child) {
+  margin-bottom: 8px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.message-content {
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.user-message {
+  align-self: flex-end;
+  margin-left: auto;
+  margin-right: 0;
+  max-width: 80%;
+}
+
+.user-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.user-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #e4e6eb;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.user-text {
+  background-color: #0084ff;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-message {
+  align-self: flex-start;
+  margin-right: auto;
+  margin-left: 0;
+  max-width: 80%;
+}
+
+.assistant-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+}
+
+.assistant-icon {
+  width: 32px;
+  height: 32px;
+  background-color: #f0f2f5;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  color: #1a73e8;
+}
+
+.assistant-text {
+  background-color: #f0f2f5;
+  color: #1c1e21;
+  padding: 12px 16px;
+  border-radius: 18px;
+  font-size: 14px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  max-width: calc(100% - 44px);
+}
+
+.assistant-text p {
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-text p:not(:last-child) {
+  margin-bottom: 8px;
+}
+
+.chat-input[contenteditable=true]:empty:before {
+  content: "Unleash the power of knowledge..."; /* Use \A for line break */
+  color: var(--text-secondary);
+  cursor: text;
+  pointer-events: none;
+  white-space: pre-wrap; /* Preserve whitespace and allow line breaks */
+  display: block;
+}
+/* New Agent Card Styles */
+.new-agent-card {
+  background: var(--bg-secondary);
+  border: 2px dashed var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 200px;
+}
+
+.new-agent-card:hover {
+  border-color: var(--accent-color);
+  background: var(--bg-hover);
+}
+
+.new-agent-card .agent-icon {
+  background: var(--bg-primary);
+  color: var(--accent-color);
+  margin-bottom: 1rem;
+}
+
+.new-agent-card .agent-name {
+  color: var(--accent-color);
+  margin-bottom: 0.5rem;
+}
+
+.new-agent-card .agent-description {
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* New Agent Form Styles */
+.new-agent-form {
+  background: var(--bg-secondary);
+  padding: 1.5rem;
+}
+
+.new-agent-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.new-agent-form input[type="text"],
+.new-agent-form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.new-agent-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.pdf-upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pdf-upload-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.selected-pdf {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.edit-controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.save-button,
+.cancel-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-button {
+  background: var(--accent-color);
+  color: white;
+}
+
+.save-button:hover {
+  background: var(--accent-hover);
+}
+
+.cancel-button {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+}
+
+.cancel-button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.knowledge-sources-container {
+  padding: 20px;
+  background: var(--bg-primary);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px var(--shadow-color);
+  overflow-y: auto;
+  overflow-x: visible;
+}
+
+.agent-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* Adjusted to show 3 tiles per row */
+  gap: 15px;
+  justify-content: flex-start;
+  width: 100%;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.agent-cards-grid--searching {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* Adjusted to show 3 tiles per row */
+  gap: 15px;
+  justify-content: flex-start;
+  width: 100%;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.agent-card {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  height: auto;
+  justify-content: space-between;
+  overflow: visible;
+}
+

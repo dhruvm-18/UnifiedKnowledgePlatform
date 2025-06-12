@@ -1,4 +1,9 @@
 import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["OMP_NUM_THREADS"] = "1"
+
+import json
+from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory, g, session
 from flask_cors import CORS
 import google.generativeai as genai
@@ -36,10 +41,14 @@ from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 import glob
 import uuid
-from datetime import datetime
 import re
-import json
 from pypdf import PdfReader
+from werkzeug.utils import secure_filename
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain.vectorstores import FAISS
+from langchain.chains import RetrievalQA
+from langchain.prompts import PromptTemplate
 
 # Suppress Faiss GPU warnings
 warnings.filterwarnings("ignore", message=".*GpuIndexIVFFlat.*")
@@ -67,10 +76,7 @@ llm = ChatGoogleGenerativeAI(
 )
 
 # Initialize the embeddings
-embeddings = GoogleGenerativeAIEmbeddings(
-    model="models/embedding-001",
-    google_api_key=GOOGLE_API_KEY
-)
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 document_heading = None
 
@@ -136,7 +142,7 @@ retriever = vectorstore.as_retriever(
 )
 
 app = Flask(__name__)
-CORS(app) # Enable CORS for all routes
+CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]}}) # Enable CORS for all routes and explicitly allow PUT
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.config['TEMPLATES_AUTO_RELOAD'] = False  # Disable template auto-reloading
 app.config['DEBUG'] = True  # Keep debug mode for development
@@ -449,6 +455,69 @@ If the answer is not found in the context, state that you cannot answer based on
         }
     }
 
+# Define the path to agents.json
+AGENTS_JSON_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'react-frontend', 'src', 'data', 'agents.json')
+
+# Global variable to store agent data
+AGENTS_DATA = {}
+
+def save_agents_to_json():
+    """Saves the current AGENTS_DATA to the agents.json file."""
+    try:
+        # Convert AGENTS_DATA dict back to a list of agent objects for JSON serialization
+        agents_list = []
+        for agent_id, pdf_source in AGENTS_DATA.items():
+            # We need to retrieve the full agent object, not just ID and pdfSource
+            # For now, let's assume AGENTS_DATA will store full agent objects, not just pdf_source
+            # Or, we fetch existing data from JSON and update it.
+            # Let's simplify: AGENTS_DATA will store a dictionary where keys are agentId and values are full agent dictionaries.
+            pass # This will be handled in the specific agent endpoints
+
+        # Re-reading the file to get full agent data and then update. This is safer.
+        current_agents_in_file = []
+        if os.path.exists(AGENTS_JSON_PATH):
+            with open(AGENTS_JSON_PATH, 'r', encoding='utf-8') as f:
+                current_agents_in_file = json.load(f).get('agents', [])
+        
+        # Update existing agents and add new ones
+        updated_agents_list = []
+        existing_agent_ids = set()
+        for agent_data in current_agents_in_file:
+            if agent_data['agentId'] in AGENTS_DATA:
+                updated_agents_list.append(AGENTS_DATA[agent_data['agentId']]) # Use updated data
+                existing_agent_ids.add(agent_data['agentId'])
+            else:
+                updated_agents_list.append(agent_data) # Keep existing if not modified/deleted
+        
+        # Add new agents that were not in the original file
+        for agent_id, agent_obj in AGENTS_DATA.items():
+            if agent_id not in existing_agent_ids:
+                updated_agents_list.append(agent_obj)
+
+        with open(AGENTS_JSON_PATH, 'w', encoding='utf-8') as f:
+            json.dump({'agents': updated_agents_list}, f, indent=2)
+        logger.info(f"Agents data saved to {AGENTS_JSON_PATH}")
+    except Exception as e:
+        logger.error(f"Error saving agents to {AGENTS_JSON_PATH}: {e}")
+
+def load_agent_data():
+    global AGENTS_DATA
+    AGENTS_DATA = {}
+    if os.path.exists(AGENTS_JSON_PATH):
+        try:
+            with open(AGENTS_JSON_PATH, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                for agent in data.get('agents', []):
+                    AGENTS_DATA[agent['agentId']] = agent # Store full agent object
+            logger.info(f"Loaded agent data from {AGENTS_JSON_PATH}: {AGENTS_DATA}")
+        except Exception as e:
+            logger.error(f"Error loading agent data from {AGENTS_JSON_PATH}: {e}")
+    else:
+        logger.warning(f"Agents JSON file not found at: {AGENTS_JSON_PATH}")
+
+# Call this function on startup
+load_agent_data()
+
 @app.route('/sessions/<session_id>/messages', methods=['POST'])
 def add_message(session_id):
     """Add a message to a session"""
@@ -463,26 +532,23 @@ def add_message(session_id):
     
     logger.info(f"Processing user message: {user_message} for agent: {agent_id}, pdfSource: {pdf_source_from_frontend}")
     
-    # Define keywords for context-aware agent detection
-    DPDP_KEYWORDS = ["data protection", "privacy", "dpdp act", "data privacy", "personal data"]
-    PARLIAMENT_KEYWORDS = ["lok sabha", "parliamentary rules", "rules of procedure", "parliament", "parliament procedures"]
+    # Determine the target PDF source based on agent_id or frontend provided pdfSource
+    target_pdf_source = None
 
-    # If agent_id is not explicitly set (i.e., no @mention from frontend), try to infer it
-    if agent_id is None:
-        lower_user_message = user_message.lower()
-        if any(keyword in lower_user_message for keyword in DPDP_KEYWORDS):
-            agent_id = 'DPDP'
-            logger.info(f"Inferred agent: DPDP based on message keywords.")
-        elif any(keyword in lower_user_message for keyword in PARLIAMENT_KEYWORDS):
-            agent_id = 'Parliament'
-            logger.info(f"Inferred agent: Parliament based on message keywords.")
-        else:
-            logger.info(f"No agent inferred based on message keywords. Proceeding with general query.")
-
-    # Update the session's agentId if it was None and we have an inferred agent
-    if sessions[session_id]['agentId'] is None and agent_id is not None:
-        sessions[session_id]['agentId'] = agent_id
-        save_sessions()  # Save the updated session with the inferred agent
+    if pdf_source_from_frontend:
+        # Prioritize pdfSource explicitly sent from frontend
+        target_pdf_source = pdf_source_from_frontend
+        logger.info(f"Using pdfSource from frontend: {target_pdf_source}")
+    elif agent_id and agent_id in AGENTS_DATA:
+        # If agent_id is present and known, use its associated pdfSource from loaded data
+        target_pdf_source = AGENTS_DATA[agent_id]
+        logger.info(f"Using pdfSource from loaded agent data for agent {agent_id}: {target_pdf_source}")
+    elif agent_id == 'DPDP': # Fallback for hardcoded DPDP if not in AGENTS_DATA
+        target_pdf_source = 'DPDP_act.pdf'
+        logger.info(f"Fallback to hardcoded DPDP pdfSource: {target_pdf_source}")
+    elif agent_id == 'Parliament': # Fallback for hardcoded Parliament if not in AGENTS_DATA
+        target_pdf_source = 'Rules_of_Procedures_Lok_Sabha.pdf'
+        logger.info(f"Fallback to hardcoded Parliament pdfSource: {target_pdf_source}")
     
     # Add messages to session with proper string conversion
     sessions[session_id]['messages'].append({
@@ -495,29 +561,15 @@ def add_message(session_id):
     all_docs = retriever.get_relevant_documents(user_message)
     logger.info(f"Retrieved {len(all_docs)} documents before agent filtering.")
     
-    # Filter documents based on pdf_source_from_frontend if provided, else use agent_id
     docs = []
-    if pdf_source_from_frontend:
-        logger.info(f"Filtering documents by provided pdfSource: {pdf_source_from_frontend}")
-        docs = [doc for doc in all_docs if doc.metadata.get('source') == pdf_source_from_frontend]
+    if target_pdf_source:
+        docs = [doc for doc in all_docs if doc.metadata.get('source') == target_pdf_source]
         if not docs and all_docs:
-            logger.warning(f"No documents found for {pdf_source_from_frontend} matching query. Using all relevant documents as fallback.")
+            logger.warning(f"No documents found for {target_pdf_source} matching query. Using all relevant documents as fallback.")
             docs = all_docs # Fallback to all documents if no specific ones found for pdfSource
-    elif agent_id == 'DPDP':
-        allowed_pdf_source = 'DPDP_act.pdf'
-        docs = [doc for doc in all_docs if doc.metadata.get('source') == allowed_pdf_source]
-        if not docs and all_docs:
-             logger.warning(f"No documents found for DPDP_act.pdf matching query. Using all relevant documents as fallback.")
-             docs = all_docs # Fallback to all documents if no specific ones found
-    elif agent_id == 'Parliament':
-        allowed_pdf_source = 'Rules_of_Procedures_Lok_Sabha.pdf'
-        docs = [doc for doc in all_docs if doc.metadata.get('source') == allowed_pdf_source]
-        if not docs and all_docs:
-             logger.warning(f"No documents found for Rules_of_Procedures_Lok_Sabha.pdf matching query. Using all relevant documents as fallback.")
-             docs = all_docs # Fallback to all documents if no specific ones found
     else:
-        docs = all_docs # No agent or pdfSource specified, use all relevant documents
-    
+        docs = all_docs # No specific pdfSource determined, use all relevant documents
+
     logger.info(f"Documents after agent filtering ({agent_id}): {[doc.metadata.get('source') for doc in docs]}")
 
     context = "\n\n".join([doc.page_content for doc in docs])
@@ -619,8 +671,8 @@ def serve_pdf(filename):
         print(f"DEBUG: [serve_pdf] PDF request - File: {filename}, Page (logical): {page}, Section (rule/fragment): {section}") # Debug print
         logger.info(f"PDF request - File: {filename}, Page (logical): {page}, Section (rule/fragment): {section}")
         
-        # Construct the full path to the PDF file
-        pdf_directory = r'C:\Users\dhruv\OneDrive\Documents\EY_RAG_Project\backend\pdfs' # Explicitly define
+        # Construct the full path to the PDF file using the UPLOAD_FOLDER
+        pdf_directory = app.config['UPLOAD_FOLDER'] # Use the configured UPLOAD_FOLDER
         pdf_path = os.path.join(pdf_directory, filename)
         print(f"DEBUG: [serve_pdf] Constructed pdf_path: {pdf_path}") # Debug print
         
@@ -694,6 +746,224 @@ CORS(app, resources={
         "supports_credentials": True
     }
 })
+
+# Create uploads directory if it doesn't exist
+UPLOAD_FOLDER = 'backend/pdfs' # Changed to backend/pdfs
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+
+ALLOWED_EXTENSIONS = {'pdf'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def process_pdf(filepath):
+    """Process a PDF file and add it to the vector store"""
+    try:
+        reader = PdfReader(filepath)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text()
+
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=200,
+            length_function=len
+        )
+        chunks = text_splitter.split_text(text)
+
+        embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
+        global retriever # Declare retriever as global to modify it
+
+        if os.path.exists("faiss_index"):
+            vectorstore = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+            vectorstore.add_texts(chunks, metadatas=[{"source": os.path.basename(filepath)}] * len(chunks))
+        else:
+            vectorstore = FAISS.from_texts(chunks, embeddings, metadatas=[{"source": os.path.basename(filepath)}] * len(chunks))
+        
+        vectorstore.save_local("faiss_index")
+        retriever = vectorstore.as_retriever() # Update the global retriever
+
+        return True
+    except Exception as e:
+        logger.error(f"Error processing PDF: {str(e)}")
+        raise e
+
+@app.route('/upload-pdf', methods=['POST'])
+def upload_pdf():
+    """Handle PDF file uploads"""
+    try:
+        if 'file' not in request.files:
+            logger.error("No file part in request")
+            return jsonify({'error': 'No file part'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            logger.error("No selected file")
+            return jsonify({'error': 'No selected file'}), 400
+        
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+            file.save(filepath)
+            file.close() # Explicitly close the file after saving
+            logger.info(f"File saved to: {filepath}")
+            
+            try:
+                process_pdf(filepath)
+                logger.info(f"PDF processed successfully: {filename}")
+                return jsonify({
+                    'message': 'File uploaded and processed successfully',
+                    'filename': filename
+                })
+            except Exception as e:
+                logger.error(f"Error processing PDF: {str(e)}")
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                return jsonify({'error': f'Error processing PDF: {str(e)}'}), 500
+        
+        logger.error(f"Invalid file type: {file.filename}")
+        return jsonify({'error': 'Invalid file type'}), 400
+    except Exception as e:
+        logger.error(f"Unexpected error in upload_pdf: {str(e)}")
+        return jsonify({'error': f'Unexpected error: {str(e)}'}), 500
+
+# Load PDFs from uploads directory on startup
+def load_uploaded_pdfs():
+    global retriever # Declare retriever as global to modify it
+    existing_pdfs_in_index = set()
+
+    # Try to load existing FAISS index to get sources
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    if os.path.exists("faiss_index"):
+        try:
+            vectorstore = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
+            # Extract existing sources from metadata (this might be tricky without iterating all docs)
+            # For simplicity, we'll assume if it's in the folder, we should try to process it
+            retriever = vectorstore.as_retriever()
+            logger.info("Existing FAISS index loaded.")
+        except Exception as e:
+            logger.warning(f"Error loading existing FAISS index: {e}. A new index will be created if needed.")
+            retriever = None # Reset retriever if loading fails
+    else:
+        logger.info("No existing FAISS index found. A new one will be created.")
+        retriever = None
+
+    # Process all PDFs in the UPLOAD_FOLDER
+    if os.path.exists(UPLOAD_FOLDER):
+        for filename in os.listdir(UPLOAD_FOLDER):
+            if filename.endswith('.pdf'):
+                filepath = os.path.join(UPLOAD_FOLDER, filename)
+                if retriever is None or filename not in existing_pdfs_in_index: # Only process if new or retriever is not initialized
+                    try:
+                        process_pdf(filepath) # This will update the global retriever
+                        logger.info(f"Loaded PDF: {filename}")
+                    except Exception as e:
+                        logger.error(f"Error loading PDF {filename}: {str(e)}")
+    
+    if retriever is None:
+        logger.warning("No PDFs processed and no retriever initialized. Chat functionality may be limited.")
+
+# Call this function on startup
+load_uploaded_pdfs()
+
+# Initialize global retriever after load_uploaded_pdfs has potentially set it
+# If no PDFs were found, `retriever` will remain None or be a mock.
+if retriever is None:
+    logger.warning("Retriever is still None after loading PDFs. Initializing a mock retriever.")
+    class FallbackRetriever:
+        def get_relevant_documents(self, query):
+            logger.warning("Using FallbackRetriever: No documents indexed. Query will not have context.")
+            return []
+    retriever = FallbackRetriever()
+
+# Agent management endpoints
+@app.route('/agents', methods=['GET'])
+def get_agents():
+    """Get all agents from AGENTS_DATA"""
+    logger.info(f"GET /agents: Returning {len(AGENTS_DATA)} agents.")
+    return jsonify(list(AGENTS_DATA.values()))
+
+@app.route('/agents', methods=['POST'])
+def add_agent():
+    """Add a new agent to AGENTS_DATA and save to agents.json"""
+    data = request.json
+    agent_id = data.get('agentId')
+    if not agent_id:
+        return jsonify({'error': 'agentId is required'}), 400
+    
+    if agent_id in AGENTS_DATA:
+        return jsonify({'error': f'Agent with ID {agent_id} already exists'}), 409
+
+    # Ensure required fields are present
+    required_fields = ['name', 'description', 'iconType', 'pdfSource']
+    if not all(field in data for field in required_fields):
+        return jsonify({'error': 'Missing required agent fields'}), 400
+
+    AGENTS_DATA[agent_id] = data
+    save_agents_to_json()
+    logger.info(f"Added new agent: {agent_id}")
+    return jsonify(data), 201
+
+@app.route('/agents/<agent_id>', methods=['PUT', 'OPTIONS'])
+def update_agent(agent_id):
+    """Update an existing agent"""
+    if request.method == 'OPTIONS':
+        # Preflight request
+        return '', 200
+
+    agents_data = load_agent_data()
+    agent_found = False
+    for i, agent in enumerate(agents_data):
+        if agent['agentId'] == agent_id:
+            agent_found = True
+            break
+
+    if not agent_found:
+        return jsonify({'error': 'Agent not found'}), 404
+    
+    # Update only allowed fields, or merge entire object
+    data = request.json
+    agents_data[i].update(data) # Simple merge for now
+    save_agents_to_json()
+    logger.info(f"Updated agent: {agent_id}")
+    return jsonify(agents_data[i])
+
+@app.route('/agents/<agent_id>', methods=['DELETE', 'OPTIONS'])
+def delete_agent(agent_id):
+    """Delete an agent from AGENTS_DATA and save to agents.json"""
+    if request.method == 'OPTIONS':
+        return '', 200 # Preflight request
+
+    if agent_id not in AGENTS_DATA:
+        return jsonify({'error': 'Agent not found'}), 404
+    
+    # Get the PDF filename before deleting the agent
+    pdf_filename = AGENTS_DATA[agent_id].get('pdfSource')
+    
+    # Delete the agent from AGENTS_DATA
+    del AGENTS_DATA[agent_id]
+    save_agents_to_json()
+    
+    # Delete the associated PDF file if it exists
+    if pdf_filename:
+        pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
+        try:
+            if os.path.exists(pdf_path):
+                os.remove(pdf_path)
+                logger.info(f"Deleted PDF file: {pdf_filename}")
+        except Exception as e:
+            logger.error(f"Error deleting PDF file {pdf_filename}: {str(e)}")
+            # Continue with agent deletion even if PDF deletion fails
+    
+    logger.info(f"Deleted agent: {agent_id}")
+    return '', 204
 
 if __name__ == '__main__':
     print("Starting Flask app...") # Debug print to confirm app starts

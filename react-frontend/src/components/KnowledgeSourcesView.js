@@ -1,64 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes, FaPlus } from 'react-icons/fa'; // Added FaEdit, FaSave, FaTimes, FaPlus
+import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes, FaPlus, FaFileAlt } from 'react-icons/fa';
+import { getIconComponent } from '../utils/iconUtils';
 
-// Helper function to get icon component
-const getIconComponent = (iconType) => {
-  switch (iconType) {
-    case 'FaShieldAlt':
-      return <FaShieldAlt />;
-    case 'FaGavel':
-      return <FaGavel />;
-    default:
-      return <FaShieldAlt />;
-  }
-};
-
-// Initial agent data with icon types instead of components
-export const KNOWLEDGE_AGENT_CONST = [
-  {
-    iconType: 'FaShieldAlt',
-    name: 'DPDP Compliance',
-    description: 'Get insights from the Digital Personal Data Protection Act. Ask about user rights, data fiduciaries, and obligations.',
-    buttonText: 'Start Chat',
-    agentId: 'DPDP', // Using DPDP as agentId to match backend
-    pdfSource: 'DPDP_act.pdf' // Added PDF source
-  },
-  {
-    iconType: 'FaGavel',
-    name: 'Parliamentary Rules',
-    description: 'Access information on the Rules of Procedure and Conduct of Business in Lok Sabha.',
-    buttonText: 'Start Chat',
-    agentId: 'Parliament', // Using Parliament as agentId to match backend
-    pdfSource: 'Rules_of_Procedures_Lok_Sabha.pdf' // Added PDF source
-  }
-];
+// KNOWLEDGE_AGENT_CONST will now serve as a default for _initial_ setup if backend is empty,
+// but agents will be fetched from backend for actual state.
+export const KNOWLEDGE_AGENT_CONST = []; // Will be populated by backend
 
 function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [agents, setAgents] = useState(() => {
-    // Load agents from localStorage or use default
-    const savedAgents = localStorage.getItem('knowledgeAgents');
-    if (savedAgents) {
-      const parsedSavedAgents = JSON.parse(savedAgents);
-      const savedAgentsMap = new Map(parsedSavedAgents.map(agent => [agent.agentId, agent]));
-
-      return KNOWLEDGE_AGENT_CONST.map(defaultAgent => {
-        const savedAgent = savedAgentsMap.get(defaultAgent.agentId);
-        if (savedAgent) {
-          return {
-            ...defaultAgent, // Start with default (correct iconType, pdfSource)
-            name: savedAgent.name || defaultAgent.name, // Override name if saved
-            description: savedAgent.description || defaultAgent.description, // Override description if saved
-            // iconType and pdfSource are not overridden from savedAgent
-          };
-        }
-        return defaultAgent;
-      });
-    }
-    return KNOWLEDGE_AGENT_CONST;
-  });
-  const [editingAgentId, setEditingAgentId] = useState(null); // State to track which agent is being edited
+  const [agents, setAgents] = useState([]); // Initialize as empty, will fetch from backend
+  const [editingAgentId, setEditingAgentId] = useState(null);
   const [editedName, setEditedName] = useState('');
   const [editedDescription, setEditedDescription] = useState('');
   const [showNewAgentForm, setShowNewAgentForm] = useState(false);
@@ -66,11 +18,31 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
   const [newAgentDescription, setNewAgentDescription] = useState('');
   const [selectedPdf, setSelectedPdf] = useState(null);
 
-  // Save agents to localStorage whenever they change
+  const BACKEND_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
+  // Function to fetch agents from the backend
+  const fetchAgents = useCallback(async () => {
+    try {
+      const response = await fetch(`${BACKEND_BASE}/agents`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch agents: ${response.statusText}`);
+      }
+      const data = await response.json();
+      setAgents(data);
+      onAgentDataChange(data); // Notify parent component (App.js) of the fetched agents
+    } catch (error) {
+      console.error('Error fetching agents:', error);
+      // Fallback to KNOWLEDGE_AGENT_CONST if fetching fails (for development convenience)
+      // In a production app, you might want a more robust error display
+      setAgents([]); // Or KNOWLEDGE_AGENT_CONST if you want hardcoded defaults
+      onAgentDataChange([]);
+    }
+  }, [BACKEND_BASE, onAgentDataChange]);
+
+  // Fetch agents on component mount
   useEffect(() => {
-    localStorage.setItem('knowledgeAgents', JSON.stringify(agents));
-    onAgentDataChange(agents); // Notify parent component of changes
-  }, [agents, onAgentDataChange]);
+    fetchAgents();
+  }, [fetchAgents]);
 
   const isSearching = searchQuery !== '';
 
@@ -86,40 +58,97 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
     setEditedDescription(agent.description);
   };
 
-  const handleSave = (agentId) => {
-    setAgents(prevAgents => {
-      const updatedAgents = prevAgents.map(agent =>
-        agent.agentId === agentId
-          ? { ...agent, name: editedName, description: editedDescription }
-          : agent
-      );
-      return updatedAgents;
-    });
-    setEditingAgentId(null);
+  const handleSave = async (agentId) => {
+    try {
+      const updatedAgent = {
+        agentId: agentId,
+        name: editedName,
+        description: editedDescription,
+      };
+
+      const response = await fetch(`${BACKEND_BASE}/agents/${agentId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedAgent),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update agent');
+      }
+      fetchAgents(); // Re-fetch agents to update state with latest data from backend
+      setEditingAgentId(null);
+    } catch (error) {
+      console.error('Error saving agent:', error);
+      alert(`Failed to save agent: ${error.message}`);
+    }
   };
 
   const handleCancelEdit = () => {
     setEditingAgentId(null);
   };
 
-  const handleNewAgentSubmit = (e) => {
+  const handleNewAgentSubmit = async (e) => {
     e.preventDefault();
-    if (!newAgentName || !newAgentDescription || !selectedPdf) return;
+    if (!newAgentName || !newAgentDescription || !selectedPdf) {
+      alert('Please fill in all fields and select a PDF file');
+      return;
+    }
 
-    const newAgent = {
-      iconType: 'FaFileAlt',
-      name: newAgentName,
-      description: newAgentDescription,
-      buttonText: 'Start Chat',
-      agentId: `agent_${Date.now()}`,
-      pdfSource: selectedPdf.name
-    };
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedPdf);
 
-    setAgents(prevAgents => [...prevAgents, newAgent]);
-    setShowNewAgentForm(false);
-    setNewAgentName('');
-    setNewAgentDescription('');
-    setSelectedPdf(null);
+      // 1. Upload PDF to backend
+      const uploadResponse = await fetch(`${BACKEND_BASE}/upload-pdf`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.error || 'Failed to upload PDF');
+      }
+      const uploadData = await uploadResponse.json();
+      const pdfFilename = uploadData.filename;
+
+      // 2. Create new agent via backend API
+      const newAgentPayload = {
+        iconType: 'FaFileAlt', // Default icon for new agents
+        name: newAgentName,
+        description: newAgentDescription,
+        buttonText: 'Start Chat',
+        agentId: `agent_${Date.now()}`,
+        pdfSource: pdfFilename,
+      };
+
+      const agentResponse = await fetch(`${BACKEND_BASE}/agents`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newAgentPayload),
+      });
+
+      if (!agentResponse.ok) {
+        const errorData = await agentResponse.json();
+        throw new Error(errorData.error || 'Failed to create new agent');
+      }
+
+      fetchAgents(); // Re-fetch agents to update state with latest data from backend
+
+      // Reset form
+      setShowNewAgentForm(false);
+      setNewAgentName('');
+      setNewAgentDescription('');
+      setSelectedPdf(null);
+
+    } catch (error) {
+      console.error('Error creating new agent:', error);
+      alert(`Failed to create new agent: ${error.message}`);
+    }
   };
 
   const handlePdfChange = (e) => {
@@ -128,6 +157,26 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
       setSelectedPdf(file);
     } else {
       alert('Please select a PDF file');
+    }
+  };
+
+  const handleDeleteAgent = async (agentId) => {
+    if (window.confirm('Are you sure you want to delete this agent?')) {
+      try {
+        const response = await fetch(`${BACKEND_BASE}/agents/${agentId}`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to delete agent');
+        }
+
+        fetchAgents(); // Re-fetch agents to update state after deletion
+      } catch (error) {
+        console.error('Error deleting agent:', error);
+        alert(`Failed to delete agent: ${error.message}`);
+      }
     }
   };
 
@@ -238,6 +287,12 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
                   >
                     <FaEdit />
                   </button>
+                  <button 
+                    className="agent-delete-button"
+                    onClick={() => handleDeleteAgent(agent.agentId)}
+                  >
+                    <FaTimes />
+                  </button>
                 </div>
               </>
             )}
@@ -253,7 +308,7 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
 
 KnowledgeSourcesView.propTypes = {
   onStartChatWithAgent: PropTypes.func.isRequired,
-  onAgentDataChange: PropTypes.func.isRequired, // New prop type
+  onAgentDataChange: PropTypes.func.isRequired,
 };
 
 export default KnowledgeSourcesView; 
