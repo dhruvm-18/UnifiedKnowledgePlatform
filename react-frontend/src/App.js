@@ -108,8 +108,8 @@ function groupSessionsByDate(sessions) {
 // Helper to clean up section/rule string for display
 function formatSectionOrRule(raw) {
   if (!raw) return '';
-  // Strip any leading "Section ", "Rule ", or similar to ensure we only have the identifier
-  let stripped = raw.replace(/^(Section|Rule)\s/i, '').trim();
+  // Strip any leading "Section ", "Rule ", or similar, allowing for multiple occurrences
+  let stripped = raw.replace(/^((?:Section|Rule)\s*)+/i, '').trim();
   // Replace any remaining underscores with spaces
   let cleaned = stripped.replace(/_/g, ' ');
   return cleaned;

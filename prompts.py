@@ -21,6 +21,7 @@ Your responses must follow these guidelines:
 
 4. **Include Sources (For Questions Only)**:
    - Only include sources when answering actual questions
+   - Add multiple resources if available in the document for the same subject
    - After your answer, add a **Sources** section listing each source as:
      - **[Section/Page/Reference]** (pdf://<doc_id>/page/<page>?section=<section>)
    - Make PDF links clickable using the `pdf://` format with query parameters
