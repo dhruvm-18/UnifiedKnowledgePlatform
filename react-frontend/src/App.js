@@ -532,13 +532,8 @@ function App() {
     setChatStarted(false);
     setShowWelcome(true);
     setCurrentView('chat');
-    
-    // Reset activeAgentDetails for a new session (unless it's a dedicated start)
     setActiveAgentDetails(null); // Explicitly clear for new general chats
-
-    // Removed activeAgentForChat and localStorage persistence from here.
-    // This will be handled by handleStartChatWithAgent if it's a dedicated chat.
-    
+    localStorage.removeItem('isDedicatedChat'); // Ensure General Chat does not have the flag
     return session.id; // Return the session ID
   };
 
@@ -1284,7 +1279,7 @@ function App() {
         {currentView === 'chat' && (
           <>
             <div className="chat-window chatbot-full-window">
-              {messages.length === 0 && !chatStarted && !loading && !activeAgentDetails && (
+              {messages.length === 0 && !chatStarted && !loading && (
                 <div className="welcome-center-outer">
                   <div className="welcome-center-area">
                     <div className="welcome-logo">
@@ -1294,29 +1289,56 @@ function App() {
                       <div className="welcome-hi-user">Hi {userName || 'User'},</div>
                       <div className="welcome-headline">Welcome to <span className="welcome-app-name">{APP_NAME}</span></div>
                     </div>
-                    <div className="welcome-subtitle" style={{ maxWidth: '600px', textAlign: 'center' }}>
-                      Unlock insights from internal documents with our intelligent AI Assistant, transforming complex information into clear, actionable knowledge.
-                    </div>
-                    <h2 className="welcome-subtitle" style={{ fontSize: '1.4rem', fontWeight: 600, marginBottom: '1rem' }}>How can I help you?</h2>
-                    <div className="quick-options-col center-col">
-                      {QUICK_OPTIONS.map(opt => (
-                        <button
-                          key={opt.label}
-                          className="welcome-option-btn"
-                          onClick={() => handleQuickOption(opt.value)}
-                          type="button"
-                        >
-                          {opt.icon} {opt.label}
-                        </button>
-                      ))}
-                    </div>
+                    {activeAgentDetails ? (
+                      <>
+                        <div className="welcome-subtitle" style={{ maxWidth: '600px', textAlign: 'center' }}>
+                          You are chatting with <span className="agent-mention">@{activeAgentDetails.fullName}</span>. Unlock insights from internal documents with our intelligent AI Assistant, transforming complex information into clear, actionable knowledge.
+                        </div>
+                        <h2 className="welcome-subtitle" style={{ fontSize: '1.4rem', fontWeight: 600, marginBottom: '1rem' }}>How can I help you?</h2>
+                        <div className="quick-options-col center-col">
+                          {QUICK_OPTIONS.map(opt => (
+                            <button
+                              key={opt.label}
+                              className="welcome-option-btn"
+                              onClick={() => handleQuickOption(opt.value)}
+                              type="button"
+                            >
+                              {opt.icon} {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      <div className="welcome-subtitle" style={{ maxWidth: '600px', textAlign: 'center' }}>
+                        Start a conversation by typing a message or mentioning an agent using @.
+                      </div>
+                    )}
+                    {!activeAgentDetails && (
+                      <div style={{ display: 'flex', justifyContent: 'center', marginTop: 32 }}>
+                        <div style={{
+                          background: 'var(--bg-secondary)',
+                          color: 'var(--text-primary)',
+                          borderRadius: 18,
+                          boxShadow: '0 2px 8px var(--shadow-color)',
+                          padding: '1.2rem 1.5rem',
+                          fontSize: '1rem',
+                          fontWeight: 500,
+                          textAlign: 'left',
+                          maxWidth: 400,
+                          display: 'inline-block',
+                          border: '1px solid var(--border-color)'
+                        }}>
+                          <span style={{ color: '#888', fontWeight: 500 }}>Example: </span><span className="user-agent-mention" style={{ color: '#2563eb', fontWeight: 600 }}>@Agent</span> What is the primary purpose of the Digital Personal Data Protection Act, 2023, as stated in the Act??
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
 
               {(messages.length > 0 || chatStarted || loading) && (
                 <div id="middle-chatbox-container">
-                  {activeAgentDetails && ( // Display agent name at the top if dedicated chat using activeAgentDetails
+                  {activeAgentDetails && (
                     <div className="dedicated-agent-header">
                       Chatting with: {activeAgentDetails.fullName}
                     </div>
@@ -1379,7 +1401,6 @@ function App() {
                             {msg.agentName && msg.agentId && (
                               <div className="agent-info-display agent-info-display-user">
                                 <span className="agent-info-icon">
-                                  {/* Ensure icon is always rendered from iconType via currentAgents */}
                                   {getIconComponent(currentAgents.find(a => a.id === msg.agentId)?.iconType)}
                                 </span>
                                 <span className="agent-info-name">{msg.agentName}</span>
@@ -1414,7 +1435,7 @@ function App() {
                   {isTyping && (
                     <div className="chat-message assistant">
                       <div className="avatar assistant"><img src="/unified-knowledge-platform.png" alt="avatar" /></div>
-                      <div className="bubble assistant" >
+                      <div className="bubble assistant">
                         {console.log('isTyping:', isTyping)}
                         <DigitalBrainLoader isLoading={isTyping} />
                       </div>
@@ -1443,73 +1464,49 @@ function App() {
                     // Update the input state for send button and other logic that might depend on it
                     setInput(plainText);
 
-                    // Dynamically build regex for highlighting based on currentAgents for input field
-                    const agentNamesForInputRegex = currentAgents.map(agent => 
-                      agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-                    ).join('|');
-                    // This regex specifically matches @ followed by a full agent name, optionally followed by a space
-                    const dynamicHighlightRegexInput = new RegExp(`@(${agentNamesForInputRegex})(?=[\s\u00A0]|$)`, 'gi');
+                    // Only allow agent mention highlighting and dropdown in General Chat (when isDedicatedChat is false)
+                    const isDedicatedChat = localStorage.getItem('isDedicatedChat') === 'true';
+                    if (!isDedicatedChat) {
+                      // General Chat: allow highlighting and dropdown
+                      // Dynamically build regex for highlighting based on currentAgents for input field
+                      const agentNamesForInputRegex = currentAgents.map(agent => 
+                        agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+                      ).join('|');
+                      // This regex specifically matches @ followed by a full agent name, optionally followed by a space
+                      const dynamicHighlightRegexInput = new RegExp(`@(${agentNamesForInputRegex})(?=[\s\u00A0]|$)`, 'gi');
 
-                    // Highlight agent mentions in the input field
-                    let highlightedHtml = plainText.replace(dynamicHighlightRegexInput, '<span class="agent-mention">$&</span>');
+                      // Highlight agent mentions in the input field
+                      let highlightedHtml = plainText.replace(dynamicHighlightRegexInput, '<span class="agent-mention">$&</span>');
 
-                    // Sanitize the HTML before setting it back
-                    const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
-                        ADD_TAGS: ['span'],
-                        ADD_ATTR: ['class']
-                    });
-                        div.innerHTML = cleanHtml;
-                    
-                    // Restore cursor position
-                    restoreSelection(div, savedCaretOffset);
+                      // Sanitize the HTML before setting it back
+                      const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
+                          ADD_TAGS: ['span'],
+                          ADD_ATTR: ['class']
+                      });
+                      div.innerHTML = cleanHtml;
 
-                    // Logic for agent dropdown and strict validation
-                    if (plainText.includes('@')) {
-                      const lastAtIndex = plainText.lastIndexOf('@');
-                      const mentionPart = plainText.substring(lastAtIndex + 1); // Get text after last @
-
-                      const matchedAgent = currentAgents.find(agent => 
-                        agent.fullName.toLowerCase() === mentionPart.toLowerCase().trim()
-                      ); 
-
-                      if (matchedAgent) {
-                        const afterAgentName = plainText.substring(lastAtIndex + 1 + matchedAgent.fullName.length);
-                          // Case 1: User typed something immediately after the full agent name without a space.
-                          // We should add a space and preserve the rest of the input.
-                        if (afterAgentName.length > 0 && !/^\s*$/.test(afterAgentName)) {
-                            const correctedPlainText = plainText.substring(0, lastAtIndex) + `@${matchedAgent.fullName} ` + afterAgentName.trimStart();
-                          div.innerText = correctedPlainText;
-                          setInput(correctedPlainText);
-                          restoreSelection(div, correctedPlainText.length);
-                          setShowAgentDropdown(false);
-                          setFilteredAgents([]);
-                          return;
-                        }
-                        // Case 2: User just finished typing the full agent name, no space yet.
-                        // We need to add a space if the current text ends with the agent mention
-                        // and doesn't already end with a space.
-                        if (!plainText.endsWith(' ') && plainText.endsWith(`@${matchedAgent.fullName}`))
-                        {
-                           const correctedPlainText = plainText + ' ';
-                           div.innerText = correctedPlainText;
-                           setInput(correctedPlainText);
-                           restoreSelection(div, correctedPlainText.length);
-                           setShowAgentDropdown(false); // Hide dropdown as agent is fully selected
-                           setFilteredAgents([]);
-                           return;
-                        }
-                      }
-
-                      // Filter against currentAgents for dynamic updates (for dropdown)
-                      const currentFilteredAgents = currentAgents.filter(agent =>
-                        agent.fullName.toLowerCase().startsWith(mentionPart.toLowerCase())
-                      );
-                      setFilteredAgents(currentFilteredAgents);
-                      setShowAgentDropdown(currentFilteredAgents.length > 0); // Show if there are matches
-                    } else {
+                      // Dropdown logic for General Chat
+                      if (plainText.includes('@')) {
+                        const lastAtIndex = plainText.lastIndexOf('@');
+                        const mentionPart = plainText.substring(lastAtIndex + 1); // Get text after last @
+                        // Filter against currentAgents for dynamic updates (for dropdown)
+                        const currentFilteredAgents = currentAgents.filter(agent =>
+                          agent.fullName.toLowerCase().startsWith(mentionPart.toLowerCase())
+                        );
+                        setFilteredAgents(currentFilteredAgents);
+                        setShowAgentDropdown(currentFilteredAgents.length > 0); // Show if there are matches
+                      } else {
                         setShowAgentDropdown(false);
                         setFilteredAgents([]);
                       }
+                    } else {
+                      // Dedicated Chat: no highlighting, no dropdown
+                      div.innerHTML = DOMPurify.sanitize(plainText);
+                      setShowAgentDropdown(false);
+                      setFilteredAgents([]);
+                    }
+                    // Restore cursor position
+                    restoreSelection(div, savedCaretOffset);
                   }}
                   onKeyDown={handleInputKeyDown}
                   disabled={loading}
