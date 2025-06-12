@@ -2,7 +2,7 @@
   "agents": [
     {
       "iconType": "FaShieldAlt",
-      "name": "DPDP Compliance",
+      "name": "DPDP Knowledge Agent",
       "description": "Get insights from the Digital Personal Data Protection Act. Ask about user rights, data fiduciaries, and obligations.",
       "buttonText": "Start Chat",
       "agentId": "DPDP",
@@ -26,18 +26,10 @@
     },
     {
       "iconType": "FaFileAlt",
-      "name": "National Security Policy Agent",
-      "description": " bleh",
+      "name": "NCSP Knowledge Agent ",
+      "description": "Get insights into the National Cyber Security Policy (NCSP) 2013, India\u2019s strategic framework for enhancing cyber resilience.",
       "buttonText": "Start Chat",
-      "agentId": "agent_1749746194823",
-      "pdfSource": "National_Cyber_Secruity.pdf"
-    },
-    {
-      "iconType": "FaFileAlt",
-      "name": "National Security Policy Agent",
-      "description": " bleh",
-      "buttonText": "Start Chat",
-      "agentId": "agent_1749746207703",
+      "agentId": "agent_1749764504037",
       "pdfSource": "National_Cyber_Secruity.pdf"
     }
   ]

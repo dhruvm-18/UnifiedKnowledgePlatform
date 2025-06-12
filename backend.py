@@ -54,11 +54,48 @@ from langchain.prompts import PromptTemplate
 warnings.filterwarnings("ignore", message=".*GpuIndexIVFFlat.*")
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG) # Set to DEBUG for detailed logs
+logging.basicConfig(level=logging.INFO) # Changed from DEBUG to INFO
 logger = logging.getLogger(__name__)
+
+# Suppress specific loggers
+logging.getLogger('werkzeug').setLevel(logging.WARNING)  # Reduce werkzeug logging
+logging.getLogger('watchdog').setLevel(logging.WARNING)  # Reduce watchdog logging
+logging.getLogger('faiss').setLevel(logging.WARNING)  # Reduce faiss logging
+logging.getLogger('langchain').setLevel(logging.WARNING)  # Reduce langchain logging
 
 # Explicitly configure Faiss to use CPU
 faiss.omp_set_num_threads(4)  # Set number of threads for CPU operations
+
+# Initialize Flask app
+app = Flask(__name__)
+
+# Configure Flask app
+app.config['DEBUG'] = False
+app.config['TEMPLATES_AUTO_RELOAD'] = False
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
+app.config['SESSION_COOKIE_NAME'] = 'rag_chatbot_session_id'
+
+# Configure CORS
+CORS(app, resources={
+    r"/*": {
+        "origins": ["http://localhost:3000"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Accept", "Authorization"],
+        "expose_headers": ["X-PDF-Page", "X-PDF-Section"],
+        "supports_credentials": True,
+        "max_age": 3600
+    }
+})
+
+# Create uploads directory if it doesn't exist
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend', 'pdfs')
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+logger.info(f"UPLOAD_FOLDER resolved to: {UPLOAD_FOLDER}")
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Load environment variables
 load_dotenv()
@@ -102,7 +139,7 @@ def load_pdfs_from_directory(directory_path: str) -> list[Document]:
     
     # Add logging to debug PDF loading
     logger.info(f"load_pdfs_from_directory called with directory_path: {directory_path}") # Log the input path
-    pdf_pattern = os.path.join(r'C:\Users\dhruv\OneDrive\Documents\EY_RAG_Project\backend\pdfs', "*.pdf")
+    pdf_pattern = os.path.join(app.config['UPLOAD_FOLDER'], "*.pdf") # Use configured UPLOAD_FOLDER
     logger.info(f"Searching for PDFs with pattern: {pdf_pattern}")
     pdf_files = glob.glob(pdf_pattern)
     logger.info(f"Found PDF files: {pdf_files}") # Log the result of glob.glob
@@ -140,18 +177,6 @@ retriever = vectorstore.as_retriever(
     search_type="similarity",
     search_kwargs={"k": 5}
 )
-
-app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*", "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"]}}) # Enable CORS for all routes and explicitly allow PUT
-app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
-app.config['TEMPLATES_AUTO_RELOAD'] = False  # Disable template auto-reloading
-app.config['DEBUG'] = True  # Keep debug mode for development
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
-app.config['SESSION_COOKIE_NAME'] = 'rag_chatbot_session_id'
-
-# Configure logging to reduce noise
-logging.getLogger('werkzeug').setLevel(logging.ERROR)  # Reduce werkzeug logging
-logging.getLogger('watchdog').setLevel(logging.ERROR)  # Reduce watchdog logging
 
 # In-memory session storage
 sessions = {}
@@ -464,56 +489,82 @@ AGENTS_DATA = {}
 def save_agents_to_json():
     """Saves the current AGENTS_DATA to the agents.json file."""
     try:
-        # Convert AGENTS_DATA dict back to a list of agent objects for JSON serialization
-        agents_list = []
-        for agent_id, pdf_source in AGENTS_DATA.items():
-            # We need to retrieve the full agent object, not just ID and pdfSource
-            # For now, let's assume AGENTS_DATA will store full agent objects, not just pdf_source
-            # Or, we fetch existing data from JSON and update it.
-            # Let's simplify: AGENTS_DATA will store a dictionary where keys are agentId and values are full agent dictionaries.
-            pass # This will be handled in the specific agent endpoints
-
-        # Re-reading the file to get full agent data and then update. This is safer.
-        current_agents_in_file = []
-        if os.path.exists(AGENTS_JSON_PATH):
-            with open(AGENTS_JSON_PATH, 'r', encoding='utf-8') as f:
-                current_agents_in_file = json.load(f).get('agents', [])
+        # Convert AGENTS_DATA dict to a list for JSON serialization
+        agents_list = list(AGENTS_DATA.values())
         
-        # Update existing agents and add new ones
-        updated_agents_list = []
-        existing_agent_ids = set()
-        for agent_data in current_agents_in_file:
-            if agent_data['agentId'] in AGENTS_DATA:
-                updated_agents_list.append(AGENTS_DATA[agent_data['agentId']]) # Use updated data
-                existing_agent_ids.add(agent_data['agentId'])
-            else:
-                updated_agents_list.append(agent_data) # Keep existing if not modified/deleted
+        # Ensure the directory exists
+        os.makedirs(os.path.dirname(AGENTS_JSON_PATH), exist_ok=True)
         
-        # Add new agents that were not in the original file
-        for agent_id, agent_obj in AGENTS_DATA.items():
-            if agent_id not in existing_agent_ids:
-                updated_agents_list.append(agent_obj)
-
         with open(AGENTS_JSON_PATH, 'w', encoding='utf-8') as f:
-            json.dump({'agents': updated_agents_list}, f, indent=2)
+            json.dump({'agents': agents_list}, f, indent=2)
         logger.info(f"Agents data saved to {AGENTS_JSON_PATH}")
     except Exception as e:
         logger.error(f"Error saving agents to {AGENTS_JSON_PATH}: {e}")
 
 def load_agent_data():
+    """Load agent data from JSON file."""
     global AGENTS_DATA
     AGENTS_DATA = {}
+    
+    # First try to load from the react-frontend path
     if os.path.exists(AGENTS_JSON_PATH):
         try:
             with open(AGENTS_JSON_PATH, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 for agent in data.get('agents', []):
-                    AGENTS_DATA[agent['agentId']] = agent # Store full agent object
-            logger.info(f"Loaded agent data from {AGENTS_JSON_PATH}: {AGENTS_DATA}")
+                    AGENTS_DATA[agent['agentId']] = agent
+            logger.info(f"Loaded {len(AGENTS_DATA)} agents from {AGENTS_JSON_PATH}")
+            return
         except Exception as e:
             logger.error(f"Error loading agent data from {AGENTS_JSON_PATH}: {e}")
-    else:
-        logger.warning(f"Agents JSON file not found at: {AGENTS_JSON_PATH}")
+    
+    # If loading from react-frontend fails, try loading from backend directory
+    backup_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'agents.json')
+    if os.path.exists(backup_path):
+        try:
+            with open(backup_path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                for agent in data.get('agents', []):
+                    AGENTS_DATA[agent['agentId']] = agent
+            logger.info(f"Loaded {len(AGENTS_DATA)} agents from backup path {backup_path}")
+            # Save to the react-frontend path for future use
+            save_agents_to_json()
+            return
+        except Exception as e:
+            logger.error(f"Error loading agent data from backup path {backup_path}: {e}")
+    
+    # If both paths fail, create default agents
+    default_agents = [
+        {
+            "iconType": "FaShieldAlt",
+            "name": "DPDP Compliance",
+            "description": "Get insights from the Digital Personal Data Protection Act. Ask about user rights, data fiduciaries, and obligations.",
+            "buttonText": "Start Chat",
+            "agentId": "DPDP",
+            "pdfSource": "DPDP_act.pdf"
+        },
+        {
+            "iconType": "FaGavel",
+            "name": "Parliamentary Rules",
+            "description": "Access information on the Rules of Procedure and Conduct of Business in Lok Sabha.",
+            "buttonText": "Start Chat",
+            "agentId": "Parliament",
+            "pdfSource": "Rules_of_Procedures_Lok_Sabha.pdf"
+        }
+    ]
+    
+    for agent in default_agents:
+        AGENTS_DATA[agent['agentId']] = agent
+    
+    # Save default agents to both locations
+    save_agents_to_json()
+    try:
+        with open(backup_path, 'w', encoding='utf-8') as f:
+            json.dump({'agents': default_agents}, f, indent=2)
+    except Exception as e:
+        logger.error(f"Error saving default agents to backup path {backup_path}: {e}")
+    
+    logger.info(f"Created {len(AGENTS_DATA)} default agents")
 
 # Call this function on startup
 load_agent_data()
@@ -736,103 +787,74 @@ def serve_pdf(filename):
         logger.error(f"Error opening PDF: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-# Configure CORS
-CORS(app, resources={
-    r"/*": {
-        "origins": ["http://localhost:3000"],
-        "methods": ["GET", "POST", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Accept"],
-        "expose_headers": ["X-PDF-Page", "X-PDF-Section"],
-        "supports_credentials": True
-    }
-})
-
-# Create uploads directory if it doesn't exist
-UPLOAD_FOLDER = 'backend/pdfs' # Changed to backend/pdfs
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
-
 ALLOWED_EXTENSIONS = {'pdf'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def process_pdf(filepath):
-    """Process a PDF file and add it to the vector store"""
-    try:
-        reader = PdfReader(filepath)
-        text = ""
-        for page in reader.pages:
-            text += page.extract_text()
+# Add this function to rebuild the FAISS index from all PDFs in the upload folder
+def rebuild_faiss_index():
+    global retriever
+    pdf_documents = load_pdfs_from_directory(app.config['UPLOAD_FOLDER'])
+    vectorstore = initialize_faiss_index(pdf_documents, embeddings)
+    retriever = vectorstore.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k": 5}
+    )
 
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
-            length_function=len
-        )
-        chunks = text_splitter.split_text(text)
-
-        embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
-
-        global retriever # Declare retriever as global to modify it
-
-        if os.path.exists("faiss_index"):
-            vectorstore = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
-            vectorstore.add_texts(chunks, metadatas=[{"source": os.path.basename(filepath)}] * len(chunks))
-        else:
-            vectorstore = FAISS.from_texts(chunks, embeddings, metadatas=[{"source": os.path.basename(filepath)}] * len(chunks))
-        
-        vectorstore.save_local("faiss_index")
-        retriever = vectorstore.as_retriever() # Update the global retriever
-
-        return True
-    except Exception as e:
-        logger.error(f"Error processing PDF: {str(e)}")
-        raise e
-
-@app.route('/upload-pdf', methods=['POST'])
+@app.route('/upload-pdf', methods=['POST', 'OPTIONS'])
 def upload_pdf():
     """Handle PDF file uploads"""
+    if request.method == 'OPTIONS':
+        return '', 200
+
     try:
         if 'file' not in request.files:
             logger.error("No file part in request")
-            return jsonify({'error': 'No file part'}), 400
+            return jsonify({'error': 'No file part', 'success': False}), 400
         
         file = request.files['file']
         if file.filename == '':
             logger.error("No selected file")
-            return jsonify({'error': 'No selected file'}), 400
+            return jsonify({'error': 'No selected file', 'success': False}), 400
         
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             
+            # Ensure the upload directory exists
             os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+            
+            # Log the actual UPLOAD_FOLDER being used right before saving
+            logger.info(f"Current UPLOAD_FOLDER from app.config: {app.config['UPLOAD_FOLDER']}")
+
+            # Save the file
+            logger.info(f"Attempting to save file to: {filepath}")
             file.save(filepath)
-            file.close() # Explicitly close the file after saving
-            logger.info(f"File saved to: {filepath}")
+            logger.info(f"File successfully saved to: {filepath}")
             
             try:
-                process_pdf(filepath)
-                logger.info(f"PDF processed successfully: {filename}")
+                # Rebuild the FAISS index from all PDFs after upload
+                logger.info(f"Rebuilding FAISS index after uploading: {filename}")
+                rebuild_faiss_index()
+                logger.info(f"FAISS index rebuilt successfully after uploading: {filename}")
                 return jsonify({
                     'message': 'File uploaded and processed successfully',
-                    'filename': filename
+                    'filename': filename,
+                    'success': True,
+                    'filepath': filepath
                 })
             except Exception as e:
-                logger.error(f"Error processing PDF: {str(e)}")
+                logger.error(f"Error during FAISS index rebuild: {str(e)}")
                 if os.path.exists(filepath):
                     os.remove(filepath)
-                return jsonify({'error': f'Error processing PDF: {str(e)}'}), 500
+                return jsonify({'error': f'Error processing PDF: {str(e)}', 'success': False}), 500
         
         logger.error(f"Invalid file type: {file.filename}")
-        return jsonify({'error': 'Invalid file type'}), 400
+        return jsonify({'error': 'Invalid file type', 'success': False}), 400
     except Exception as e:
-        logger.error(f"Unexpected error in upload_pdf: {str(e)}")
-        return jsonify({'error': f'Unexpected error: {str(e)}'}), 500
+        logger.error(f"Unexpected error in upload_pdf route: {str(e)}") # Changed log message
+        return jsonify({'error': f'Unexpected error: {str(e)}', 'success': False}), 500
 
 # Load PDFs from uploads directory on startup
 def load_uploaded_pdfs():
@@ -887,86 +909,99 @@ if retriever is None:
 @app.route('/agents', methods=['GET'])
 def get_agents():
     """Get all agents from AGENTS_DATA"""
-    logger.info(f"GET /agents: Returning {len(AGENTS_DATA)} agents.")
-    return jsonify(list(AGENTS_DATA.values()))
+    try:
+        # Reload agents from file to ensure we have the latest data
+        load_agent_data()
+        agents_list = list(AGENTS_DATA.values())
+        logger.info(f"GET /agents: Returning {len(agents_list)} agents")
+        return jsonify(agents_list)
+    except Exception as e:
+        logger.error(f"Error in get_agents: {e}")
+        return jsonify([])
 
 @app.route('/agents', methods=['POST'])
 def add_agent():
     """Add a new agent to AGENTS_DATA and save to agents.json"""
-    data = request.json
-    agent_id = data.get('agentId')
-    if not agent_id:
-        return jsonify({'error': 'agentId is required'}), 400
-    
-    if agent_id in AGENTS_DATA:
-        return jsonify({'error': f'Agent with ID {agent_id} already exists'}), 409
+    try:
+        data = request.json
+        agent_id = data.get('agentId')
+        if not agent_id:
+            return jsonify({'error': 'agentId is required', 'success': False}), 400
+        
+        if agent_id in AGENTS_DATA:
+            return jsonify({'error': f'Agent with ID {agent_id} already exists', 'success': False}), 409
 
-    # Ensure required fields are present
-    required_fields = ['name', 'description', 'iconType', 'pdfSource']
-    if not all(field in data for field in required_fields):
-        return jsonify({'error': 'Missing required agent fields'}), 400
+        # Ensure required fields are present
+        required_fields = ['name', 'description', 'iconType', 'pdfSource']
+        if not all(field in data for field in required_fields):
+            return jsonify({'error': 'Missing required agent fields', 'success': False}), 400
 
-    AGENTS_DATA[agent_id] = data
-    save_agents_to_json()
-    logger.info(f"Added new agent: {agent_id}")
-    return jsonify(data), 201
+        AGENTS_DATA[agent_id] = data
+        save_agents_to_json()
+        logger.info(f"Added new agent: {agent_id}")
+        return jsonify({
+            'message': 'Agent created successfully',
+            'agent': data,
+            'success': True
+        }), 201
+    except Exception as e:
+        logger.error(f"Error adding agent: {str(e)}")
+        return jsonify({'error': f'Error adding agent: {str(e)}', 'success': False}), 500
 
 @app.route('/agents/<agent_id>', methods=['PUT', 'OPTIONS'])
 def update_agent(agent_id):
     """Update an existing agent"""
     if request.method == 'OPTIONS':
-        # Preflight request
         return '', 200
 
-    agents_data = load_agent_data()
-    agent_found = False
-    for i, agent in enumerate(agents_data):
-        if agent['agentId'] == agent_id:
-            agent_found = True
-            break
-
-    if not agent_found:
+    if agent_id not in AGENTS_DATA:
         return jsonify({'error': 'Agent not found'}), 404
     
     # Update only allowed fields, or merge entire object
     data = request.json
-    agents_data[i].update(data) # Simple merge for now
-    save_agents_to_json()
+    AGENTS_DATA[agent_id].update(data) # Update the agent data
+    save_agents_to_json() # Save changes to JSON file
     logger.info(f"Updated agent: {agent_id}")
-    return jsonify(agents_data[i])
+    return jsonify(AGENTS_DATA[agent_id])
 
 @app.route('/agents/<agent_id>', methods=['DELETE', 'OPTIONS'])
 def delete_agent(agent_id):
     """Delete an agent from AGENTS_DATA and save to agents.json"""
     if request.method == 'OPTIONS':
-        return '', 200 # Preflight request
+        return '', 200
 
-    if agent_id not in AGENTS_DATA:
-        return jsonify({'error': 'Agent not found'}), 404
-    
-    # Get the PDF filename before deleting the agent
-    pdf_filename = AGENTS_DATA[agent_id].get('pdfSource')
-    
-    # Delete the agent from AGENTS_DATA
-    del AGENTS_DATA[agent_id]
-    save_agents_to_json()
-    
-    # Delete the associated PDF file if it exists
-    if pdf_filename:
-        pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
-        try:
-            if os.path.exists(pdf_path):
-                os.remove(pdf_path)
-                logger.info(f"Deleted PDF file: {pdf_filename}")
-        except Exception as e:
-            logger.error(f"Error deleting PDF file {pdf_filename}: {str(e)}")
-            # Continue with agent deletion even if PDF deletion fails
-    
-    logger.info(f"Deleted agent: {agent_id}")
-    return '', 204
+    try:
+        if agent_id not in AGENTS_DATA:
+            return jsonify({'error': 'Agent not found'}), 404
+        
+        # Get the PDF filename before deleting the agent
+        pdf_filename = AGENTS_DATA[agent_id].get('pdfSource')
+        
+        # Delete the agent from AGENTS_DATA
+        del AGENTS_DATA[agent_id]
+        
+        # Save to JSON file immediately after deletion
+        save_agents_to_json()
+        
+        # Delete the associated PDF file if it exists
+        if pdf_filename:
+            pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
+            try:
+                if os.path.exists(pdf_path):
+                    os.remove(pdf_path)
+                    logger.info(f"Deleted PDF file: {pdf_filename}")
+            except Exception as e:
+                logger.error(f"Error deleting PDF file {pdf_filename}: {str(e)}")
+                # Continue with agent deletion even if PDF deletion fails
+        
+        logger.info(f"Deleted agent: {agent_id}")
+        return '', 204
+    except Exception as e:
+        logger.error(f"Error deleting agent {agent_id}: {str(e)}")
+        return jsonify({'error': f'Error deleting agent: {str(e)}'}), 500
 
 if __name__ == '__main__':
-    print("Starting Flask app...") # Debug print to confirm app starts
+    print("Starting Flask app...")
     load_sessions()
-    # You might want to remove debug=True in a production environment
-    app.run(debug=True, port=5000) 
+    # Disable debug mode and reloader
+    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False) 

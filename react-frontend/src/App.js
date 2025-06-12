@@ -1448,9 +1448,10 @@ function App() {
                     if (!isDedicatedChat) {
                       // General Chat: allow highlighting and dropdown
                       // Dynamically build regex for highlighting based on currentAgents for input field
-                      const agentNamesForInputRegex = currentAgents.map(agent => 
-                        agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-                      ).join('|');
+                      const agentNamesForInputRegex = currentAgents
+                        .filter(agent => typeof agent.fullName === 'string' && agent.fullName.trim() !== '')
+                        .map(agent => agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                        .join('|');
                       // This regex specifically matches @ followed by a full agent name, optionally followed by a space
                       const dynamicHighlightRegexInput = new RegExp(`@(${agentNamesForInputRegex})(?=[\s\u00A0]|$)`, 'gi');
 

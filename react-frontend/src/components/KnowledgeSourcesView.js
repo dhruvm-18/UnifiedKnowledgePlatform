@@ -17,6 +17,8 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
   const [newAgentName, setNewAgentName] = useState('');
   const [newAgentDescription, setNewAgentDescription] = useState('');
   const [selectedPdf, setSelectedPdf] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const BACKEND_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
@@ -97,6 +99,9 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
       return;
     }
 
+    setIsSubmitting(true);
+    setSuccessMessage('');
+
     try {
       const formData = new FormData();
       formData.append('file', selectedPdf);
@@ -112,6 +117,11 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
         throw new Error(errorData.error || 'Failed to upload PDF');
       }
       const uploadData = await uploadResponse.json();
+      
+      if (!uploadData.success) {
+        throw new Error(uploadData.error || 'Failed to upload PDF');
+      }
+      
       const pdfFilename = uploadData.filename;
 
       // 2. Create new agent via backend API
@@ -137,17 +147,30 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
         throw new Error(errorData.error || 'Failed to create new agent');
       }
 
-      fetchAgents(); // Re-fetch agents to update state with latest data from backend
-
-      // Reset form
-      setShowNewAgentForm(false);
-      setNewAgentName('');
-      setNewAgentDescription('');
-      setSelectedPdf(null);
-
+      const agentData = await agentResponse.json();
+      
+      if (agentData.success) {
+        // Update the agents list by re-fetching from backend
+        fetchAgents();
+        setSuccessMessage('Agent created successfully! ✓');
+        // Reset form after successful creation
+        setShowNewAgentForm(false);
+        setNewAgentName('');
+        setNewAgentDescription('');
+        setSelectedPdf(null);
+        // Force another agent list refresh after closing the form
+        setTimeout(() => {
+          fetchAgents();
+          setSuccessMessage('');
+        }, 300);
+      } else {
+        throw new Error(agentData.error || 'Failed to create agent');
+      }
     } catch (error) {
       console.error('Error creating new agent:', error);
       alert(`Failed to create new agent: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -189,6 +212,12 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
         Click 'Start Chat' to begin a conversation with an agent and explore its knowledge.
       </p>
 
+      {successMessage && (
+        <div className="success-message">
+          {successMessage}
+        </div>
+      )}
+
       {/* Search Input with Icon */}
       <div className="search-panel">
         <FaSearch className="search-icon" /> {/* Add the search icon */}
@@ -221,6 +250,7 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
                 onChange={(e) => setNewAgentName(e.target.value)}
                 className="agent-edit-name-input"
                 required
+                disabled={isSubmitting}
               />
               <textarea
                 placeholder="Agent Description"
@@ -228,6 +258,7 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
                 onChange={(e) => setNewAgentDescription(e.target.value)}
                 className="agent-edit-description-input"
                 required
+                disabled={isSubmitting}
               />
               <div className="pdf-upload-section">
                 <input
@@ -236,12 +267,26 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
                   onChange={handlePdfChange}
                   className="pdf-upload-input"
                   required
+                  disabled={isSubmitting}
                 />
                 {selectedPdf && <p className="selected-pdf">Selected: {selectedPdf.name}</p>}
               </div>
               <div className="edit-controls">
-                <button type="submit" className="save-button"><FaSave /> Create Agent</button>
-                <button type="button" onClick={() => setShowNewAgentForm(false)} className="cancel-button"><FaTimes /> Cancel</button>
+                <button 
+                  type="submit" 
+                  className="save-button"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Creating...' : <><FaSave /> Create Agent</>}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setShowNewAgentForm(false)} 
+                  className="cancel-button"
+                  disabled={isSubmitting}
+                >
+                  <FaTimes /> Cancel
+                </button>
               </div>
             </form>
           </div>
