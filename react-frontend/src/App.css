@@ -3378,3 +3378,124 @@ html, body, #root {
   white-space: pre-wrap; /* Preserve whitespace and allow line breaks */
   display: block;
 }
+
+/* New Agent Card Styles */
+.new-agent-card {
+  background: var(--bg-secondary);
+  border: 2px dashed var(--border-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-height: 200px;
+}
+
+.new-agent-card:hover {
+  border-color: var(--accent-color);
+  background: var(--bg-hover);
+}
+
+.new-agent-card .agent-icon {
+  background: var(--bg-primary);
+  color: var(--accent-color);
+  margin-bottom: 1rem;
+}
+
+.new-agent-card .agent-name {
+  color: var(--accent-color);
+  margin-bottom: 0.5rem;
+}
+
+.new-agent-card .agent-description {
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* New Agent Form Styles */
+.new-agent-form {
+  background: var(--bg-secondary);
+  padding: 1.5rem;
+}
+
+.new-agent-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.new-agent-form input[type="text"],
+.new-agent-form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.new-agent-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.pdf-upload-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pdf-upload-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.selected-pdf {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.edit-controls {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.save-button,
+.cancel-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.save-button {
+  background: var(--accent-color);
+  color: white;
+}
+
+.save-button:hover {
+  background: var(--accent-hover);
+}
+
+.cancel-button {
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+}
+
+.cancel-button:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes } from 'react-icons/fa'; // Added FaEdit, FaSave, FaTimes
+import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes, FaPlus } from 'react-icons/fa'; // Added FaEdit, FaSave, FaTimes, FaPlus
 
 // Helper function to get icon component
 const getIconComponent = (iconType) => {
@@ -61,6 +61,10 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
   const [editingAgentId, setEditingAgentId] = useState(null); // State to track which agent is being edited
   const [editedName, setEditedName] = useState('');
   const [editedDescription, setEditedDescription] = useState('');
+  const [showNewAgentForm, setShowNewAgentForm] = useState(false);
+  const [newAgentName, setNewAgentName] = useState('');
+  const [newAgentDescription, setNewAgentDescription] = useState('');
+  const [selectedPdf, setSelectedPdf] = useState(null);
 
   // Save agents to localStorage whenever they change
   useEffect(() => {
@@ -98,6 +102,35 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
     setEditingAgentId(null);
   };
 
+  const handleNewAgentSubmit = (e) => {
+    e.preventDefault();
+    if (!newAgentName || !newAgentDescription || !selectedPdf) return;
+
+    const newAgent = {
+      iconType: 'FaFileAlt',
+      name: newAgentName,
+      description: newAgentDescription,
+      buttonText: 'Start Chat',
+      agentId: `agent_${Date.now()}`,
+      pdfSource: selectedPdf.name
+    };
+
+    setAgents(prevAgents => [...prevAgents, newAgent]);
+    setShowNewAgentForm(false);
+    setNewAgentName('');
+    setNewAgentDescription('');
+    setSelectedPdf(null);
+  };
+
+  const handlePdfChange = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type === 'application/pdf') {
+      setSelectedPdf(file);
+    } else {
+      alert('Please select a PDF file');
+    }
+  };
+
   return (
     <div className="knowledge-sources-container">
       {/* Add the main heading here */}
@@ -121,6 +154,50 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
 
       {/* Agent Cards Grid - Add class when searching */}
       <div className={`agent-cards-grid ${isSearching ? 'agent-cards-grid--searching' : ''}`}>
+        {!showNewAgentForm && (
+          <div className="agent-card new-agent-card" onClick={() => setShowNewAgentForm(true)}>
+            <div className="agent-icon"><FaPlus /></div>
+            <h3 className="agent-name">New Knowledge Agent</h3>
+            <p className="agent-description">Design and deploy your own AI-powered knowledge agent by uploading custom documents like PDFs.</p>
+          </div>
+        )}
+
+        {showNewAgentForm && (
+          <div className="agent-card new-agent-form">
+            <form onSubmit={handleNewAgentSubmit}>
+              <input
+                type="text"
+                placeholder="Agent Name"
+                value={newAgentName}
+                onChange={(e) => setNewAgentName(e.target.value)}
+                className="agent-edit-name-input"
+                required
+              />
+              <textarea
+                placeholder="Agent Description"
+                value={newAgentDescription}
+                onChange={(e) => setNewAgentDescription(e.target.value)}
+                className="agent-edit-description-input"
+                required
+              />
+              <div className="pdf-upload-section">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={handlePdfChange}
+                  className="pdf-upload-input"
+                  required
+                />
+                {selectedPdf && <p className="selected-pdf">Selected: {selectedPdf.name}</p>}
+              </div>
+              <div className="edit-controls">
+                <button type="submit" className="save-button"><FaSave /> Create Agent</button>
+                <button type="button" onClick={() => setShowNewAgentForm(false)} className="cancel-button"><FaTimes /> Cancel</button>
+              </div>
+            </form>
+          </div>
+        )}
+
         {filteredAgents.map((agent) => (
           <div key={agent.agentId} className="agent-card">
             <div className="agent-icon">{getIconComponent(agent.iconType)}</div>
