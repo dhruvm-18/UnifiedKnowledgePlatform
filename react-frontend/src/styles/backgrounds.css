@@ -1,0 +1,108 @@
+/* Theme-aware minimalist sidebar backgrounds */
+:root {
+  --sidebar-bg1: #e3f0ff;
+  --sidebar-bg2: #c2dbf7;
+  --sidebar-ball1: rgba(100, 150, 255, 0.25);
+  --sidebar-ball2: rgba(100, 150, 255, 0.18);
+  --sidebar-ball3: rgba(100, 150, 255, 0.15);
+}
+.dark-mode {
+  --sidebar-bg1: #232b3a;
+  --sidebar-bg2: #1a2232;
+  --sidebar-ball1: rgba(80, 120, 200, 0.18);
+  --sidebar-ball2: rgba(80, 120, 200, 0.13);
+  --sidebar-ball3: rgba(80, 120, 200, 0.10);
+}
+
+.left-sidebar,
+.right-sidebar {
+  background: linear-gradient(120deg, var(--sidebar-bg1) 0%, var(--sidebar-bg2) 100%);
+  /* No pattern overlays, no boxes */
+  border: none;
+  box-shadow: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Remove pattern overlays */
+.left-sidebar::before,
+.right-sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, var(--sidebar-ball1) 0, var(--sidebar-ball1) 80px, transparent 140px),
+    radial-gradient(circle at 70% 60%, var(--sidebar-ball2) 0, var(--sidebar-ball2) 100px, transparent 180px),
+    radial-gradient(circle at 50% 80%, var(--sidebar-ball3) 0, var(--sidebar-ball3) 60px, transparent 120px);
+  background-repeat: no-repeat;
+}
+
+/* Chat input container remains clean */
+.chat-input-container {
+  background: #f3f7fd;
+  border-top: 1px solid #d6e4f5;
+  box-shadow: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.dark-mode .chat-input-container {
+  background: #232b3a;
+  border-top: 1px solid #232b3a;
+}
+
+.chat-input-container::before {
+  content: none;
+}
+
+/* Light theme specific adjustments */
+:root {
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F3F4F6;
+  --bg-tertiary: #E5E7EB;
+  --accent-color: #3B82F6;
+  --border-color: #E5E7EB;
+}
+
+/* Dark theme specific adjustments */
+.dark-mode {
+  --bg-primary: #1F2937;
+  --bg-secondary: #374151;
+  --bg-tertiary: #4B5563;
+  --accent-color: #60A5FA;
+  --border-color: #374151;
+}
+
+.theme-toggle {
+  background: none !important;
+  box-shadow: none !important;
+  color: inherit !important;
+  border: none !important;
+}
+
+.theme-toggle:hover {
+  background: rgba(0,0,0,0.04) !important;
+  box-shadow: none !important;
+  color: inherit !important;
+}
+
+.sidebar-nav-item {
+  transition: background 0.2s, color 0.2s;
+}
+
+.sidebar-nav-item:hover {
+  background: rgba(0,0,0,0.04) !important;
+  color: inherit !important;
+  box-shadow: none !important;
+}
+
+.dark-mode .sidebar-nav-item:hover {
+  background: rgba(255,255,255,0.06) !important;
+  color: inherit !important;
+  box-shadow: none !important;
+} 

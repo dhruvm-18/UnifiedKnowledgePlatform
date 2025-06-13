@@ -31,6 +31,14 @@
       "buttonText": "Start Chat",
       "agentId": "agent_1749764504037",
       "pdfSource": "National_Cyber_Secruity.pdf"
+    },
+    {
+      "iconType": "FaFileAlt",
+      "name": "Aadhar Act Knowledge Agent",
+      "description": "Get insights from the Aadhaar Act, 2016. Ask about authentication, UIDAI functions, data security, and individual rights.",
+      "buttonText": "Start Chat",
+      "agentId": "agent_1749794991399",
+      "pdfSource": "Aadhar_Act.pdf"
     }
   ]
 }
