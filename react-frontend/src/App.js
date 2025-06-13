@@ -1449,14 +1449,15 @@ function App() {
                       // General Chat: allow highlighting and dropdown
                       // Dynamically build regex for highlighting based on currentAgents for input field
                       const agentNamesForInputRegex = currentAgents
-                        .filter(agent => typeof agent.fullName === 'string' && agent.fullName.trim() !== '')
+                        .filter(agent => agent && typeof agent.fullName === 'string' && agent.fullName.trim() !== '')
                         .map(agent => agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                        .sort((a, b) => b.length - a.length) // Sort by length DESC to match longest names first
                         .join('|');
-                      // This regex specifically matches @ followed by a full agent name, optionally followed by a space
-                      const dynamicHighlightRegexInput = new RegExp(`@(${agentNamesForInputRegex})(?=[\s\u00A0]|$)`, 'gi');
+                      // Regex: @ followed by any agent name (including spaces), with word boundary or end
+                      const dynamicHighlightRegexInput = new RegExp(`@(${agentNamesForInputRegex})(?=\\b|\\s|$)`, 'g');
 
-                      // Highlight agent mentions in the input field
-                      let highlightedHtml = plainText.replace(dynamicHighlightRegexInput, '<span class="agent-mention">$&</span>');
+                      // Highlight ALL agent mentions in the input, not just the one being typed
+                      let highlightedHtml = plainText.replace(dynamicHighlightRegexInput, '<span class="agent-mention">@$1</span>');
 
                       // Sanitize the HTML before setting it back
                       const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
@@ -1468,13 +1469,14 @@ function App() {
                       // Dropdown logic for General Chat
                       if (plainText.includes('@')) {
                         const lastAtIndex = plainText.lastIndexOf('@');
-                        const mentionPart = plainText.substring(lastAtIndex + 1); // Get text after last @
+                        const mentionPart = plainText.substring(lastAtIndex + 1).trim(); // Get text after last @ and trim whitespace
                         // Filter against currentAgents for dynamic updates (for dropdown)
                         const currentFilteredAgents = currentAgents.filter(agent =>
+                          agent && agent.fullName && 
                           agent.fullName.toLowerCase().startsWith(mentionPart.toLowerCase())
                         );
                         setFilteredAgents(currentFilteredAgents);
-                        setShowAgentDropdown(currentFilteredAgents.length > 0); // Show if there are matches
+                        setShowAgentDropdown(currentFilteredAgents.length > 0);
                       } else {
                         setShowAgentDropdown(false);
                         setFilteredAgents([]);
@@ -1492,7 +1494,20 @@ function App() {
                   disabled={loading}
                 ></div>
                 {showAgentDropdown && filteredAgents.length > 0 && (
-                  <div className="agent-dropdown">
+                  <div className="agent-dropdown" style={{
+                    position: 'absolute',
+                    bottom: '100%',
+                    left: '0',
+                    backgroundColor: 'var(--bg-primary)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    zIndex: 1000,
+                    marginBottom: '8px',
+                    width: '100%'
+                  }}>
                     {filteredAgents.map(agent => (
                       <div
                         key={agent.id}
@@ -1529,9 +1544,28 @@ function App() {
                           setShowAgentDropdown(false);
                           setFilteredAgents([]);
                           div.focus(); // Ensure the div remains focused
+
+                          // NEW: Set active agent details for general chat and persist in localStorage
+                          setActiveAgentDetails(agent);
+                          localStorage.setItem('activeAgentId', agent.id);
+                          if (currentSessionId) {
+                            localStorage.setItem(`sessionAgent_${currentSessionId}`, agent.id);
+                          }
+                        }}
+                        style={{
+                          padding: '8px 12px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          color: 'var(--text-primary)',
+                          ':hover': {
+                            backgroundColor: 'var(--bg-secondary)'
+                          }
                         }}
                       >
-                        @{agent.fullName} {/* Display full name in dropdown */}
+                        {agent.iconType && <span>{getIconComponent(agent.iconType)}</span>}
+                        <span>@{agent.fullName}</span>
                       </div>
                     ))}
                   </div>

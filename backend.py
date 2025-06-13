@@ -170,6 +170,40 @@ def load_pdfs_from_directory(directory_path: str) -> list[Document]:
     
     return documents
 
+def process_pdf(filepath):
+    """Process a single PDF file and update the FAISS index"""
+    global retriever
+    try:
+        # Read the PDF file
+        reader = PdfReader(filepath)
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text() + "\n"
+        
+        # Create a document with metadata
+        doc = Document(
+            page_content=text,
+            metadata={"source": os.path.basename(filepath)}
+        )
+        
+        # Initialize or update the FAISS index
+        if retriever is None:
+            # If no retriever exists, create a new FAISS index
+            vectorstore = initialize_faiss_index([doc], embeddings)
+            retriever = vectorstore.as_retriever(
+                search_type="similarity",
+                search_kwargs={"k": 5}
+            )
+        else:
+            # If retriever exists, update the existing FAISS index
+            update_faiss_index([doc], embeddings)
+            
+        logger.info(f"Successfully processed PDF: {filepath}")
+        return True
+    except Exception as e:
+        logger.error(f"Error processing PDF {filepath}: {str(e)}")
+        return False
+
 # Initialize vector store with PDFs
 pdf_documents = load_pdfs_from_directory("backend/pdfs")
 vectorstore = initialize_faiss_index(pdf_documents, embeddings)
@@ -615,12 +649,10 @@ def add_message(session_id):
     docs = []
     if target_pdf_source:
         docs = [doc for doc in all_docs if doc.metadata.get('source') == target_pdf_source]
-        if not docs and all_docs:
-            logger.warning(f"No documents found for {target_pdf_source} matching query. Using all relevant documents as fallback.")
-            docs = all_docs # Fallback to all documents if no specific ones found for pdfSource
+        # Do NOT fallback to all_docs if none found; just return empty context for strict agent separation
     else:
-        docs = all_docs # No specific pdfSource determined, use all relevant documents
-
+        docs = []
+    
     logger.info(f"Documents after agent filtering ({agent_id}): {[doc.metadata.get('source') for doc in docs]}")
 
     context = "\n\n".join([doc.page_content for doc in docs])

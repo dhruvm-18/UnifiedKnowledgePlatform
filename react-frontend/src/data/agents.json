@@ -10,7 +10,7 @@
     },
     {
       "iconType": "FaGavel",
-      "name": "Parliamentary Rules",
+      "name": "Parliamentary Knowledge Agent",
       "description": "Access information on the Rules of Procedure and Conduct of Business in Lok Sabha.",
       "buttonText": "Start Chat",
       "agentId": "Parliament",
@@ -18,7 +18,7 @@
     },
     {
       "iconType": "FaFileAlt",
-      "name": "IT Act Agent",
+      "name": "IT Act Knowledge Agent",
       "description": "Get insights into the Information Technology (IT) Act, 2000, India's key legislation governing cyber law, digital transactions, data protection, and online regulations.",
       "buttonText": "Start Chat",
       "agentId": "agent_1749736096843",
@@ -26,7 +26,7 @@
     },
     {
       "iconType": "FaFileAlt",
-      "name": "NCSP Knowledge Agent ",
+      "name": "NCSP Knowledge Agent",
       "description": "Get insights into the National Cyber Security Policy (NCSP) 2013, India\u2019s strategic framework for enhancing cyber resilience.",
       "buttonText": "Start Chat",
       "agentId": "agent_1749764504037",
