@@ -4243,3 +4243,57 @@ html, body, #root {
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
 }
 
+.chat-wave-bg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: 140px;
+  pointer-events: none;
+  z-index: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, var(--sidebar-bg1, #e3f0ff) 0%, var(--sidebar-bg2, #c2dbf7) 100%);
+  background-size: 200% 100%;
+  background-position: 0 0;
+  clip-path: polygon(
+    0% 60%, 10% 65%, 20% 62%, 30% 68%, 40% 64%, 50% 70%, 60% 66%, 70% 72%, 80% 68%, 90% 74%, 100% 70%, 100% 100%, 0% 100%
+  );
+  opacity: 0.95;
+  animation: waveMove 6s linear infinite alternate, waveBgMove 12s linear infinite;
+  transition: background 0.3s;
+}
+
+.chat-wave-bg.top {
+  top: 0;
+  bottom: unset;
+  transform: scaleY(-1);
+}
+
+@keyframes waveMove {
+  0% {
+    clip-path: polygon(
+      0% 60%, 10% 65%, 20% 62%, 30% 68%, 40% 64%, 50% 70%, 60% 66%, 70% 72%, 80% 68%, 90% 74%, 100% 70%, 100% 100%, 0% 100%
+    );
+  }
+  50% {
+    clip-path: polygon(
+      0% 65%, 10% 60%, 20% 68%, 30% 62%, 40% 70%, 50% 64%, 60% 72%, 70% 66%, 80% 74%, 90% 68%, 100% 72%, 100% 100%, 0% 100%
+    );
+  }
+  100% {
+    clip-path: polygon(
+      0% 60%, 10% 65%, 20% 62%, 30% 68%, 40% 64%, 50% 70%, 60% 66%, 70% 72%, 80% 68%, 90% 74%, 100% 70%, 100% 100%, 0% 100%
+    );
+  }
+}
+
+@keyframes waveBgMove {
+  0% { background-position: 0 0; }
+  100% { background-position: 100% 0; }
+}
+
+.dark-mode .chat-wave-bg {
+  background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%);
+  opacity: 0.85;
+}
+
