@@ -77,34 +77,6 @@
   pointer-events: none;
 }
 
-.chat-window::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image:
-    radial-gradient(circle at 20% 30%, var(--sidebar-ball1) 0, var(--sidebar-ball1) 80px, transparent 140px),
-    radial-gradient(circle at 70% 60%, var(--sidebar-ball2) 0, var(--sidebar-ball2) 100px, transparent 180px),
-    radial-gradient(circle at 50% 80%, var(--sidebar-ball3) 0, var(--sidebar-ball3) 60px, transparent 120px);
-  background-repeat: no-repeat;
-  pointer-events: none;
-  opacity: 0.5;
-}
-
-.dark-mode .chat-window::before {
-  background: linear-gradient(135deg,
-    rgba(0, 0, 0, 0.1) 0%,
-    rgba(0, 0, 0, 0.05) 50%,
-    rgba(0, 0, 0, 0.1) 100%
-  );
-}
-
-.dark-mode .chat-window::after {
-  opacity: 0.3;
-}
-
 .chat-input-container {
   background: linear-gradient(135deg,
     var(--bg-primary) 0%,

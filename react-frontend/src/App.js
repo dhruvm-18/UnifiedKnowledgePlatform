@@ -1426,206 +1426,206 @@ function App() {
                 </div>
               )}
               <div className="chat-wave-bg" />
-              <div className="floating-input-row anchored-bottom">
-                <div className="floating-input-inner">
-                  <label htmlFor="file-upload" className="media-upload-btn" style={{ cursor: 'pointer', marginRight: 12 }}>
-                    <FaPaperclip size={22} color="#60A5FA" />
-                    <input id="file-upload" type="file" style={{ display: 'none' }} onChange={handleFileUpload} />
-                  </label>
-                  <div
-                    ref={inputRef}
-                    className="chat-input"
-                    contentEditable={true}
-                    placeholder="Type your question..."
-                    onInput={e => {
-                      const div = e.target;
-                      const savedCaretOffset = saveSelection(div);
-                      let plainText = div.innerText; // Get plain text content
+            <div className="floating-input-row anchored-bottom">
+              <div className="floating-input-inner">
+                <label htmlFor="file-upload" className="media-upload-btn" style={{ cursor: 'pointer', marginRight: 12 }}>
+                  <FaPaperclip size={22} color="#60A5FA" />
+                  <input id="file-upload" type="file" style={{ display: 'none' }} onChange={handleFileUpload} />
+                </label>
+                <div
+                  ref={inputRef}
+                  className="chat-input"
+                  contentEditable={true}
+                  placeholder="Type your question..."
+                  onInput={e => {
+                    const div = e.target;
+                    const savedCaretOffset = saveSelection(div);
+                    let plainText = div.innerText; // Get plain text content
 
-                      // Update the input state for send button and other logic that might depend on it
-                      setInput(plainText);
+                    // Update the input state for send button and other logic that might depend on it
+                    setInput(plainText);
 
-                      // Only allow agent mention highlighting and dropdown in General Chat (when isDedicatedChat is false)
-                      const isDedicatedChat = localStorage.getItem('isDedicatedChat') === 'true';
-                      if (!isDedicatedChat) {
-                        // General Chat: allow highlighting and dropdown
-                        // Dynamically build regex for highlighting based on currentAgents for input field
-                        const agentNamesForInputRegex = currentAgents
-                          .filter(agent => agent && typeof agent.fullName === 'string' && agent.fullName.trim() !== '')
-                          .map(agent => agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-                          .sort((a, b) => b.length - a.length) // Sort by length DESC to match longest names first
-                          .join('|');
-                        // Regex: @ followed by any agent name (including spaces), with word boundary or end
-                        const dynamicHighlightRegexInput = new RegExp(`@(${agentNamesForInputRegex})(?=\\b|\\s|$)`, 'g');
+                    // Only allow agent mention highlighting and dropdown in General Chat (when isDedicatedChat is false)
+                    const isDedicatedChat = localStorage.getItem('isDedicatedChat') === 'true';
+                    if (!isDedicatedChat) {
+                      // General Chat: allow highlighting and dropdown
+                      // Dynamically build regex for highlighting based on currentAgents for input field
+                      const agentNamesForInputRegex = currentAgents
+                        .filter(agent => agent && typeof agent.fullName === 'string' && agent.fullName.trim() !== '')
+                        .map(agent => agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                        .sort((a, b) => b.length - a.length) // Sort by length DESC to match longest names first
+                        .join('|');
+                      // Regex: @ followed by any agent name (including spaces), with word boundary or end
+                      const dynamicHighlightRegexInput = new RegExp(`@(${agentNamesForInputRegex})(?=\\b|\\s|$)`, 'g');
 
-                        // Highlight ALL agent mentions in the input, not just the one being typed
-                        let highlightedHtml = plainText.replace(dynamicHighlightRegexInput, '<span class="agent-mention">@$1</span>');
+                      // Highlight ALL agent mentions in the input, not just the one being typed
+                      let highlightedHtml = plainText.replace(dynamicHighlightRegexInput, '<span class="agent-mention">@$1</span>');
 
-                        // Sanitize the HTML before setting it back
-                        const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
-                            ADD_TAGS: ['span'],
-                            ADD_ATTR: ['class']
-                        });
-                        div.innerHTML = cleanHtml;
+                      // Sanitize the HTML before setting it back
+                      const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
+                          ADD_TAGS: ['span'],
+                          ADD_ATTR: ['class']
+                      });
+                      div.innerHTML = cleanHtml;
 
-                        // Dropdown logic for General Chat
-                        if (plainText.includes('@')) {
-                          const lastAtIndex = plainText.lastIndexOf('@');
-                          const mentionPart = plainText.substring(lastAtIndex + 1).trim(); // Get text after last @ and trim whitespace
-                          // Filter against currentAgents for dynamic updates (for dropdown)
-                          const currentFilteredAgents = currentAgents.filter(agent =>
-                            agent && agent.fullName && 
-                            agent.fullName.toLowerCase().startsWith(mentionPart.toLowerCase())
-                          );
-                          setFilteredAgents(currentFilteredAgents);
-                          setShowAgentDropdown(currentFilteredAgents.length > 0);
-                        } else {
-                          setShowAgentDropdown(false);
-                          setFilteredAgents([]);
-                        }
+                      // Dropdown logic for General Chat
+                      if (plainText.includes('@')) {
+                        const lastAtIndex = plainText.lastIndexOf('@');
+                        const mentionPart = plainText.substring(lastAtIndex + 1).trim(); // Get text after last @ and trim whitespace
+                        // Filter against currentAgents for dynamic updates (for dropdown)
+                        const currentFilteredAgents = currentAgents.filter(agent =>
+                          agent && agent.fullName && 
+                          agent.fullName.toLowerCase().startsWith(mentionPart.toLowerCase())
+                        );
+                        setFilteredAgents(currentFilteredAgents);
+                        setShowAgentDropdown(currentFilteredAgents.length > 0);
                       } else {
-                        // Dedicated Chat: no highlighting, no dropdown
-                        div.innerHTML = DOMPurify.sanitize(plainText);
                         setShowAgentDropdown(false);
                         setFilteredAgents([]);
                       }
-                      // Restore cursor position
-                      restoreSelection(div, savedCaretOffset);
-                    }}
-                    onKeyDown={handleInputKeyDown}
-                    disabled={loading}
-                  ></div>
-                  {showAgentDropdown && filteredAgents.length > 0 && (
-                    <div className="agent-dropdown" style={{
-                      position: 'absolute',
-                      bottom: '100%',
-                      left: '0',
-                      backgroundColor: 'var(--bg-primary)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                      maxHeight: '200px',
-                      overflowY: 'auto',
-                      zIndex: 1000,
-                      marginBottom: '8px',
-                      width: '100%'
-                    }}>
-                      {filteredAgents.map(agent => (
-                        <div
-                          key={agent.id}
-                          className="agent-dropdown-item"
-                          onClick={() => {
-                            const div = inputRef.current;
-                            const currentText = div.innerText;
-                            const lastAtIndex = currentText.lastIndexOf('@');
-                            
-                            // Construct the new plain text for the input using agent.fullName
-                            const newPlainText = currentText.substring(0, lastAtIndex) + `@${agent.fullName} `;
-                            
-                            // Calculate the new caret offset
-                            const newCaretOffset = newPlainText.length;
+                    } else {
+                      // Dedicated Chat: no highlighting, no dropdown
+                      div.innerHTML = DOMPurify.sanitize(plainText);
+                      setShowAgentDropdown(false);
+                      setFilteredAgents([]);
+                    }
+                    // Restore cursor position
+                    restoreSelection(div, savedCaretOffset);
+                  }}
+                  onKeyDown={handleInputKeyDown}
+                  disabled={loading}
+                ></div>
+                {showAgentDropdown && filteredAgents.length > 0 && (
+                  <div className="agent-dropdown" style={{
+                    position: 'absolute',
+                    bottom: '100%',
+                    left: '0',
+                    backgroundColor: 'var(--bg-primary)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    zIndex: 1000,
+                    marginBottom: '8px',
+                    width: '100%'
+                  }}>
+                    {filteredAgents.map(agent => (
+                      <div
+                        key={agent.id}
+                        className="agent-dropdown-item"
+                        onClick={() => {
+                          const div = inputRef.current;
+                          const currentText = div.innerText;
+                          const lastAtIndex = currentText.lastIndexOf('@');
+                          
+                          // Construct the new plain text for the input using agent.fullName
+                          const newPlainText = currentText.substring(0, lastAtIndex) + `@${agent.fullName} `;
+                          
+                          // Calculate the new caret offset
+                          const newCaretOffset = newPlainText.length;
 
-                            // Dynamically build regex for highlighting based on the selected agent's full name
-                            const escapedAgentFullName = agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                            const agentMentionRegex = new RegExp(`@${escapedAgentFullName}`, 'gi');
-                            const highlightedHtml = newPlainText.replace(agentMentionRegex, '<span class="agent-mention">$&</span>');
+                          // Dynamically build regex for highlighting based on the selected agent's full name
+                          const escapedAgentFullName = agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                          const agentMentionRegex = new RegExp(`@${escapedAgentFullName}`, 'gi');
+                          const highlightedHtml = newPlainText.replace(agentMentionRegex, '<span class="agent-mention">$&</span>');
 
-                            // Sanitize and set the new HTML content
-                            const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
-                                ADD_TAGS: ['span'],
-                                ADD_ATTR: ['class']
-                            });
-                            div.innerHTML = cleanHtml;
+                          // Sanitize and set the new HTML content
+                          const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
+                              ADD_TAGS: ['span'],
+                              ADD_ATTR: ['class']
+                          });
+                          div.innerHTML = cleanHtml;
 
-                            // Update the input state to keep it in sync for send button etc.
-                            setInput(newPlainText);
-                            
-                            // Restore cursor position
-                            restoreSelection(div, newCaretOffset);
+                          // Update the input state to keep it in sync for send button etc.
+                          setInput(newPlainText);
+                          
+                          // Restore cursor position
+                          restoreSelection(div, newCaretOffset);
 
-                            setShowAgentDropdown(false);
-                            setFilteredAgents([]);
-                            div.focus(); // Ensure the div remains focused
+                          setShowAgentDropdown(false);
+                          setFilteredAgents([]);
+                          div.focus(); // Ensure the div remains focused
 
-                            // NEW: Set active agent details for general chat and persist in localStorage
-                            setActiveAgentDetails(agent);
-                            localStorage.setItem('activeAgentId', agent.id);
-                            if (currentSessionId) {
-                              localStorage.setItem(`sessionAgent_${currentSessionId}`, agent.id);
-                            }
-                          }}
-                          style={{
-                            padding: '8px 12px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            color: 'var(--text-primary)',
-                            ':hover': {
-                              backgroundColor: 'var(--bg-secondary)'
-                            }
-                          }}
-                        >
-                          {agent.iconType && <span>{getIconComponent(agent.iconType)}</span>}
-                          <span>@{agent.fullName}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <button
-                    className="lang-toggle-btn"
-                    type="button"
-                    title={voiceLang === 'en-US' ? 'Switch to Hindi' : 'Switch to English'}
-                    onClick={() => setVoiceLang(voiceLang === 'en-US' ? 'hi-IN' : 'en-US')}
-                    style={{
-                      background: '#007BFF',
-                      color: '#F9FAFB',
-                      border: 'none',
-                      borderRadius: '8px',
-                      width: 44,
-                      height: 44,
-                      marginLeft: 8,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      fontWeight: 700,
-                      fontSize: 16,
-                      transition: 'background 0.2s, color 0.2s',
-                    }}
-                    disabled={loading}
-                  >
-                    {voiceLang === 'en-US' ? 'EN' : 'HI'}
-                  </button>
-                  <button
-                    className="voice-input-btn"
-                    type="button"
-                    title={listening ? 'Stop listening' : 'Speak'}
-                    onClick={listening ? stopListening : startListening}
-                    style={{
-                      border: 'none',
-                      width: 44,
-                      height: 44,
-                      marginLeft: 8,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
-                    }}
-                    disabled={loading}
-                  >
-                    <FaMicrophone size={20} style={{ color: listening ? '#007BFF' : 'var(--text-secondary)' }} />
-                  </button>
-                  <button
-                    className="send-btn send-arrow"
-                    onClick={handleSend}
-                    disabled={loading || !input.trim()}
-                    title="Send"
-                    type="button"
-                  >
-                    <FaPaperPlane color={input.trim() ? '#3B82F6' : '#6B7280'} size={24} />
-                  </button>
+                          // NEW: Set active agent details for general chat and persist in localStorage
+                          setActiveAgentDetails(agent);
+                          localStorage.setItem('activeAgentId', agent.id);
+                          if (currentSessionId) {
+                            localStorage.setItem(`sessionAgent_${currentSessionId}`, agent.id);
+                          }
+                        }}
+                        style={{
+                          padding: '8px 12px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          color: 'var(--text-primary)',
+                          ':hover': {
+                            backgroundColor: 'var(--bg-secondary)'
+                          }
+                        }}
+                      >
+                        {agent.iconType && <span>{getIconComponent(agent.iconType)}</span>}
+                        <span>@{agent.fullName}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button
+                  className="lang-toggle-btn"
+                  type="button"
+                  title={voiceLang === 'en-US' ? 'Switch to Hindi' : 'Switch to English'}
+                  onClick={() => setVoiceLang(voiceLang === 'en-US' ? 'hi-IN' : 'en-US')}
+                  style={{
+                    background: '#007BFF',
+                    color: '#F9FAFB',
+                    border: 'none',
+                    borderRadius: '8px',
+                    width: 44,
+                    height: 44,
+                    marginLeft: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    fontWeight: 700,
+                    fontSize: 16,
+                    transition: 'background 0.2s, color 0.2s',
+                  }}
+                  disabled={loading}
+                >
+                  {voiceLang === 'en-US' ? 'EN' : 'HI'}
+                </button>
+                <button
+                  className="voice-input-btn"
+                  type="button"
+                  title={listening ? 'Stop listening' : 'Speak'}
+                  onClick={listening ? stopListening : startListening}
+                  style={{
+                    border: 'none',
+                    width: 44,
+                    height: 44,
+                    marginLeft: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
+                  }}
+                  disabled={loading}
+                >
+                  <FaMicrophone size={20} style={{ color: listening ? '#007BFF' : 'var(--text-secondary)' }} />
+                </button>
+                <button
+                  className="send-btn send-arrow"
+                  onClick={handleSend}
+                  disabled={loading || !input.trim()}
+                  title="Send"
+                  type="button"
+                >
+                  <FaPaperPlane color={input.trim() ? '#3B82F6' : '#6B7280'} size={24} />
+                </button>
                 </div>
               </div>
             </div>

@@ -39,6 +39,14 @@
       "buttonText": "Start Chat",
       "agentId": "agent_1749794991399",
       "pdfSource": "Aadhar_Act.pdf"
+    },
+    {
+      "iconType": "FaFileAlt",
+      "name": "NSAI Knowledge Agent",
+      "description": "Discover insights from India\u2019s National Strategy for Artificial Intelligence by NITI Aayog. Explore key focus areas like healthcare, agriculture, education, smart mobility, and AI for public infrastructure.",
+      "buttonText": "Start Chat",
+      "agentId": "agent_1749818483673",
+      "pdfSource": "National_Strategy_AI.pdf"
     }
   ]
 }
