@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes, FaPlus, FaFileAlt, FaRobot, FaBook, FaLightbulb, FaFlask, FaUserTie, FaTrash } from 'react-icons/fa';
+import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes, FaPlus, FaFileAlt, FaRobot, FaBook, FaLightbulb, FaFlask, FaUserTie, FaTrash, FaArrowRight } from 'react-icons/fa';
 import { getIconComponent } from '../utils/iconUtils';
 import '../styles/KnowledgeSourcesView.css';
 import { Element, scroller } from 'react-scroll';
@@ -278,29 +278,32 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
             <h3>{agent.name}</h3>
             <p>{agent.description}</p>
             {agent.pdfSource && <p className="source-info">Source: {agent.pdfSource}</p>}
-            <div className="agent-tag">Agent</div>
             <div className="agent-card-footer">
-              <button
-                className="start-chat-btn"
-                onClick={() => onStartChatWithAgent(agent.agentId)}
-              >
-                {agent.buttonText}
-              </button>
-              <div className="tile-actions">
+              <div className="agent-tag">Agent</div>
+              <div className="agent-actions-right">
                 <button
-                  className="edit-button"
-                  onClick={() => handleEditAgent(agent)}
-                  title="Edit Agent"
+                  className="start-chat-btn"
+                  onClick={() => onStartChatWithAgent(agent.agentId)}
                 >
-                  <FaEdit />
+                  <span>{agent.buttonText}</span>
+                  <FaArrowRight className="start-chat-arrow" />
                 </button>
-                <button
-                  className="delete-btn"
-                  onClick={() => handleDeleteAgent(agent.agentId)}
-                  title="Delete Agent"
-                >
-                  <FaTimes />
-                </button>
+                <div className="tile-actions">
+                  <button
+                    className="edit-button"
+                    onClick={() => handleEditAgent(agent)}
+                    title="Edit Agent"
+                  >
+                    <FaEdit />
+                  </button>
+                  <button
+                    className="delete-btn"
+                    onClick={() => handleDeleteAgent(agent.agentId)}
+                    title="Delete Agent"
+                  >
+                    <FaTimes />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
