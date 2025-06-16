@@ -27,6 +27,10 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
   const [agentToEdit, setAgentToEdit] = useState(null); // New state to hold the agent being edited
   const [overlayScrollTop, setOverlayScrollTop] = useState(0); // State to store the scroll position for overlay
   const knowledgeSourcesViewRef = useRef(null); // Ref for the main scrollable div
+  const [newAgentTileLineStartColor, setNewAgentTileLineStartColor] = useState('');
+  const [newAgentTileLineEndColor, setNewAgentTileLineEndColor] = useState('');
+  const [editedTileLineStartColor, setEditedTileLineStartColor] = useState(''); // New state for edit form
+  const [editedTileLineEndColor, setEditedTileLineEndColor] = useState('');     // New state for edit form
 
   const BACKEND_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
@@ -83,6 +87,8 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
     setAgentToEdit(agent);
     setEditedName(agent.name);
     setEditedDescription(agent.description);
+    setEditedTileLineStartColor(agent.tileLineStartColor || ''); // Initialize with existing color or empty string
+    setEditedTileLineEndColor(agent.tileLineEndColor || '');     // Initialize with existing color or empty string
     // Capture current scroll position of the knowledge-sources-view
     if (knowledgeSourcesViewRef.current) {
       setOverlayScrollTop(knowledgeSourcesViewRef.current.scrollTop);
@@ -98,6 +104,8 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
         agentId: agentToEdit.agentId,
         name: editedName,
         description: editedDescription,
+        tileLineStartColor: editedTileLineStartColor,
+        tileLineEndColor: editedTileLineEndColor,
       };
 
       const response = await fetch(`${BACKEND_BASE}/agents/${agentToEdit.agentId}`, {
@@ -166,6 +174,8 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
         buttonText: 'Start Chat',
         agentId: `agent_${Date.now()}`,
         pdfSource: pdfFilename,
+        tileLineStartColor: newAgentTileLineStartColor,
+        tileLineEndColor: newAgentTileLineEndColor,
       };
 
       const agentResponse = await fetch(`${BACKEND_BASE}/agents`, {
@@ -190,6 +200,8 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
         setNewAgentName('');
         setNewAgentDescription('');
         setSelectedPdf(null);
+        setNewAgentTileLineStartColor('');
+        setNewAgentTileLineEndColor('');
         // Close overlay after a delay
         setTimeout(() => {
           setShowNewAgentOverlay(false);
@@ -273,7 +285,14 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
       {/* Agent Cards Grid - Add class when searching */}
       <Element name="knowledge-sources-scroll-container" className={`agent-grid ${isSearching ? 'agent-cards-grid--searching' : ''}`}>
         {filteredAgents.map((agent) => (
-          <div key={agent.agentId} className="agent-card">
+          <div
+            key={agent.agentId}
+            className="agent-card"
+            style={{
+              '--tile-line-gradient-start': agent.tileLineStartColor,
+              '--tile-line-gradient-end': agent.tileLineEndColor,
+            }}
+          >
             <div className="agent-icon">{getIconComponent(agent.iconType)}</div>
             <h3>{agent.name}</h3>
             <p>{agent.description}</p>
@@ -342,6 +361,20 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
                 value={newAgentDescription}
                 onChange={(e) => setNewAgentDescription(e.target.value)}
                 required
+                disabled={isSubmitting}
+              />
+              <input
+                type="text"
+                placeholder="Tile Line Start Color (e.g., #3498db or red)"
+                value={newAgentTileLineStartColor}
+                onChange={(e) => setNewAgentTileLineStartColor(e.target.value)}
+                disabled={isSubmitting}
+              />
+              <input
+                type="text"
+                placeholder="Tile Line End Color (e.g., #8e44ad or blue)"
+                value={newAgentTileLineEndColor}
+                onChange={(e) => setNewAgentTileLineEndColor(e.target.value)}
                 disabled={isSubmitting}
               />
               <div className="icon-selection-container">
@@ -426,6 +459,20 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
                 value={editedDescription}
                 onChange={(e) => setEditedDescription(e.target.value)}
                 required
+                disabled={isSubmitting}
+              />
+              <input
+                type="text"
+                placeholder="Tile Line Start Color (e.g., #3498db or red)"
+                value={editedTileLineStartColor}
+                onChange={(e) => setEditedTileLineStartColor(e.target.value)}
+                disabled={isSubmitting}
+              />
+              <input
+                type="text"
+                placeholder="Tile Line End Color (e.g., #8e44ad or blue)"
+                value={editedTileLineEndColor}
+                onChange={(e) => setEditedTileLineEndColor(e.target.value)}
                 disabled={isSubmitting}
               />
               <div className="overlay-actions">

@@ -6,7 +6,9 @@
       "description": "Get insights from the Digital Personal Data Protection Act. Ask about user rights, data fiduciaries, and obligations.",
       "buttonText": "Start Chat",
       "agentId": "DPDP",
-      "pdfSource": "DPDP_act.pdf"
+      "pdfSource": "DPDP_act.pdf",
+      "tileLineStartColor": "Red",
+      "tileLineEndColor": "Black"
     },
     {
       "iconType": "FaGavel",

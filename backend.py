@@ -49,6 +49,9 @@ from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
+from elevenlabs import play # Keep play for local playback if needed
+from elevenlabs.client import ElevenLabs # Import the client class
+import requests
 
 # Suppress Faiss GPU warnings
 warnings.filterwarnings("ignore", message=".*GpuIndexIVFFlat.*")
@@ -101,8 +104,16 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 load_dotenv()
 
 # Configure Gemini API
-GOOGLE_API_KEY = "AIzaSyB1whZlck89xDwjawOBsqPCpP8-V-oDwFM"  # Using the provided API key
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyB1whZlck89xDwjawOBsqPCpP8-V-oDwFM") # Using the provided API key
 genai.configure(api_key=GOOGLE_API_KEY)
+
+# Configure ElevenLabs API
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "sk_3308db3a66a549976266cbdeb9387297390112d4d18158a6")
+# Initialize ElevenLabs client
+elevenlabs_client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
+
+# Configure Sarvam API
+SARVAM_API_KEY = os.getenv("SARVAM_API_KEY", "560098fc-7d8b-4ede-bf46-ffebae088e30") # Using the provided API key
 
 # Initialize the LLM
 llm = ChatGoogleGenerativeAI(
@@ -407,6 +418,10 @@ def format_response_with_sources(response, sources):
 
 def create_structured_prompt(user_message, context, doc_id=None, DOCUMENT_HEADING=None, USER_NAME=None, AGENT_ID=None):
     """Create a structured prompt using the instruction constants"""
+    # Check if the message contains Hindi characters
+    hindi_pattern = re.compile(r'[\u0900-\u097F]')
+    is_hindi = bool(hindi_pattern.search(user_message))
+    
     # Check if it's a pure greeting vs a question with greeting
     greeting_keywords = ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening']
     question_keywords = ['what', 'why', 'how', 'when', 'where', 'who', 'which', 'can', 'could', 'would', 'should', 'is', 'are', 'do', 'does', 'did']
@@ -443,8 +458,14 @@ def create_structured_prompt(user_message, context, doc_id=None, DOCUMENT_HEADIN
             selected_instruction = CORE_INSTRUCTION
 
     # Create the base prompt with core instructions and formatting guidelines
+    language_instruction = """
+IMPORTANT: Respond in the same language as the user's question. If the question is in Hindi, respond in Hindi. If the question is in English, respond in English.
+""" if is_hindi else ""
+
     base_prompt = f"""
 {CORE_INSTRUCTION}
+
+{language_instruction}
 
 You are an AI assistant designed to answer questions based on the provided context.
 Carefully read the following context and answer the user's question directly and concisely.
@@ -617,6 +638,10 @@ def add_message(session_id):
     
     logger.info(f"Processing user message: {user_message} for agent: {agent_id}, pdfSource: {pdf_source_from_frontend}")
     
+    # Check if the message contains Hindi characters
+    hindi_pattern = re.compile(r'[\u0900-\u097F]')
+    is_hindi = bool(hindi_pattern.search(user_message))
+    
     # Determine the target PDF source based on agent_id or frontend provided pdfSource
     target_pdf_source = None
 
@@ -685,10 +710,47 @@ def add_message(session_id):
     )
     
     # Generate response
-    response = chain.invoke({
-        "context": escaped_context,
-        "user_message": user_message
-    })
+    if is_hindi:
+        # Use Sarvam API for Hindi responses
+        try:
+            # Make request to Sarvam API
+            sarvam_response = requests.post(
+                'https://api.sarvam.ai/v1/chat/completions',
+                headers={
+                    'Content-Type': 'application/json',
+                    'Authorization': f'Bearer {SARVAM_API_KEY}'
+                },
+                json={
+                    'model': 'sarvam-m',
+                    'messages': [
+                        {
+                            'role': 'system',
+                            'content': f'You are a helpful AI assistant. Answer based on this context: {escaped_context}'
+                        },
+                        {
+                            'role': 'user',
+                            'content': user_message
+                        }
+                    ],
+                    'temperature': 0.7
+                }
+            )
+            
+            if sarvam_response.status_code == 200:
+                response = sarvam_response.json()['choices'][0]['message']['content']
+            else:
+                logger.error(f"Sarvam API error: {sarvam_response.text}")
+                response = "मुझे खेद है, लेकिन मैं इस समय आपके प्रश्न का उत्तर नहीं दे पा रहा हूं। कृपया कुछ देर बाद पुनः प्रयास करें।"
+        except Exception as e:
+            logger.error(f"Error calling Sarvam API: {e}")
+            response = "मुझे खेद है, लेकिन मैं इस समय आपके प्रश्न का उत्तर नहीं दे पा रहा हूं। कृपया कुछ देर बाद पुनः प्रयास करें।"
+    else:
+        # Use Gemini for English responses
+        response = chain.invoke({
+            "context": escaped_context,
+            "user_message": user_message
+        })
+    
     logger.info(f"Raw model response (first 500 chars): {response[:500]}...")
     
     # Format the response with source information
@@ -1031,6 +1093,77 @@ def delete_agent(agent_id):
     except Exception as e:
         logger.error(f"Error deleting agent {agent_id}: {str(e)}")
         return jsonify({'error': f'Error deleting agent: {str(e)}'}), 500
+
+@app.route('/elevenlabs/tts', methods=['POST', 'OPTIONS'])
+def elevenlabs_tts():
+    if request.method == 'OPTIONS':
+        return '', 200
+    try:
+        data = request.json
+        text = data.get('text')
+        voice_lang = data.get('voiceLang', 'en-US') # Get the voice language from the request
+        
+        # Set voice_id based on language
+        if voice_lang == 'hi-IN':
+            voice_id ='TXb68m09B5U6BTh8UMd5'# Hindi voice ID
+        else:
+            voice_id = 'NFG5qt843uXKj4pFvR7C'  # Default English voice ID (Adam) for other languages
+
+        if not text:
+            return jsonify({'error': 'No text provided'}), 400
+
+        # Use elevenlabs_client to generate audio
+        audio_stream = elevenlabs_client.text_to_speech.stream(
+            text=text,
+            voice_id=voice_id,
+            model_id="eleven_multilingual_v2", # Using a multilingual model
+        )
+
+        def generate_audio():
+            for chunk in audio_stream:
+                yield chunk
+
+        response = app.response_class(generate_audio(), mimetype='audio/mpeg')
+        response.headers['Content-Disposition'] = 'inline; filename="speech.mp3"'
+        response.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response
+
+    except Exception as e:
+        logger.error(f"ElevenLabs TTS error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/elevenlabs/stt', methods=['POST', 'OPTIONS'])
+def elevenlabs_stt():
+    if request.method == 'OPTIONS':
+        return '', 200
+    try:
+        if 'audio' not in request.files:
+            return jsonify({'error': 'No audio file provided'}), 400
+
+        audio_file = request.files['audio']
+        audio_data = audio_file.read()
+
+        # Placeholder for actual ElevenLabs STT integration
+        # The ElevenLabs Python SDK primarily focuses on TTS.
+        # For STT, you might need to use a different library or make a direct API call.
+        # Example of how you might call their STT if a client method existed:
+        # transcript = elevenlabs_client.speech_to_text.transcribe(audio_data)
+
+        transcript = "This is a placeholder for transcribed text from ElevenLabs STT."
+
+        response = jsonify({'transcript': transcript})
+        response.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response
+
+    except Exception as e:
+        logger.error(f"ElevenLabs STT error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("Starting Flask app...")

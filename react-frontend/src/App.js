@@ -247,6 +247,7 @@ function App() {
   const inputRef = useRef(null);
   const [listening, setListening] = useState(false);
   const recognitionRef = useRef(null);
+  const audioRef = useRef(null); // New ref to hold the audio object
   const [voiceLang, setVoiceLang] = useState('en-US');
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
@@ -262,6 +263,9 @@ function App() {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [currentView, setCurrentView] = useState('home');
   const [showWelcome, setShowWelcome] = useState(true);
+  const [defaultAssistantDisplayName, setDefaultAssistantDisplayName] = useState(localStorage.getItem('defaultAssistantDisplayName') || 'AI Assistant');
+  const [editingAssistantName, setEditingAssistantName] = useState(false);
+  const assistantNameInputRef = useRef(null);
 
   // State for PDF viewer
   const [viewedPdfUrl, setViewedPdfUrl] = useState(null);
@@ -272,6 +276,10 @@ function App() {
   const [filteredAgents, setFilteredAgents] = useState([]);
   const [chatHistory, setChatHistory] = useState([]);
   const [activeAgentDetails, setActiveAgentDetails] = useState(null);
+
+  // State for MediaRecorder
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [audioChunks, setAudioChunks] = useState([]);
 
   // Initialize currentAgents by fetching from backend on mount
   const [currentAgents, setCurrentAgents] = useState([]);
@@ -441,6 +449,12 @@ function App() {
   }, [editingUserName]);
 
   useEffect(() => {
+    if (editingAssistantName && assistantNameInputRef.current) {
+      assistantNameInputRef.current.focus();
+    }
+  }, [editingAssistantName]);
+
+  useEffect(() => {
     const handleDocumentClick = (e) => {
       if (showUserDetailsMenu) {
         const leftSidebar = document.querySelector('.left-sidebar');
@@ -539,116 +553,63 @@ function App() {
     }
   }, [currentSessionId]);
 
-  const handleSpeak = (text) => {
+  const handleSpeak = async (text) => {
     console.log('handleSpeak called with text:', text);
-    if (!('speechSynthesis' in window)) {
-      console.error('Speech synthesis not supported');
-      return;
-    }
-
-    window.speechSynthesis.cancel();
     setIsSpeaking(true);
 
-    const voices = window.speechSynthesis.getVoices();
-    console.log('Fetched voices:', voices);
+    // Stop any currently playing audio before starting a new one
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
 
-    const findHindiVoice = (voices) => {
-      return voices.find(v => v.lang === 'hi-IN') ||
-             voices.find(v => v.lang.includes('hi')) ||
-             voices.find(v => v.name.toLowerCase().includes('hindi'));
-    };
+    try {
+      const response = await fetch(`${BACKEND_BASE}/elevenlabs/tts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: text, voiceLang: voiceLang }),
+      });
 
-    const hindiVoice = findHindiVoice(voices);
-    const englishVoice = voices.find(v => v.lang === 'en-US') || voices.find(v => v.lang.includes('en'));
-
-    console.log('Text received for speaking:', text);
-    let sentences = text.match(/[^.!?\n।]+[.!?\n।]?/g) || [text];
-    sentences = sentences.filter(sentence => sentence.trim().length > 0);
-    console.log('Sentences after splitting:', sentences);
-
-    const speak = async () => {
-      for (let i = 0; i < sentences.length; i++) {
-        const sentence = sentences[i].trim();
-        if (!sentence) continue;
-
-        const utter = new window.SpeechSynthesisUtterance(sentence);
-
-        const isHindi = /[\u0900-\u097F]/.test(sentence) || sentence.startsWith(ASSISTANT_PREFIX_HI);
-
-        if (isHindi) {
-        utter.lang = 'hi-IN';
-          if (hindiVoice) {
-            utter.voice = hindiVoice;
-            utter.rate = 0.9;
-          } else if (englishVoice) {
-            utter.voice = englishVoice;
-            utter.lang = 'en-US';
-            utter.rate = 1.0;
-          } else if (voices.length > 0) {
-            utter.voice = voices[0];
-            utter.lang = voices[0].lang || 'en-US';
-          }
-          utter.pitch = 1.0;
-      } else {
-        utter.lang = 'en-US';
-          if (englishVoice) {
-            utter.voice = englishVoice;
-          } else if (hindiVoice) {
-            utter.voice = hindiVoice;
-            utter.lang = 'hi-IN';
-            utter.rate = 0.9;
-          } else if (voices.length > 0) {
-            utter.voice = voices[0];
-            utter.lang = voices[0].lang || 'en-US';
-          }
-          utter.rate = 1.0;
-          utter.pitch = 1.0;
-        }
-
-        await new Promise((resolve, reject) => {
-          utter.onstart = () => {
-            console.log('Utterance started (' + (i + 1) + '/' + sentences.length + '):', utter.text.substring(0, 50) + '...');
-          };
-      utter.onend = () => {
-            console.log('Utterance ended (' + (i + 1) + '/' + sentences.length + '):', utter.text.substring(0, 50) + '...');
-            if (i === sentences.length - 1) {
-              setIsSpeaking(false);
-            }
-            resolve();
-      };
-          utter.onerror = (event) => {
-            console.error('Speech synthesis error (' + (i + 1) + '/' + sentences.length + '):', event, 'for text:', utter.text.substring(0, 50) + '...');
-        setIsSpeaking(false);
-            reject(new Error('Speech synthesis error'));
-      };
-           utter.onpause = () => {
-             console.log('Utterance paused (' + (i + 1) + '/' + sentences.length + '):', utter.text.substring(0, 50) + '...');
-           };
-           utter.onresume = () => {
-             console.log('Utterance resumed (' + (i + 1) + '/' + sentences.length + '):', utter.text.substring(0, 50) + '...');
-           };
-
-          try {
-      window.speechSynthesis.speak(utter);
-            console.log('Speech synthesis speak() called for utterance (' + (i + 1) + '/' + sentences.length + '):', utter.text.substring(0, 50) + '...');
-          } catch (e) {
-            console.error('Synchronous error during speechSynthesis.speak:', e, 'for text:', utter.text.substring(0, 50) + '...');
-            setIsSpeaking(false);
-            reject(e);
-          }
-        });
+      if (!response.ok) {
+        throw new Error(`Failed to fetch audio: ${response.statusText}`);
       }
-    };
 
-    speak().catch(error => {
-      console.error('Speech synthesis sequence stopped due to error:', error);
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio; // Store the audio object in the ref
+
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+        audioRef.current = null; // Clear the ref when audio ends
+      };
+
+      audio.onerror = (e) => {
+        console.error('Audio playback error:', e);
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
+        audioRef.current = null; // Clear the ref on error
+      };
+
+      audio.play();
+
+    } catch (error) {
+      console.error('Error in handleSpeak:', error);
       setIsSpeaking(false);
-    });
+      if (audioRef.current) {
+        audioRef.current.pause(); // Ensure audio is stopped on error
+        audioRef.current = null;
+      }
+    }
   };
 
   const handleStopSpeak = () => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null; // Clear the ref after stopping
       setIsSpeaking(false);
     }
   };
@@ -968,55 +929,80 @@ function App() {
     setEditingUserName(false);
   };
 
-  // Voice input functionality
-  const { interimTranscript, setInterimTranscript } = useState('');
-  const { startListening, stopListening } = useSpeechRecognition({ lang: voiceLang });
-  const { speak, cancelSpeak } = useSpeechSynthesis();
-
-  useEffect(() => {
-    if ('webkitSpeechRecognition' in window) {
-      const sr = new window.webkitSpeechRecognition();
-      sr.continuous = true;
-      sr.interimResults = true;
-      sr.lang = voiceLang; // Use the selected voice language
-
-      sr.onstart = () => {
-        setListening(true);
-        console.log('Speech recognition started');
-      };
-
-      sr.onresult = (event) => {
-        let finalTranscript = '';
-        let currentInterim = '';
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
-          } else {
-            currentInterim += event.results[i][0].transcript;
-          }
-        }
-        setInput(prevInput => prevInput + finalTranscript); // Append final transcript to current input
-        inputRef.current.innerText = inputRef.current.innerText + finalTranscript; // Update contenteditable div
-        setInterimTranscript(currentInterim);
-        restoreSelection(inputRef.current, inputRef.current.innerText.length);
-      };
-
-      sr.onerror = (event) => {
-        console.error('Speech recognition error:', event);
-        setListening(false);
-        setInterimTranscript('');
-      };
-
-      sr.onend = () => {
-        setListening(false);
-        setInterimTranscript('');
-        console.log('Speech recognition ended');
-      };
-      recognitionRef.current = sr;
-    } else {
-      console.warn('webkitSpeechRecognition not available');
+  const handleSaveDefaultAssistantDisplayName = () => {
+    if (defaultAssistantDisplayName.trim() === '') {
+      setDefaultAssistantDisplayName('AI Assistant');
     }
-  }, [voiceLang]); // Re-initialize if voiceLang changes
+    localStorage.setItem('defaultAssistantDisplayName', defaultAssistantDisplayName);
+    setEditingAssistantName(false);
+  };
+
+  const handleCancelDefaultAssistantDisplayNameEdit = () => {
+    setDefaultAssistantDisplayName(localStorage.getItem('defaultAssistantDisplayName') || 'AI Assistant');
+    setEditingAssistantName(false);
+  };
+
+  // Voice input functionality
+  const startListening = async () => {
+    if (listening) return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      setMediaRecorder(recorder);
+      setAudioChunks([]);
+
+      recorder.ondataavailable = (event) => {
+        setAudioChunks((prev) => [...prev, event.data]);
+      };
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // Adjust MIME type if necessary
+        setAudioChunks([]); // Clear chunks after stopping
+
+        const formData = new FormData();
+        formData.append('audio', audioBlob, 'recording.webm');
+
+        try {
+          const response = await fetch(`${BACKEND_BASE}/elevenlabs/stt`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!response.ok) {
+            throw new Error(`STT failed: ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          setInput(data.transcript); // Set the transcribed text to input
+          if (inputRef.current) {
+            inputRef.current.innerText = data.transcript;
+            restoreSelection(inputRef.current, data.transcript.length);
+          }
+        } catch (error) {
+          console.error('Error sending audio for STT:', error);
+        } finally {
+          setListening(false);
+        }
+        stream.getTracks().forEach(track => track.stop()); // Stop microphone stream
+      };
+
+      recorder.start();
+      setListening(true);
+      console.log('MediaRecorder started');
+    } catch (error) {
+      console.error('Error starting microphone:', error);
+      setListening(false);
+    }
+  };
+
+  const stopListening = () => {
+    if (mediaRecorder && listening) {
+      mediaRecorder.stop();
+      console.log('MediaRecorder stopped');
+    }
+  };
+
+  // Removed the useEffect for webkitSpeechRecognition as it's no longer used.
 
   const handleAgentDataChange = useCallback((updatedAgentsData) => {
     // This function is called by KnowledgeSourcesView when agents are updated (added, edited, deleted)
@@ -1251,12 +1237,32 @@ function App() {
                 ) : (
                   <div className="user-name">{userName}</div>
                 )}
+                {editingAssistantName ? (
+                  <input
+                    type="text"
+                    value={defaultAssistantDisplayName}
+                    onChange={(e) => setDefaultAssistantDisplayName(e.target.value)}
+                    onBlur={handleSaveDefaultAssistantDisplayName}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleSaveDefaultAssistantDisplayName();
+                      } else if (e.key === 'Escape') {
+                        handleCancelDefaultAssistantDisplayNameEdit();
+                      }
+                    }}
+                    className="user-name-input"
+                    ref={assistantNameInputRef}
+                  />
+                ) : (
+                  <div className="user-name assistant-name-display">AI Assistant: {defaultAssistantDisplayName}</div>
+                )}
                 <div className="user-email">dhruv.mendiratta4@gmail.com</div>
               </div>
               {showUserDetailsMenu && (
                 <div className="user-details-menu">
                   <div className="menu-item" onClick={handleChangeAvatarClick}>Change avatar</div>
                   <div className="menu-item" onClick={handleChangeNameClick}>Change name</div>
+                  <div className="menu-item" onClick={() => setEditingAssistantName(true)}>Change Assistant Name</div>
                   <div className="menu-item" onClick={() => console.log('Change Password clicked')}>Change password</div>
                   <div className="menu-item" onClick={() => console.log('Log Out clicked')}>Log out</div>
                 </div>
@@ -1355,6 +1361,12 @@ function App() {
                                 <div className="agent-info-display">
                                   {msg.agentIcon && <span className="agent-info-icon">{getIconComponent(msg.agentIcon)}</span>}
                                   <span className="agent-info-name">{msg.agentName}</span>
+                                </div>
+                              )}
+                              {!msg.agentName && (
+                                <div className="agent-info-display">
+                                    <span className="agent-info-icon"><img src="/unified-knowledge-platform.png" alt="avatar" style={{ width: '24px', height: '24px', borderRadius: '50%' }} /></span>
+                                    <span className="agent-info-name">{defaultAssistantDisplayName}</span>
                                 </div>
                               )}
                               {(() => {

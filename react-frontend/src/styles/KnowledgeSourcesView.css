@@ -136,7 +136,7 @@
   left: 0;
   width: 100%;
   height: 8px;
-  background: linear-gradient(90deg, #3498db, #8e44ad);
+  background: linear-gradient(90deg, var(--tile-line-gradient-start, #3498db), var(--tile-line-gradient-end, #8e44ad));
   transition: all 0.3s ease;
 }
 
@@ -883,7 +883,7 @@
 }
 
 .dark-mode .agent-card::before {
-  background: linear-gradient(90deg, #5e35b1, #7b1fa2); /* Adjusted gradient for dark mode */
+  background: linear-gradient(90deg, var(--tile-line-gradient-start, #5e35b1), var(--tile-line-gradient-end, #7b1fa2));
 }
 
 .dark-mode .agent-card:hover {
