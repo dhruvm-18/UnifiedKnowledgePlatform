@@ -7,11 +7,11 @@
   --sidebar-ball3: rgba(100, 150, 255, 0.15);
 }
 .dark-mode {
-  --sidebar-bg1: #232b3a;
-  --sidebar-bg2: #1a2232;
-  --sidebar-ball1: rgba(80, 120, 200, 0.18);
-  --sidebar-ball2: rgba(80, 120, 200, 0.13);
-  --sidebar-ball3: rgba(80, 120, 200, 0.10);
+  --sidebar-bg1: #2c2c2c;
+  --sidebar-bg2: #3a3a3a;
+  --sidebar-ball1: rgba(156, 39, 176, 0.18);
+  --sidebar-ball2: rgba(156, 39, 176, 0.13);
+  --sidebar-ball3: rgba(156, 39, 176, 0.10);
 }
 
 .left-sidebar,
@@ -52,8 +52,8 @@
 }
 
 .dark-mode .chat-input-container {
-  background: #232b3a;
-  border-top: 1px solid #232b3a;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
 }
 
 .chat-input-container::before {
@@ -71,11 +71,11 @@
 
 /* Dark theme specific adjustments */
 .dark-mode {
-  --bg-primary: #1F2937;
-  --bg-secondary: #374151;
-  --bg-tertiary: #4B5563;
-  --accent-color: #60A5FA;
-  --border-color: #374151;
+  --bg-primary: #2c2c2c;
+  --bg-secondary: #3a3a3a;
+  --bg-tertiary: #4a4a4a;
+  --accent-color: #9c27b0;
+  --border-color: #555;
 }
 
 .theme-toggle {

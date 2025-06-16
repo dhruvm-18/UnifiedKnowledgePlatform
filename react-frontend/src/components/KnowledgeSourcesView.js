@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes, FaPlus, FaFileAlt } from 'react-icons/fa';
+import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes, FaPlus, FaFileAlt, FaRobot, FaBook, FaLightbulb, FaFlask, FaUserTie, FaTrash } from 'react-icons/fa';
 import { getIconComponent } from '../utils/iconUtils';
+import '../styles/KnowledgeSourcesView.css';
+import { Element, scroller } from 'react-scroll';
 
 // KNOWLEDGE_AGENT_CONST will now serve as a default for _initial_ setup if backend is empty,
 // but agents will be fetched from backend for actual state.
@@ -19,6 +21,10 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
   const [selectedPdf, setSelectedPdf] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [newAgentIconType, setNewAgentIconType] = useState('FaFileAlt'); // New state for icon type
+  const [showNewAgentOverlay, setShowNewAgentOverlay] = useState(false);
+  const [overlaySuccessMessage, setOverlaySuccessMessage] = useState('');
+  const [agentToEdit, setAgentToEdit] = useState(null); // New state to hold the agent being edited
 
   const BACKEND_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
@@ -54,21 +60,24 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
     agent.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleEdit = (agent) => {
-    setEditingAgentId(agent.agentId);
+  const handleEditAgent = (agent) => {
+    setAgentToEdit(agent);
     setEditedName(agent.name);
     setEditedDescription(agent.description);
   };
 
-  const handleSave = async (agentId) => {
+  const handleSaveEdit = async () => {
+    if (!agentToEdit) return; // Should not happen if button is correctly rendered
+
+    setIsSubmitting(true);
     try {
       const updatedAgent = {
-        agentId: agentId,
+        agentId: agentToEdit.agentId,
         name: editedName,
         description: editedDescription,
       };
 
-      const response = await fetch(`${BACKEND_BASE}/agents/${agentId}`, {
+      const response = await fetch(`${BACKEND_BASE}/agents/${agentToEdit.agentId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -81,15 +90,17 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
         throw new Error(errorData.error || 'Failed to update agent');
       }
       fetchAgents(); // Re-fetch agents to update state with latest data from backend
-      setEditingAgentId(null);
+      setAgentToEdit(null); // Close the edit overlay
     } catch (error) {
       console.error('Error saving agent:', error);
       alert(`Failed to save agent: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleCancelEdit = () => {
-    setEditingAgentId(null);
+    setAgentToEdit(null); // Close the edit overlay
   };
 
   const handleNewAgentSubmit = async (e) => {
@@ -100,7 +111,7 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
     }
 
     setIsSubmitting(true);
-    setSuccessMessage('');
+    setOverlaySuccessMessage('');
 
     try {
       const formData = new FormData();
@@ -126,7 +137,7 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
 
       // 2. Create new agent via backend API
       const newAgentPayload = {
-        iconType: 'FaFileAlt', // Default icon for new agents
+        iconType: newAgentIconType,
         name: newAgentName,
         description: newAgentDescription,
         buttonText: 'Start Chat',
@@ -150,19 +161,17 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
       const agentData = await agentResponse.json();
       
       if (agentData.success) {
-        // Update the agents list by re-fetching from backend
         fetchAgents();
-        setSuccessMessage('Agent created successfully! ✓');
+        setOverlaySuccessMessage('Agent created successfully! ✓');
         // Reset form after successful creation
-        setShowNewAgentForm(false);
         setNewAgentName('');
         setNewAgentDescription('');
         setSelectedPdf(null);
-        // Force another agent list refresh after closing the form
+        // Close overlay after a delay
         setTimeout(() => {
-          fetchAgents();
-          setSuccessMessage('');
-        }, 300);
+          setShowNewAgentOverlay(false);
+          setOverlaySuccessMessage('');
+        }, 2000);
       } else {
         throw new Error(agentData.error || 'Failed to create agent');
       }
@@ -204,9 +213,16 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
   };
 
   return (
-    <div className="knowledge-sources-container">
-      {/* Add the main heading here */}
-      <h2>Knowledge Sources</h2>
+    <div className="knowledge-sources-view">
+      <div className="knowledge-sources-header">
+        <h1>Knowledge Sources</h1>
+        <button 
+          className="new-agent-header-btn"
+          onClick={() => setShowNewAgentOverlay(true)}
+        >
+          <FaPlus /> New Agent
+        </button>
+      </div>
       <p className="knowledge-sources-description">
         Browse available knowledge sources, each representing an AI Agent trained on specific datasets.
         Click 'Start Chat' to begin a conversation with an agent and explore its knowledge.
@@ -219,36 +235,79 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
       )}
 
       {/* Search Input with Icon */}
-      <div className="search-panel">
-        <FaSearch className="search-icon" /> {/* Add the search icon */}
-        <input
-          type="text"
-          placeholder="Search agents..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="agent-search-input"
-        />
+      <div className="search-bar">
+        <div className="search-input-container">
+          <FaSearch className="search-icon" />
+          <input
+            type="text"
+            placeholder="Search agents..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
       </div>
 
       {/* Agent Cards Grid - Add class when searching */}
-      <div className={`agent-cards-grid ${isSearching ? 'agent-cards-grid--searching' : ''}`}>
-        {!showNewAgentForm && (
-          <div className="agent-card new-agent-card" onClick={() => setShowNewAgentForm(true)}>
-            <div className="agent-icon"><FaPlus /></div>
-            <h3 className="agent-name">New Knowledge Agent</h3>
-            <p className="agent-description">Design and deploy your own AI-powered knowledge agent by uploading custom documents like PDFs.</p>
+      <Element name="knowledge-sources-scroll-container" className={`agent-grid ${isSearching ? 'agent-cards-grid--searching' : ''}`}>
+        {filteredAgents.map((agent) => (
+          <div key={agent.agentId} className="agent-card">
+            <div className="agent-icon">{getIconComponent(agent.iconType)}</div>
+            <h3>{agent.name}</h3>
+            <p>{agent.description}</p>
+            {agent.pdfSource && <p className="source-info">Source: {agent.pdfSource}</p>}
+            <div className="agent-tag">Agent</div>
+            <div className="agent-card-footer">
+              <button
+                className="start-chat-btn"
+                onClick={() => onStartChatWithAgent(agent.agentId)}
+              >
+                {agent.buttonText}
+              </button>
+              <div className="tile-actions">
+                <button
+                  className="edit-button"
+                  onClick={() => handleEditAgent(agent)}
+                  title="Edit Agent"
+                >
+                  <FaEdit />
+                </button>
+                <button
+                  className="delete-btn"
+                  onClick={() => handleDeleteAgent(agent.agentId)}
+                  title="Delete Agent"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+            </div>
           </div>
+        ))}
+        {filteredAgents.length === 0 && (
+          <p>No agents found matching your search.</p>
         )}
+      </Element>
 
-        {showNewAgentForm && (
-          <div className="agent-card new-agent-form">
+      {/* New Agent Overlay */}
+      {showNewAgentOverlay && (
+        <div className="new-agent-overlay">
+          <div className="new-agent-overlay-content">
+            <div className="overlay-header">
+              <h2>Create New Agent</h2>
+              <button className="close-overlay-btn" onClick={() => setShowNewAgentOverlay(false)}>
+                <FaTimes />
+              </button>
+            </div>
+            {overlaySuccessMessage && (
+              <div className="overlay-success-message">
+                {overlaySuccessMessage}
+              </div>
+            )}
             <form onSubmit={handleNewAgentSubmit}>
               <input
                 type="text"
                 placeholder="Agent Name"
                 value={newAgentName}
                 onChange={(e) => setNewAgentName(e.target.value)}
-                className="agent-edit-name-input"
                 required
                 disabled={isSubmitting}
               />
@@ -256,33 +315,59 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
                 placeholder="Agent Description"
                 value={newAgentDescription}
                 onChange={(e) => setNewAgentDescription(e.target.value)}
-                className="agent-edit-description-input"
                 required
                 disabled={isSubmitting}
               />
+              <div className="icon-selection-container">
+                <label htmlFor="icon-select" className="icon-select-label">Choose an Icon:</label>
+                <select
+                  id="icon-select"
+                  value={newAgentIconType}
+                  onChange={(e) => setNewAgentIconType(e.target.value)}
+                  disabled={isSubmitting}
+                >
+                  <option value="FaFileAlt">Document (Default)</option>
+                  <option value="FaShieldAlt">Shield</option>
+                  <option value="FaGavel">Gavel</option>
+                  <option value="FaRobot">Robot</option>
+                  <option value="FaBook">Book</option>
+                  <option value="FaLightbulb">Lightbulb</option>
+                  <option value="FaFlask">Flask</option>
+                  <option value="FaUserTie">User Tie</option>
+                </select>
+                <div className="selected-icon-preview">
+                  {getIconComponent(newAgentIconType, { size: '24px' })} 
+                </div>
+              </div>
               <div className="pdf-upload-section">
                 <input
                   type="file"
                   accept=".pdf"
                   onChange={handlePdfChange}
-                  className="pdf-upload-input"
+                  id="pdf-upload"
+                  className="pdf-upload-input-hidden"
                   required
                   disabled={isSubmitting}
                 />
-                {selectedPdf && <p className="selected-pdf">Selected: {selectedPdf.name}</p>}
+                <label htmlFor="pdf-upload" className="file-upload-button">
+                  <FaFileAlt /> Choose File
+                </label>
+                <span className="file-chosen-text">
+                  {selectedPdf ? selectedPdf.name : 'No file chosen'}
+                </span>
               </div>
-              <div className="edit-controls">
+              <div className="overlay-actions">
                 <button 
                   type="submit" 
-                  className="save-button"
+                  className="create-agent-btn"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Creating...' : <><FaSave /> Create Agent</>}
                 </button>
                 <button 
                   type="button" 
-                  onClick={() => setShowNewAgentForm(false)} 
-                  className="cancel-button"
+                  onClick={() => setShowNewAgentOverlay(false)} 
+                  className="cancel-btn"
                   disabled={isSubmitting}
                 >
                   <FaTimes /> Cancel
@@ -290,63 +375,54 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
               </div>
             </form>
           </div>
-        )}
+        </div>
+      )}
 
-        {filteredAgents.map((agent) => (
-          <div key={agent.agentId} className="agent-card">
-            <div className="agent-icon">{getIconComponent(agent.iconType)}</div>
-            {editingAgentId === agent.agentId ? (
-              <div className="agent-edit-fields">
-                <input
-                  type="text"
-                  value={editedName}
-                  onChange={(e) => setEditedName(e.target.value)}
-                  className="agent-edit-name-input"
-                />
-                <textarea
-                  value={editedDescription}
-                  onChange={(e) => setEditedDescription(e.target.value)}
-                  className="agent-edit-description-input"
-                />
-                <div className="edit-controls">
-                  <button onClick={() => handleSave(agent.agentId)}><FaSave /> Save</button>
-                  <button onClick={handleCancelEdit}><FaTimes /> Cancel</button>
-                </div>
+      {/* Edit Agent Overlay */}
+      {agentToEdit && (
+        <div className="new-agent-overlay">
+          <div className="new-agent-overlay-content">
+            <div className="overlay-header">
+              <h2>Edit Agent</h2>
+              <button className="close-overlay-btn" onClick={handleCancelEdit}>
+                <FaTimes />
+              </button>
+            </div>
+            <form onSubmit={(e) => { e.preventDefault(); handleSaveEdit(); }}>
+              <input
+                type="text"
+                value={editedName}
+                onChange={(e) => setEditedName(e.target.value)}
+                required
+                disabled={isSubmitting}
+              />
+              <textarea
+                value={editedDescription}
+                onChange={(e) => setEditedDescription(e.target.value)}
+                required
+                disabled={isSubmitting}
+              />
+              <div className="overlay-actions">
+                <button 
+                  type="submit" 
+                  className="create-agent-btn"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Saving...' : <><FaSave /> Save</>}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={handleCancelEdit} 
+                  className="cancel-btn"
+                  disabled={isSubmitting}
+                >
+                  <FaTimes /> Cancel
+                </button>
               </div>
-            ) : (
-              <>
-                <h3 className="agent-name">{agent.name}</h3>
-                <p className="agent-description">{agent.description}</p>
-                {agent.pdfSource && <p className="agent-pdf-source">Source: {agent.pdfSource}</p>}
-                <div className="agent-tag">Agent</div>
-                <div className="agent-card-footer">
-                  <button
-                    className="agent-start-chat-button"
-                    onClick={() => onStartChatWithAgent(agent.agentId)}
-                  >
-                    {agent.buttonText}
-                  </button>
-                  <button 
-                    className="agent-edit-button"
-                    onClick={() => handleEdit(agent)}
-                  >
-                    <FaEdit />
-                  </button>
-                  <button 
-                    className="agent-delete-button"
-                    onClick={() => handleDeleteAgent(agent.agentId)}
-                  >
-                    <FaTimes />
-                  </button>
-                </div>
-              </>
-            )}
+            </form>
           </div>
-        ))}
-        {filteredAgents.length === 0 && (
-          <p>No agents found matching your search.</p>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

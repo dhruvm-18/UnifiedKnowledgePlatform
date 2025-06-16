@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import './App.css';
 import './styles/backgrounds.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl } from 'react-icons/fa';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport } from 'react-icons/fa';
 import HomeView from './components/HomeView';
 import KnowledgeSourcesView from './components/KnowledgeSourcesView';
 import PDFViewer from './components/PDFViewer';
@@ -1161,6 +1161,26 @@ function App() {
     await startDedicatedAgentChat(agentId);
   };
 
+  const [copiedMessageId, setCopiedMessageId] = useState(null);
+
+  const handleCopyMessage = (content, messageId) => {
+    navigator.clipboard.writeText(content);
+    setCopiedMessageId(messageId);
+    setTimeout(() => setCopiedMessageId(null), 2000); // Reset after 2 seconds
+  };
+
+  const handleExportMessage = (content) => {
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chat-response-${new Date().toISOString()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className={`app-layout ${theme}-mode${leftCollapsed ? ' left-collapsed' : ''}${rightCollapsed ? ' right-collapsed' : ''}`}>
       <aside className={`left-sidebar${leftCollapsed ? ' collapsed' : ''}`}>
@@ -1353,25 +1373,67 @@ function App() {
                                 }
                                 return renderAssistantContent(content);
                               })()}
-                              <button
-                                className="voice-btn"
-                                title="Read aloud"
-                                onClick={() => handleSpeak(typeof msg.content === 'string' ? msg.content : String(msg.content))}
-                                style={{ marginLeft: 10, background: 'none', border: 'none', cursor: isSpeaking ? 'not-allowed' : 'pointer', color: isSpeaking ? '#10B981' : '#bbb' }}
-                                disabled={isSpeaking}
-                              >
-                                <FaVolumeUp size={18} />
-                              </button>
-                              {isSpeaking && (
+                              <div className="message-actions">
                                 <button
-                                  className="voice-stop-btn"
-                                  title="Stop reading"
-                                  onClick={handleStopSpeak}
-                                  style={{ marginLeft: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#EF4444' }}
+                                  className="action-btn copy-btn"
+                                  title={copiedMessageId === msg.id ? "Copied!" : "Copy message"}
+                                  onClick={() => handleCopyMessage(msg.content, msg.id)}
+                                  style={{ 
+                                    background: 'none', 
+                                    border: 'none', 
+                                    cursor: 'pointer', 
+                                    color: copiedMessageId === msg.id ? '#10B981' : '#bbb',
+                                    marginLeft: 10
+                                  }}
                                 >
-                                  Stop
+                                  <FaCopy size={18} />
                                 </button>
-                              )}
+                                <button
+                                  className="action-btn export-btn"
+                                  title="Export message"
+                                  onClick={() => handleExportMessage(msg.content)}
+                                  style={{ 
+                                    background: 'none', 
+                                    border: 'none', 
+                                    cursor: 'pointer', 
+                                    color: '#bbb',
+                                    marginLeft: 6
+                                  }}
+                                >
+                                  <FaFileExport size={18} />
+                                </button>
+                                <button
+                                  className="voice-btn"
+                                  title="Read aloud"
+                                  onClick={() => handleSpeak(typeof msg.content === 'string' ? msg.content : String(msg.content))}
+                                  style={{ 
+                                    background: 'none', 
+                                    border: 'none', 
+                                    cursor: isSpeaking ? 'not-allowed' : 'pointer', 
+                                    color: isSpeaking ? '#10B981' : '#bbb',
+                                    marginLeft: 6
+                                  }}
+                                  disabled={isSpeaking}
+                                >
+                                  <FaVolumeUp size={18} />
+                                </button>
+                                {isSpeaking && (
+                                  <button
+                                    className="voice-stop-btn"
+                                    title="Stop reading"
+                                    onClick={handleStopSpeak}
+                                    style={{ 
+                                      background: 'none', 
+                                      border: 'none', 
+                                      cursor: 'pointer', 
+                                      color: '#EF4444',
+                                      marginLeft: 6
+                                    }}
+                                  >
+                                    Stop
+                                  </button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </>

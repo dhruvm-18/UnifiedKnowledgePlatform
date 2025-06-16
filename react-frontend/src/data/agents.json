@@ -47,6 +47,14 @@
       "buttonText": "Start Chat",
       "agentId": "agent_1749818483673",
       "pdfSource": "National_Strategy_AI.pdf"
+    },
+    {
+      "iconType": "FaRobot",
+      "name": "TRAI AGENT",
+      "description": "Get Insights from Trai",
+      "buttonText": "Start Chat",
+      "agentId": "agent_1750078917949",
+      "pdfSource": "indiantelegraphact_1885.pdf"
     }
   ]
 }
