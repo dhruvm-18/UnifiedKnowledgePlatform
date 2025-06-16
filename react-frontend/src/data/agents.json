@@ -49,11 +49,11 @@
       "pdfSource": "National_Strategy_AI.pdf"
     },
     {
-      "iconType": "FaRobot",
-      "name": "TRAI AGENT",
-      "description": "Get Insights from Trai",
+      "iconType": "FaFlask",
+      "name": "TRAI Knowledge Agent",
+      "description": "wohoo",
       "buttonText": "Start Chat",
-      "agentId": "agent_1750078917949",
+      "agentId": "agent_1750080268328",
       "pdfSource": "indiantelegraphact_1885.pdf"
     }
   ]

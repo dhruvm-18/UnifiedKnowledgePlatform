@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes, FaPlus, FaFileAlt, FaRobot, FaBook, FaLightbulb, FaFlask, FaUserTie, FaTrash } from 'react-icons/fa';
 import { getIconComponent } from '../utils/iconUtils';
@@ -25,8 +25,27 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
   const [showNewAgentOverlay, setShowNewAgentOverlay] = useState(false);
   const [overlaySuccessMessage, setOverlaySuccessMessage] = useState('');
   const [agentToEdit, setAgentToEdit] = useState(null); // New state to hold the agent being edited
+  const [overlayScrollTop, setOverlayScrollTop] = useState(0); // State to store the scroll position for overlay
+  const knowledgeSourcesViewRef = useRef(null); // Ref for the main scrollable div
 
   const BACKEND_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
+
+  // Effect to manage scrolling of the knowledge-sources-view when overlays are active
+  useEffect(() => {
+    if (knowledgeSourcesViewRef.current) {
+      if (showNewAgentOverlay || agentToEdit) {
+        knowledgeSourcesViewRef.current.style.overflowY = 'hidden';
+      } else {
+        knowledgeSourcesViewRef.current.style.overflowY = 'auto';
+      }
+    }
+    // Cleanup function to reset overflow when component unmounts or dependencies change
+    return () => {
+      if (knowledgeSourcesViewRef.current) {
+        knowledgeSourcesViewRef.current.style.overflowY = '';
+      }
+    };
+  }, [showNewAgentOverlay, agentToEdit]);
 
   // Function to fetch agents from the backend
   const fetchAgents = useCallback(async () => {
@@ -64,6 +83,10 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
     setAgentToEdit(agent);
     setEditedName(agent.name);
     setEditedDescription(agent.description);
+    // Capture current scroll position of the knowledge-sources-view
+    if (knowledgeSourcesViewRef.current) {
+      setOverlayScrollTop(knowledgeSourcesViewRef.current.scrollTop);
+    }
   };
 
   const handleSaveEdit = async () => {
@@ -213,7 +236,7 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
   };
 
   return (
-    <div className="knowledge-sources-view">
+    <div className="knowledge-sources-view" ref={knowledgeSourcesViewRef}>
       <div className="knowledge-sources-header">
         <h1>Knowledge Sources</h1>
         <button 
@@ -287,12 +310,12 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
         )}
       </Element>
 
-      {/* New Agent Overlay */}
+      {/* New Agent Creation Overlay */}
       {showNewAgentOverlay && (
-        <div className="new-agent-overlay">
+        <div className="new-agent-overlay" style={{ top: `20px` }}>
           <div className="new-agent-overlay-content">
             <div className="overlay-header">
-              <h2>Create New Agent</h2>
+              <h2>New Agent</h2>
               <button className="close-overlay-btn" onClick={() => setShowNewAgentOverlay(false)}>
                 <FaTimes />
               </button>
@@ -380,7 +403,7 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
 
       {/* Edit Agent Overlay */}
       {agentToEdit && (
-        <div className="new-agent-overlay">
+        <div className="new-agent-overlay" style={{ top: `${overlayScrollTop}px` }}>
           <div className="new-agent-overlay-content">
             <div className="overlay-header">
               <h2>Edit Agent</h2>
