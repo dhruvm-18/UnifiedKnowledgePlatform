@@ -16,7 +16,9 @@
       "description": "Access information on the Rules of Procedure and Conduct of Business in Lok Sabha.",
       "buttonText": "Start Chat",
       "agentId": "Parliament",
-      "pdfSource": "Rules_of_Procedures_Lok_Sabha.pdf"
+      "pdfSource": "Rules_of_Procedures_Lok_Sabha.pdf",
+      "tileLineStartColor": "Gold",
+      "tileLineEndColor": "Black"
     },
     {
       "iconType": "FaFileAlt",
@@ -24,7 +26,9 @@
       "description": "Get insights into the Information Technology (IT) Act, 2000, India's key legislation governing cyber law, digital transactions, data protection, and online regulations.",
       "buttonText": "Start Chat",
       "agentId": "agent_1749736096843",
-      "pdfSource": "IT_act_2000.pdf"
+      "pdfSource": "IT_act_2000.pdf",
+      "tileLineStartColor": "Blue",
+      "tileLineEndColor": "Black"
     },
     {
       "iconType": "FaFileAlt",

@@ -201,10 +201,12 @@ When the user asks a technical question:
 DEFINITION_INSTRUCTION = """
 When the user asks for a definition:
 
-1. Provide a clear, concise definition in 2-3 sentences.
-2. Expand if more detail is requested.
-3. Example:
+1. Provide a clear, concise definition or explanation of the concept in 2-3 sentences.
+2. If a formal definition is not explicitly stated but the concept is discussed, explain it based on the information available in the context.
+3. Expand if more detail is requested.
+4. Example:
    - "Here's the definition of {{Term}}: {{Definition}}."
+   - "The concept of {{Term}} is explained as: {{Explanation}}."
 """
 
 # ================================

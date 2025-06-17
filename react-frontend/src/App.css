@@ -1513,12 +1513,10 @@ html, body, #root {
 }
 
 .user-name {
-  font-size: 0.95rem; /* Slightly smaller name */
   font-weight: 600;
-  color: var(--text-tertiary);
-  white-space: nowrap; /* Prevent name from wrapping */
-  overflow: hidden;
-  text-overflow: ellipsis; /* Add ellipsis if name is too long */
+  font-size: 1rem;
+  color: var(--text-primary);
+  margin-bottom: 4px;
 }
 
 .user-name-input {
@@ -1991,4 +1989,9 @@ html, body, #root {
 
 .voice-stop-btn:hover {
   color: #EF4444 !important;
+}
+
+/* Remove assistant name display styles */
+.assistant-name-display {
+  display: none;
 }

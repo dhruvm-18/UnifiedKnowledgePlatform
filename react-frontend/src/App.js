@@ -252,7 +252,6 @@ function App() {
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
   const [editingSessionId, setEditingSessionId] = useState(null);
-  const [editingTitle, setEditingTitle] = useState('');
   const [chatStarted, setChatStarted] = useState(false);
   const [showUserDetailsMenu, setShowUserDetailsMenu] = useState(false);
   const [userName, setUserName] = useState('Dhruv Mendiratta');
@@ -263,7 +262,6 @@ function App() {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [currentView, setCurrentView] = useState('home');
   const [showWelcome, setShowWelcome] = useState(true);
-  const [defaultAssistantDisplayName, setDefaultAssistantDisplayName] = useState(localStorage.getItem('defaultAssistantDisplayName') || 'AI Assistant');
   const [editingAssistantName, setEditingAssistantName] = useState(false);
   const assistantNameInputRef = useRef(null);
 
@@ -447,12 +445,6 @@ function App() {
       userNameInputRef.current.focus();
     }
   }, [editingUserName]);
-
-  useEffect(() => {
-    if (editingAssistantName && assistantNameInputRef.current) {
-      assistantNameInputRef.current.focus();
-    }
-  }, [editingAssistantName]);
 
   useEffect(() => {
     const handleDocumentClick = (e) => {
@@ -929,19 +921,6 @@ function App() {
     setEditingUserName(false);
   };
 
-  const handleSaveDefaultAssistantDisplayName = () => {
-    if (defaultAssistantDisplayName.trim() === '') {
-      setDefaultAssistantDisplayName('AI Assistant');
-    }
-    localStorage.setItem('defaultAssistantDisplayName', defaultAssistantDisplayName);
-    setEditingAssistantName(false);
-  };
-
-  const handleCancelDefaultAssistantDisplayNameEdit = () => {
-    setDefaultAssistantDisplayName(localStorage.getItem('defaultAssistantDisplayName') || 'AI Assistant');
-    setEditingAssistantName(false);
-  };
-
   // Voice input functionality
   const startListening = async () => {
     if (listening) return;
@@ -1018,29 +997,6 @@ function App() {
   }, []);
 
   const groupedSessions = groupSessionsByDate(sessions);
-
-  const handleEditTitle = (session) => {
-    setEditingSessionId(session.id);
-    setEditingTitle(session.title);
-  };
-
-  const handleSaveTitle = async (sessionId) => {
-    const res = await fetch(`${BACKEND_BASE}/sessions/${sessionId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: editingTitle })
-    });
-
-    if (res.ok) {
-      setSessions(sessions => sessions.map(session =>
-        session.id === sessionId ? { ...session, title: editingTitle } : session
-      ));
-      setEditingSessionId(null);
-      setEditingTitle('');
-    } else {
-      console.error("Error updating session title");
-    }
-  };
 
   // Function to handle navigation to Home view
   const handleNavigateToHome = () => {
@@ -1237,32 +1193,12 @@ function App() {
                 ) : (
                   <div className="user-name">{userName}</div>
                 )}
-                {editingAssistantName ? (
-                  <input
-                    type="text"
-                    value={defaultAssistantDisplayName}
-                    onChange={(e) => setDefaultAssistantDisplayName(e.target.value)}
-                    onBlur={handleSaveDefaultAssistantDisplayName}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleSaveDefaultAssistantDisplayName();
-                      } else if (e.key === 'Escape') {
-                        handleCancelDefaultAssistantDisplayNameEdit();
-                      }
-                    }}
-                    className="user-name-input"
-                    ref={assistantNameInputRef}
-                  />
-                ) : (
-                  <div className="user-name assistant-name-display">AI Assistant: {defaultAssistantDisplayName}</div>
-                )}
                 <div className="user-email">dhruv.mendiratta4@gmail.com</div>
               </div>
               {showUserDetailsMenu && (
                 <div className="user-details-menu">
                   <div className="menu-item" onClick={handleChangeAvatarClick}>Change avatar</div>
                   <div className="menu-item" onClick={handleChangeNameClick}>Change name</div>
-                  <div className="menu-item" onClick={() => setEditingAssistantName(true)}>Change Assistant Name</div>
                   <div className="menu-item" onClick={() => console.log('Change Password clicked')}>Change password</div>
                   <div className="menu-item" onClick={() => console.log('Log Out clicked')}>Log out</div>
                 </div>
@@ -1365,8 +1301,7 @@ function App() {
                               )}
                               {!msg.agentName && (
                                 <div className="agent-info-display">
-                                    <span className="agent-info-icon"><img src="/unified-knowledge-platform.png" alt="avatar" style={{ width: '24px', height: '24px', borderRadius: '50%' }} /></span>
-                                    <span className="agent-info-name">{defaultAssistantDisplayName}</span>
+                                  <span className="agent-info-icon"><img src="/unified-knowledge-platform.png" alt="avatar" style={{ width: '24px', height: '24px', borderRadius: '50%' }} /></span>
                                 </div>
                               )}
                               {(() => {
@@ -1752,27 +1687,8 @@ function App() {
                           onClick={() => setCurrentSessionId(session.id)}
                         >
                           <FaRegFileAlt size={22} style={{ color: '#bbb' }} />
-                          {editingSessionId === session.id ? (
-                            <input
-                              type="text"
-                              value={editingTitle}
-                              onChange={(e) => setEditingTitle(e.target.value)}
-                              onBlur={() => handleSaveTitle(session.id)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  handleSaveTitle(session.id);
-                                }
-                              }}
-                              className="chat-history-input"
-                              autoFocus
-                            />
-                          ) : (
                           <span className="chat-history-title">{String(session.title)}</span>
-                          )}
                           <button className="delete-chat-btn" onClick={e => { e.stopPropagation(); handleDeleteSession(session.id); }}><FaTrash /></button>
-                          {editingSessionId !== session.id && (
-                            <button className="edit-chat-btn" onClick={e => { e.stopPropagation(); handleEditTitle(session); }}>✏️</button>
-                          )}
                         </div>
                       ))}
                     </div>

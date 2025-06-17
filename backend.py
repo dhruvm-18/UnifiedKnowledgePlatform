@@ -448,12 +448,17 @@ def create_structured_prompt(user_message, context, doc_id=None, DOCUMENT_HEADIN
         
         # Determine if the user is asking for a detailed/elaborated response
         is_detailed_query = any(keyword in user_message.lower() for keyword in ['elaborate', 'detail', 'detailed', 'explain more', 'tell me more', 'in depth'])
+        
+        # Determine if the user is asking for a definition
+        is_definition_query = any(keyword in user_message.lower() for keyword in ['define', 'what is', 'meaning of', 'definition of', 'explain'])
 
         # Select the appropriate instruction based on query type
         if is_detailed_query:
             selected_instruction = DETAILED_RESPONSE_INSTRUCTION
         elif is_comparison_query:
             selected_instruction = COMPARISON_INSTRUCTION
+        elif is_definition_query:
+            selected_instruction = DEFINITION_INSTRUCTION
         else:
             selected_instruction = CORE_INSTRUCTION
 
