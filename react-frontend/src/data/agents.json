@@ -8,7 +8,10 @@
       "agentId": "DPDP",
       "pdfSource": "DPDP_act.pdf",
       "tileLineStartColor": "Red",
-      "tileLineEndColor": "Black"
+      "tileLineEndColor": "Black",
+      "pdfSources": [
+        "DPDP_act.pdf"
+      ]
     },
     {
       "iconType": "FaGavel",
@@ -18,7 +21,10 @@
       "agentId": "Parliament",
       "pdfSource": "Rules_of_Procedures_Lok_Sabha.pdf",
       "tileLineStartColor": "Gold",
-      "tileLineEndColor": "Black"
+      "tileLineEndColor": "Black",
+      "pdfSources": [
+        "Rules_of_Procedures_Lok_Sabha.pdf"
+      ]
     },
     {
       "iconType": "FaFileAlt",
@@ -28,7 +34,10 @@
       "agentId": "agent_1749736096843",
       "pdfSource": "IT_act_2000.pdf",
       "tileLineStartColor": "Blue",
-      "tileLineEndColor": "Black"
+      "tileLineEndColor": "Black",
+      "pdfSources": [
+        "IT_act_2000.pdf"
+      ]
     },
     {
       "iconType": "FaFileAlt",
@@ -36,7 +45,10 @@
       "description": "Get insights into the National Cyber Security Policy (NCSP) 2013, India\u2019s strategic framework for enhancing cyber resilience.",
       "buttonText": "Start Chat",
       "agentId": "agent_1749764504037",
-      "pdfSource": "National_Cyber_Secruity.pdf"
+      "pdfSource": "National_Cyber_Secruity.pdf",
+      "pdfSources": [
+        "National_Cyber_Secruity.pdf"
+      ]
     },
     {
       "iconType": "FaFileAlt",
@@ -44,7 +56,10 @@
       "description": "Get insights from the Aadhaar Act, 2016. Ask about authentication, UIDAI functions, data security, and individual rights.",
       "buttonText": "Start Chat",
       "agentId": "agent_1749794991399",
-      "pdfSource": "Aadhar_Act.pdf"
+      "pdfSource": "Aadhar_Act.pdf",
+      "pdfSources": [
+        "Aadhar_Act.pdf"
+      ]
     },
     {
       "iconType": "FaFileAlt",
@@ -52,15 +67,10 @@
       "description": "Discover insights from India\u2019s National Strategy for Artificial Intelligence by NITI Aayog. Explore key focus areas like healthcare, agriculture, education, smart mobility, and AI for public infrastructure.",
       "buttonText": "Start Chat",
       "agentId": "agent_1749818483673",
-      "pdfSource": "National_Strategy_AI.pdf"
-    },
-    {
-      "iconType": "FaFlask",
-      "name": "TRAI Knowledge Agent",
-      "description": "wohoo",
-      "buttonText": "Start Chat",
-      "agentId": "agent_1750080268328",
-      "pdfSource": "indiantelegraphact_1885.pdf"
+      "pdfSource": "National_Strategy_AI.pdf",
+      "pdfSources": [
+        "National_Strategy_AI.pdf"
+      ]
     }
   ]
 }

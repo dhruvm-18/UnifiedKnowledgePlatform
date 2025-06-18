@@ -18,7 +18,7 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
   const [showNewAgentForm, setShowNewAgentForm] = useState(false);
   const [newAgentName, setNewAgentName] = useState('');
   const [newAgentDescription, setNewAgentDescription] = useState('');
-  const [selectedPdf, setSelectedPdf] = useState(null);
+  const [selectedPdfs, setSelectedPdfs] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [newAgentIconType, setNewAgentIconType] = useState('FaFileAlt'); // New state for icon type
@@ -134,10 +134,19 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
     setAgentToEdit(null); // Close the edit overlay
   };
 
+  const handlePdfChange = (e) => {
+    const files = Array.from(e.target.files).filter(file => file.type === 'application/pdf');
+    if (files.length > 0) {
+      setSelectedPdfs(files);
+    } else {
+      alert('Please select PDF files');
+    }
+  };
+
   const handleNewAgentSubmit = async (e) => {
     e.preventDefault();
-    if (!newAgentName || !newAgentDescription || !selectedPdf) {
-      alert('Please fill in all fields and select a PDF file');
+    if (!newAgentName || !newAgentDescription || selectedPdfs.length === 0) {
+      alert('Please fill in all fields and select at least one PDF file');
       return;
     }
 
@@ -145,26 +154,36 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
     setOverlaySuccessMessage('');
 
     try {
+      // Create FormData and append files
       const formData = new FormData();
-      formData.append('file', selectedPdf);
+      selectedPdfs.forEach((file) => {
+        formData.append('files', file);
+      });
 
-      // 1. Upload PDF to backend
+      // 1. Upload PDFs to backend
       const uploadResponse = await fetch(`${BACKEND_BASE}/upload-pdf`, {
         method: 'POST',
         body: formData,
+        // Remove Content-Type header to let the browser set it with the boundary
+        headers: {
+          'Accept': 'application/json',
+        },
       });
 
       if (!uploadResponse.ok) {
         const errorData = await uploadResponse.json();
-        throw new Error(errorData.error || 'Failed to upload PDF');
+        throw new Error(errorData.error || 'Failed to upload PDFs');
       }
+
       const uploadData = await uploadResponse.json();
-      
+      console.log('Upload response:', uploadData); // Debug log
+
       if (!uploadData.success) {
-        throw new Error(uploadData.error || 'Failed to upload PDF');
+        throw new Error(uploadData.error || 'Failed to upload PDFs');
       }
-      
-      const pdfFilename = uploadData.filename;
+
+      const pdfFilenames = uploadData.filenames; // Expecting an array
+      console.log('PDF filenames:', pdfFilenames); // Debug log
 
       // 2. Create new agent via backend API
       const newAgentPayload = {
@@ -173,10 +192,12 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
         description: newAgentDescription,
         buttonText: 'Start Chat',
         agentId: `agent_${Date.now()}`,
-        pdfSource: pdfFilename,
+        pdfSources: pdfFilenames,
         tileLineStartColor: newAgentTileLineStartColor,
         tileLineEndColor: newAgentTileLineEndColor,
       };
+
+      console.log('Creating agent with payload:', newAgentPayload); // Debug log
 
       const agentResponse = await fetch(`${BACKEND_BASE}/agents`, {
         method: 'POST',
@@ -192,14 +213,16 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
       }
 
       const agentData = await agentResponse.json();
+      console.log('Agent creation response:', agentData); // Debug log
       
       if (agentData.success) {
-        fetchAgents();
+        // Call fetchAgents to update the list
+        await fetchAgents();
         setOverlaySuccessMessage('Agent created successfully! ✓');
         // Reset form after successful creation
         setNewAgentName('');
         setNewAgentDescription('');
-        setSelectedPdf(null);
+        setSelectedPdfs([]);
         setNewAgentTileLineStartColor('');
         setNewAgentTileLineEndColor('');
         // Close overlay after a delay
@@ -215,15 +238,6 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
       alert(`Failed to create new agent: ${error.message}`);
     } finally {
       setIsSubmitting(false);
-    }
-  };
-
-  const handlePdfChange = (e) => {
-    const file = e.target.files[0];
-    if (file && file.type === 'application/pdf') {
-      setSelectedPdf(file);
-    } else {
-      alert('Please select a PDF file');
     }
   };
 
@@ -296,7 +310,16 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
             <div className="agent-icon">{getIconComponent(agent.iconType)}</div>
             <h3>{agent.name}</h3>
             <p>{agent.description}</p>
-            {agent.pdfSource && <p className="source-info">Source: {agent.pdfSource}</p>}
+            {agent.pdfSources && agent.pdfSources.length > 0 && (
+              <div className="source-info">
+                <p>Sources:</p>
+                <ul>
+                  {agent.pdfSources.map((source, index) => (
+                    <li key={index}>{source}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="agent-card-footer">
               <div className="agent-tag">Agent</div>
               <div className="agent-actions-right">
@@ -402,6 +425,7 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
                 <input
                   type="file"
                   accept=".pdf"
+                  multiple
                   onChange={handlePdfChange}
                   id="pdf-upload"
                   className="pdf-upload-input-hidden"
@@ -409,10 +433,12 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
                   disabled={isSubmitting}
                 />
                 <label htmlFor="pdf-upload" className="file-upload-button">
-                  <FaFileAlt /> Choose File
+                  <FaFileAlt /> Choose Files
                 </label>
                 <span className="file-chosen-text">
-                  {selectedPdf ? selectedPdf.name : 'No file chosen'}
+                  {selectedPdfs.length > 0
+                    ? selectedPdfs.map(f => f.name).join(', ')
+                    : 'No files chosen'}
                 </span>
               </div>
               <div className="overlay-actions">

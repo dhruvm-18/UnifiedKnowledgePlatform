@@ -549,12 +549,8 @@ AGENTS_DATA = {}
 def save_agents_to_json():
     """Saves the current AGENTS_DATA to the agents.json file."""
     try:
-        # Convert AGENTS_DATA dict to a list for JSON serialization
         agents_list = list(AGENTS_DATA.values())
-        
-        # Ensure the directory exists
         os.makedirs(os.path.dirname(AGENTS_JSON_PATH), exist_ok=True)
-        
         with open(AGENTS_JSON_PATH, 'w', encoding='utf-8') as f:
             json.dump({'agents': agents_list}, f, indent=2)
         logger.info(f"Agents data saved to {AGENTS_JSON_PATH}")
@@ -565,35 +561,32 @@ def load_agent_data():
     """Load agent data from JSON file."""
     global AGENTS_DATA
     AGENTS_DATA = {}
-    
-    # First try to load from the react-frontend path
     if os.path.exists(AGENTS_JSON_PATH):
         try:
             with open(AGENTS_JSON_PATH, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 for agent in data.get('agents', []):
+                    if 'pdfSources' not in agent and 'pdfSource' in agent:
+                        agent['pdfSources'] = [agent['pdfSource']]
                     AGENTS_DATA[agent['agentId']] = agent
             logger.info(f"Loaded {len(AGENTS_DATA)} agents from {AGENTS_JSON_PATH}")
             return
         except Exception as e:
             logger.error(f"Error loading agent data from {AGENTS_JSON_PATH}: {e}")
-    
-    # If loading from react-frontend fails, try loading from backend directory
     backup_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'agents.json')
     if os.path.exists(backup_path):
         try:
             with open(backup_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
                 for agent in data.get('agents', []):
+                    if 'pdfSources' not in agent and 'pdfSource' in agent:
+                        agent['pdfSources'] = [agent['pdfSource']]
                     AGENTS_DATA[agent['agentId']] = agent
             logger.info(f"Loaded {len(AGENTS_DATA)} agents from backup path {backup_path}")
-            # Save to the react-frontend path for future use
             save_agents_to_json()
             return
         except Exception as e:
             logger.error(f"Error loading agent data from backup path {backup_path}: {e}")
-    
-    # If both paths fail, create default agents
     default_agents = [
         {
             "iconType": "FaShieldAlt",
@@ -601,7 +594,7 @@ def load_agent_data():
             "description": "Get insights from the Digital Personal Data Protection Act. Ask about user rights, data fiduciaries, and obligations.",
             "buttonText": "Start Chat",
             "agentId": "DPDP",
-            "pdfSource": "DPDP_act.pdf"
+            "pdfSources": ["DPDP_act.pdf"]
         },
         {
             "iconType": "FaGavel",
@@ -609,21 +602,17 @@ def load_agent_data():
             "description": "Access information on the Rules of Procedure and Conduct of Business in Lok Sabha.",
             "buttonText": "Start Chat",
             "agentId": "Parliament",
-            "pdfSource": "Rules_of_Procedures_Lok_Sabha.pdf"
+            "pdfSources": ["Rules_of_Procedures_Lok_Sabha.pdf"]
         }
     ]
-    
     for agent in default_agents:
         AGENTS_DATA[agent['agentId']] = agent
-    
-    # Save default agents to both locations
     save_agents_to_json()
     try:
         with open(backup_path, 'w', encoding='utf-8') as f:
             json.dump({'agents': default_agents}, f, indent=2)
     except Exception as e:
         logger.error(f"Error saving default agents to backup path {backup_path}: {e}")
-    
     logger.info(f"Created {len(AGENTS_DATA)} default agents")
 
 # Call this function on startup
@@ -656,7 +645,7 @@ def add_message(session_id):
         logger.info(f"Using pdfSource from frontend: {target_pdf_source}")
     elif agent_id and agent_id in AGENTS_DATA:
         # If agent_id is present and known, use its associated pdfSource from loaded data
-        target_pdf_source = AGENTS_DATA[agent_id]
+        target_pdf_source = AGENTS_DATA[agent_id]['pdfSources'][0] if AGENTS_DATA[agent_id]['pdfSources'] else None
         logger.info(f"Using pdfSource from loaded agent data for agent {agent_id}: {target_pdf_source}")
     elif agent_id == 'DPDP': # Fallback for hardcoded DPDP if not in AGENTS_DATA
         target_pdf_source = 'DPDP_act.pdf'
@@ -903,56 +892,51 @@ def rebuild_faiss_index():
 
 @app.route('/upload-pdf', methods=['POST', 'OPTIONS'])
 def upload_pdf():
-    """Handle PDF file uploads"""
+    """Handle PDF file uploads (multiple files supported)"""
     if request.method == 'OPTIONS':
         return '', 200
 
     try:
-        if 'file' not in request.files:
-            logger.error("No file part in request")
-            return jsonify({'error': 'No file part', 'success': False}), 400
+        if 'files' not in request.files:
+            logger.error("No files part in request")
+            return jsonify({'error': 'No files part', 'success': False}), 400
         
-        file = request.files['file']
-        if file.filename == '':
-            logger.error("No selected file")
-            return jsonify({'error': 'No selected file', 'success': False}), 400
+        files = request.files.getlist('files')
+        if not files or all(f.filename == '' for f in files):
+            logger.error("No selected files")
+            return jsonify({'error': 'No selected files', 'success': False}), 400
         
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            
-            # Ensure the upload directory exists
-            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-            
-            # Log the actual UPLOAD_FOLDER being used right before saving
-            logger.info(f"Current UPLOAD_FOLDER from app.config: {app.config['UPLOAD_FOLDER']}")
-
-            # Save the file
-            logger.info(f"Attempting to save file to: {filepath}")
-            file.save(filepath)
-            logger.info(f"File successfully saved to: {filepath}")
-            
-            try:
-                # Rebuild the FAISS index from all PDFs after upload
-                logger.info(f"Rebuilding FAISS index after uploading: {filename}")
-                rebuild_faiss_index()
-                logger.info(f"FAISS index rebuilt successfully after uploading: {filename}")
-                return jsonify({
-                    'message': 'File uploaded and processed successfully',
-                    'filename': filename,
-                    'success': True,
-                    'filepath': filepath
-                })
-            except Exception as e:
-                logger.error(f"Error during FAISS index rebuild: {str(e)}")
+        saved_filenames = []
+        for file in files:
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+                logger.info(f"Saving file: {filepath}")
+                file.save(filepath)
+                saved_filenames.append(filename)
+            else:
+                logger.error(f"Invalid file type: {file.filename}")
+                return jsonify({'error': f'Invalid file type: {file.filename}', 'success': False}), 400
+        try:
+            logger.info(f"Rebuilding FAISS index after uploading: {saved_filenames}")
+            rebuild_faiss_index()
+            logger.info(f"FAISS index rebuilt successfully after uploading: {saved_filenames}")
+            return jsonify({
+                'message': 'Files uploaded and processed successfully',
+                'filenames': saved_filenames,
+                'success': True
+            })
+        except Exception as e:
+            logger.error(f"Error during FAISS index rebuild: {str(e)}")
+            # Remove all uploaded files if processing fails
+            for filename in saved_filenames:
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
                 if os.path.exists(filepath):
                     os.remove(filepath)
-                return jsonify({'error': f'Error processing PDF: {str(e)}', 'success': False}), 500
-        
-        logger.error(f"Invalid file type: {file.filename}")
-        return jsonify({'error': 'Invalid file type', 'success': False}), 400
+            return jsonify({'error': f'Error processing PDFs: {str(e)}', 'success': False}), 500
     except Exception as e:
-        logger.error(f"Unexpected error in upload_pdf route: {str(e)}") # Changed log message
+        logger.error(f"Unexpected error in upload_pdf route: {str(e)}")
         return jsonify({'error': f'Unexpected error: {str(e)}', 'success': False}), 500
 
 # Load PDFs from uploads directory on startup
@@ -1020,7 +1004,7 @@ def get_agents():
 
 @app.route('/agents', methods=['POST'])
 def add_agent():
-    """Add a new agent to AGENTS_DATA and save to agents.json"""
+    """Add a new agent to AGENTS_DATA and save to agents.json (supports multiple pdfSources)"""
     try:
         data = request.json
         agent_id = data.get('agentId')
@@ -1030,17 +1014,36 @@ def add_agent():
         if agent_id in AGENTS_DATA:
             return jsonify({'error': f'Agent with ID {agent_id} already exists', 'success': False}), 409
 
+        # Accept pdfSources (list) or pdfSource (single file, for backward compatibility)
+        pdf_sources = data.get('pdfSources')
+        if not pdf_sources:
+            pdf_source = data.get('pdfSource')
+            if pdf_source:
+                pdf_sources = [pdf_source]
+            else:
+                return jsonify({'error': 'Missing required agent pdfSources/pdfSource', 'success': False}), 400
+
         # Ensure required fields are present
-        required_fields = ['name', 'description', 'iconType', 'pdfSource']
+        required_fields = ['name', 'description', 'iconType']
         if not all(field in data for field in required_fields):
             return jsonify({'error': 'Missing required agent fields', 'success': False}), 400
 
-        AGENTS_DATA[agent_id] = data
+        agent_data = {
+            'agentId': agent_id,
+            'name': data['name'],
+            'description': data['description'],
+            'iconType': data['iconType'],
+            'buttonText': data.get('buttonText', 'Start Chat'),
+            'pdfSources': pdf_sources,
+            'tileLineStartColor': data.get('tileLineStartColor', ''),
+            'tileLineEndColor': data.get('tileLineEndColor', ''),
+        }
+        AGENTS_DATA[agent_id] = agent_data
         save_agents_to_json()
         logger.info(f"Added new agent: {agent_id}")
         return jsonify({
             'message': 'Agent created successfully',
-            'agent': data,
+            'agent': agent_data,
             'success': True
         }), 201
     except Exception as e:
@@ -1073,8 +1076,8 @@ def delete_agent(agent_id):
         if agent_id not in AGENTS_DATA:
             return jsonify({'error': 'Agent not found'}), 404
         
-        # Get the PDF filename before deleting the agent
-        pdf_filename = AGENTS_DATA[agent_id].get('pdfSource')
+        # Get all PDF filenames before deleting the agent
+        pdf_filenames = AGENTS_DATA[agent_id].get('pdfSources', [])
         
         # Delete the agent from AGENTS_DATA
         del AGENTS_DATA[agent_id]
@@ -1082,8 +1085,8 @@ def delete_agent(agent_id):
         # Save to JSON file immediately after deletion
         save_agents_to_json()
         
-        # Delete the associated PDF file if it exists
-        if pdf_filename:
+        # Delete all associated PDF files if they exist
+        for pdf_filename in pdf_filenames:
             pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], pdf_filename)
             try:
                 if os.path.exists(pdf_path):
@@ -1091,7 +1094,6 @@ def delete_agent(agent_id):
                     logger.info(f"Deleted PDF file: {pdf_filename}")
             except Exception as e:
                 logger.error(f"Error deleting PDF file {pdf_filename}: {str(e)}")
-                # Continue with agent deletion even if PDF deletion fails
         
         logger.info(f"Deleted agent: {agent_id}")
         return '', 204
