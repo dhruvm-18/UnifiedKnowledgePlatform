@@ -1995,3 +1995,10 @@ html, body, #root {
 .assistant-name-display {
   display: none;
 }
+
+.chat-input[contenteditable]:empty:before {
+  content: attr(data-placeholder);
+  color: #b0b0b0;
+  pointer-events: none;
+  display: block;
+}

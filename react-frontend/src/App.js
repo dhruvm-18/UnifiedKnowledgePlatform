@@ -1445,7 +1445,7 @@ function App() {
                   ref={inputRef}
                   className="chat-input"
                   contentEditable={true}
-                  placeholder="Type your question..."
+                  data-placeholder="Your entire knowledge base, one question away..."
                   onInput={e => {
                     const div = e.target;
                     const savedCaretOffset = saveSelection(div);

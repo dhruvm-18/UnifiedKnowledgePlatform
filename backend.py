@@ -636,23 +636,20 @@ def add_message(session_id):
     hindi_pattern = re.compile(r'[\u0900-\u097F]')
     is_hindi = bool(hindi_pattern.search(user_message))
     
-    # Determine the target PDF source based on agent_id or frontend provided pdfSource
-    target_pdf_source = None
-
+    # Determine the target PDF sources based on agent_id or frontend provided pdfSource
+    target_pdf_sources = []
     if pdf_source_from_frontend:
-        # Prioritize pdfSource explicitly sent from frontend
-        target_pdf_source = pdf_source_from_frontend
-        logger.info(f"Using pdfSource from frontend: {target_pdf_source}")
+        target_pdf_sources = [pdf_source_from_frontend]
+        logger.info(f"Using pdfSource from frontend: {target_pdf_sources}")
     elif agent_id and agent_id in AGENTS_DATA:
-        # If agent_id is present and known, use its associated pdfSource from loaded data
-        target_pdf_source = AGENTS_DATA[agent_id]['pdfSources'][0] if AGENTS_DATA[agent_id]['pdfSources'] else None
-        logger.info(f"Using pdfSource from loaded agent data for agent {agent_id}: {target_pdf_source}")
-    elif agent_id == 'DPDP': # Fallback for hardcoded DPDP if not in AGENTS_DATA
-        target_pdf_source = 'DPDP_act.pdf'
-        logger.info(f"Fallback to hardcoded DPDP pdfSource: {target_pdf_source}")
-    elif agent_id == 'Parliament': # Fallback for hardcoded Parliament if not in AGENTS_DATA
-        target_pdf_source = 'Rules_of_Procedures_Lok_Sabha.pdf'
-        logger.info(f"Fallback to hardcoded Parliament pdfSource: {target_pdf_source}")
+        target_pdf_sources = AGENTS_DATA[agent_id].get('pdfSources', [])
+        logger.info(f"Using pdfSources from loaded agent data for agent {agent_id}: {target_pdf_sources}")
+    elif agent_id == 'DPDP':
+        target_pdf_sources = ['DPDP_act.pdf']
+        logger.info(f"Fallback to hardcoded DPDP pdfSource: {target_pdf_sources}")
+    elif agent_id == 'Parliament':
+        target_pdf_sources = ['Rules_of_Procedures_Lok_Sabha.pdf']
+        logger.info(f"Fallback to hardcoded Parliament pdfSource: {target_pdf_sources}")
     
     # Add messages to session with proper string conversion
     sessions[session_id]['messages'].append({
@@ -666,8 +663,8 @@ def add_message(session_id):
     logger.info(f"Retrieved {len(all_docs)} documents before agent filtering.")
     
     docs = []
-    if target_pdf_source:
-        docs = [doc for doc in all_docs if doc.metadata.get('source') == target_pdf_source]
+    if target_pdf_sources:
+        docs = [doc for doc in all_docs if doc.metadata.get('source') in target_pdf_sources]
         # Do NOT fallback to all_docs if none found; just return empty context for strict agent separation
     else:
         docs = []

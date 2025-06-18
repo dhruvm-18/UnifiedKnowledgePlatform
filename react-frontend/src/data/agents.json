@@ -71,6 +71,20 @@
       "pdfSources": [
         "National_Strategy_AI.pdf"
       ]
+    },
+    {
+      "agentId": "agent_1750230039917",
+      "name": "GST Act",
+      "description": "Get inishgts from CGST,IGST,UGST act of 2017 from Indian Government",
+      "iconType": "FaLightbulb",
+      "buttonText": "Start Chat",
+      "pdfSources": [
+        "UGST.pdf",
+        "IGST.pdf",
+        "CGST.pdf"
+      ],
+      "tileLineStartColor": "Blue",
+      "tileLineEndColor": "Orange"
     }
   ]
 }
