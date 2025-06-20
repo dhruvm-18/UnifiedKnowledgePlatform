@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 
 const CompactMagnifyingGlassLoader = () => {
@@ -42,8 +41,8 @@ const CompactMagnifyingGlassLoader = () => {
           style={{
             width: "100%",
             height: "100%",
-            backgroundColor: "#f3f4f6", // Light gray background
-            border: "1px solid #d1d5db", // Border color
+            backgroundColor: "var(--bg-secondary)", // Use theme background
+            border: "1px solid var(--border-color)",
             borderRadius: "8px",
             overflow: "hidden",
             position: "relative",
@@ -108,7 +107,7 @@ const CompactMagnifyingGlassLoader = () => {
           style={{
             marginTop: "8px",
             fontSize: "14px",
-            color: "#374151", // Dark gray text color
+            color: "var(--text-primary)", // Use theme text color
             textAlign: "center",
             fontWeight: "500",
           }}

@@ -2002,3 +2002,21 @@ html, body, #root {
   pointer-events: none;
   display: block;
 }
+
+.dark-mode .cta-button {
+  background: linear-gradient(45deg, #7c3aed, #8b5cf6) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4) !important;
+}
+.dark-mode .cta-button:hover {
+  background: linear-gradient(45deg, #6d28d9, #7c3aed) !important;
+  box-shadow: 0 6px 16px rgba(124, 58, 237, 0.6) !important;
+}
+
+.dark-mode .feature-icon svg {
+  color: var(--accent-color) !important;
+}
+
+.dark-mode .step svg {
+  color: var(--accent-color) !important;
+}

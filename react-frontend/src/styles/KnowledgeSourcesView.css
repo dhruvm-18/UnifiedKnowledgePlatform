@@ -917,10 +917,10 @@
 }
 
 .dark-mode .agent-icon {
-  color: var(--text-primary); /* Set to light text color for dark mode */
-  background: none; /* Remove gradient background to allow solid color */
-  -webkit-background-clip: unset; /* Ensure background clip is removed */
-  -webkit-text-fill-color: unset; /* Ensure text fill color is unset */
+  color: var(--accent-color) !important;
+  background: none !important;
+  -webkit-background-clip: unset !important;
+  -webkit-text-fill-color: unset !important;
 }
 
 .dark-mode .agent-card h3 {
@@ -1037,11 +1037,12 @@
 }
 
 .dark-mode .create-agent-btn {
-  background: linear-gradient(45deg, #66bb6a, #43a047); /* Darker green for create button */
+  background: linear-gradient(45deg, #7c3aed, #8b5cf6) !important;
+  color: #fff !important;
 }
 
 .dark-mode .create-agent-btn:hover {
-  box-shadow: 0 4px 15px rgba(102, 187, 106, 0.4); /* Darker shadow */
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4) !important;
 }
 
 .source-info {
@@ -1082,4 +1083,42 @@
   border-bottom: 1px solid rgba(52, 152, 219, 0.2);
   padding-bottom: 5px;
   margin-bottom: 5px;
+}
+
+/* --- Improved dark mode for Sources box and Create Agent button --- */
+.dark-mode .source-info {
+  background-color: #23233a !important;
+  color: #e0e0e0 !important;
+}
+.dark-mode .source-info p {
+  color: #b39ddb !important;
+}
+.dark-mode .source-info li {
+  color: #b0b0b0 !important;
+}
+.dark-mode .source-info li:not(:last-child) {
+  border-bottom: 1px solid #444 !important;
+}
+
+.dark-mode .create-agent-btn {
+  background: linear-gradient(45deg, #7c3aed, #8b5cf6) !important;
+  color: #fff !important;
+}
+.dark-mode .create-agent-btn:hover {
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.4) !important;
+}
+
+/* --- Accent color for New Agent button in dark mode --- */
+.dark-mode .new-agent-header-btn {
+  background: linear-gradient(45deg, #7c3aed, #8b5cf6) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3) !important;
+}
+.dark-mode .new-agent-header-btn:hover {
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4) !important;
+}
+
+/* Remove overlay background darkening in dark mode */
+.dark-mode .new-agent-overlay {
+  background-color: transparent !important;
 } 

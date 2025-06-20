@@ -8,9 +8,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* Add background and text colors that match your theme */
-    background-color: var(--background-color-dark);
-    color: var(--text-color-light);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
 }
 
 /* Error message style */
@@ -47,8 +46,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    /* Add background color if needed, considering dark mode */
-    /* background-color: var(--background-color-card); */
+    background-color: var(--bg-secondary);
     border-radius: 8px;
 }
 
@@ -59,14 +57,13 @@
     border-radius: 4px;
     cursor: pointer;
     transition: background-color 0.2s ease;
-    color: white; /* Default text color */
-    /* Default button styles */
-    background-color: #007bff; /* Blue */
+    color: var(--text-primary);
+    background-color: var(--accent-color);
 }
 
 .pdf-controls button:disabled {
-    background-color: #ccc; /* Grey when disabled */
-    cursor: not-allowed;
+    background-color: #555;
+    color: #aaa;
 }
 
 /* Specific styles for zoom buttons */
@@ -77,8 +74,7 @@
 /* Page number display */
 .pdf-page-info {
     margin-left: 20px;
-    /* Add text color if needed */
-    color: var(--text-color-light);
+    color: var(--text-primary);
 }
 
 /* Canvas container */
@@ -93,11 +89,10 @@
 /* Canvas element style */
 .pdf-canvas {
     border: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px var(--shadow-color);
     max-width: 100%;
     height: auto;
-    /* Background for the canvas itself if PDF doesn't fill */
-    background-color: white;
+    background-color: var(--bg-secondary);
 }
 
 /* Hide canvas when loading or no document */

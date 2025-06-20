@@ -46,7 +46,6 @@ from pypdf import PdfReader
 from werkzeug.utils import secure_filename
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 from elevenlabs import play # Keep play for local playback if needed
@@ -124,7 +123,7 @@ llm = ChatGoogleGenerativeAI(
 )
 
 # Initialize the embeddings
-embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")  # Multilingual support
 
 document_heading = None
 
@@ -203,7 +202,7 @@ def process_pdf(filepath):
             vectorstore = initialize_faiss_index([doc], embeddings)
             retriever = vectorstore.as_retriever(
                 search_type="similarity",
-                search_kwargs={"k": 5}
+                search_kwargs={"k": 20}
             )
         else:
             # If retriever exists, update the existing FAISS index
@@ -220,7 +219,7 @@ pdf_documents = load_pdfs_from_directory("backend/pdfs")
 vectorstore = initialize_faiss_index(pdf_documents, embeddings)
 retriever = vectorstore.as_retriever(
     search_type="similarity",
-    search_kwargs={"k": 5}
+    search_kwargs={"k": 20}
 )
 
 # In-memory session storage
@@ -618,6 +617,51 @@ def load_agent_data():
 # Call this function on startup
 load_agent_data()
 
+# --- Agent-specific retrievers ---
+# Build a vectorstore and retriever for each agent's PDF(s)
+agent_retrievers = {}
+all_documents = []
+
+# Load all PDFs and build a general retriever as fallback
+pdf_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend', 'pdfs')
+pdf_files = [f for f in os.listdir(pdf_dir) if f.endswith('.pdf')]
+pdf_path_map = {os.path.basename(f): os.path.join(pdf_dir, f) for f in pdf_files}
+
+# Helper to load a PDF as LangChain Document(s)
+def load_pdf_as_documents(pdf_filename):
+    pdf_dir = app.config['UPLOAD_FOLDER']
+    pdf_path = os.path.join(pdf_dir, pdf_filename)
+    if not os.path.exists(pdf_path):
+        logger.error(f"PDF file {pdf_filename} not found in {pdf_dir}")
+        return []
+    try:
+        reader = PdfReader(pdf_path)
+        docs = []
+        for i, page in enumerate(reader.pages):
+            text = page.extract_text()
+            if text:
+                docs.append(Document(page_content=text, metadata={"source": pdf_filename, "page": i+1}))
+        return docs
+    except Exception as e:
+        logger.error(f"Error loading PDF {pdf_filename}: {e}")
+        return []
+
+# Build agent-specific retrievers
+for agent_id, agent in AGENTS_DATA.items():
+    pdfs = agent.get('pdfSources', [])
+    agent_docs = []
+    for pdf in pdfs:
+        agent_docs.extend(load_pdf_as_documents(pdf))
+    if agent_docs:
+        agent_vectorstore = initialize_faiss_index(agent_docs, embeddings)
+        agent_retrievers[agent_id] = agent_vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 20})
+        logger.info(f"Built retriever for agent {agent_id} with {len(agent_docs)} docs.")
+    all_documents.extend(agent_docs)
+
+# Build a general retriever for all documents as fallback
+general_vectorstore = initialize_faiss_index(all_documents, embeddings) if all_documents else None
+general_retriever = general_vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 20}) if general_vectorstore else None
+
 @app.route('/sessions/<session_id>/messages', methods=['POST'])
 def add_message(session_id):
     """Add a message to a session"""
@@ -625,52 +669,26 @@ def add_message(session_id):
         return jsonify({'error': 'Session not found'}), 404
     
     data = request.json
+    # Always use the translated English message for all backend logic
     user_message = str(data.get('message', '')) if data.get('message') is not None else ''
     user_name = str(data.get('userName', 'User')) if data.get('userName') is not None else 'User'
     agent_id = data.get('agentId', None)
     pdf_source_from_frontend = data.get('pdfSource', None)
+    original_message = data.get('original_message', user_message)  # Optionally store original message for display
+    lang = data.get('lang', 'en-IN')  # Default to BCP-47 code
     
     logger.info(f"Processing user message: {user_message} for agent: {agent_id}, pdfSource: {pdf_source_from_frontend}")
     
-    # Check if the message contains Hindi characters
-    hindi_pattern = re.compile(r'[\u0900-\u097F]')
-    is_hindi = bool(hindi_pattern.search(user_message))
+    # Use agent-specific retriever if available, else fallback to general retriever
+    retriever_to_use = agent_retrievers.get(agent_id) if agent_id in agent_retrievers else general_retriever
+    if retriever_to_use is None:
+        logger.error("No retriever available for this agent or general context.")
+        return jsonify({'error': 'No retriever available.'}), 500
+    all_docs = retriever_to_use.get_relevant_documents(user_message)
+    logger.info(f"Retrieved {len(all_docs)} documents for agent {agent_id if agent_id else 'general'}.")
+    docs = all_docs  # No post-retrieval filtering needed
+    logger.info(f"Documents returned: {[doc.metadata.get('source') for doc in docs]}")
     
-    # Determine the target PDF sources based on agent_id or frontend provided pdfSource
-    target_pdf_sources = []
-    if pdf_source_from_frontend:
-        target_pdf_sources = [pdf_source_from_frontend]
-        logger.info(f"Using pdfSource from frontend: {target_pdf_sources}")
-    elif agent_id and agent_id in AGENTS_DATA:
-        target_pdf_sources = AGENTS_DATA[agent_id].get('pdfSources', [])
-        logger.info(f"Using pdfSources from loaded agent data for agent {agent_id}: {target_pdf_sources}")
-    elif agent_id == 'DPDP':
-        target_pdf_sources = ['DPDP_act.pdf']
-        logger.info(f"Fallback to hardcoded DPDP pdfSource: {target_pdf_sources}")
-    elif agent_id == 'Parliament':
-        target_pdf_sources = ['Rules_of_Procedures_Lok_Sabha.pdf']
-        logger.info(f"Fallback to hardcoded Parliament pdfSource: {target_pdf_sources}")
-    
-    # Add messages to session with proper string conversion
-    sessions[session_id]['messages'].append({
-        'sender': 'user',
-        'content': str(user_message),  # Ensure content is string
-        'agentId': agent_id  # Store the agent ID received from frontend or inferred
-    })
-    
-    # Get relevant context from documents
-    all_docs = retriever.get_relevant_documents(user_message)
-    logger.info(f"Retrieved {len(all_docs)} documents before agent filtering.")
-    
-    docs = []
-    if target_pdf_sources:
-        docs = [doc for doc in all_docs if doc.metadata.get('source') in target_pdf_sources]
-        # Do NOT fallback to all_docs if none found; just return empty context for strict agent separation
-    else:
-        docs = []
-    
-    logger.info(f"Documents after agent filtering ({agent_id}): {[doc.metadata.get('source') for doc in docs]}")
-
     context = "\n\n".join([doc.page_content for doc in docs])
     # Escape curly braces in the context to prevent them from being misinterpreted as variables by Langchain
     escaped_context = context.replace('{', '{{').replace('}', '}}')
@@ -701,46 +719,10 @@ def add_message(session_id):
     )
     
     # Generate response
-    if is_hindi:
-        # Use Sarvam API for Hindi responses
-        try:
-            # Make request to Sarvam API
-            sarvam_response = requests.post(
-                'https://api.sarvam.ai/v1/chat/completions',
-                headers={
-                    'Content-Type': 'application/json',
-                    'Authorization': f'Bearer {SARVAM_API_KEY}'
-                },
-                json={
-                    'model': 'sarvam-m',
-                    'messages': [
-                        {
-                            'role': 'system',
-                            'content': f'You are a helpful AI assistant. Answer based on this context: {escaped_context}'
-                        },
-                        {
-                            'role': 'user',
-                            'content': user_message
-                        }
-                    ],
-                    'temperature': 0.7
-                }
-            )
-            
-            if sarvam_response.status_code == 200:
-                response = sarvam_response.json()['choices'][0]['message']['content']
-            else:
-                logger.error(f"Sarvam API error: {sarvam_response.text}")
-                response = "मुझे खेद है, लेकिन मैं इस समय आपके प्रश्न का उत्तर नहीं दे पा रहा हूं। कृपया कुछ देर बाद पुनः प्रयास करें।"
-        except Exception as e:
-            logger.error(f"Error calling Sarvam API: {e}")
-            response = "मुझे खेद है, लेकिन मैं इस समय आपके प्रश्न का उत्तर नहीं दे पा रहा हूं। कृपया कुछ देर बाद पुनः प्रयास करें।"
-    else:
-        # Use Gemini for English responses
-        response = chain.invoke({
-            "context": escaped_context,
-            "user_message": user_message
-        })
+    response = chain.invoke({
+        "context": escaped_context,
+        "user_message": user_message
+    })
     
     logger.info(f"Raw model response (first 500 chars): {response[:500]}...")
     
@@ -757,9 +739,16 @@ def add_message(session_id):
     
     # Add messages to session
     sessions[session_id]['messages'].append({
+        'sender': 'user',
+        'content': original_message,  # Store the original message for display
+        'agentId': agent_id,  # Store the agent ID received from frontend or inferred
+        'lang': lang  # Store BCP-47 code
+    })
+    sessions[session_id]['messages'].append({
         'sender': 'assistant',
         'content': str(formatted_response), # Ensure assistant response is always a string
-        'agentId': agent_id # Store the agent ID for assistant messages as well
+        'agentId': agent_id, # Store the agent ID for assistant messages as well
+        'lang': lang  # Store BCP-47 code
     })
     
     # Update session title if it's the first message
@@ -884,7 +873,7 @@ def rebuild_faiss_index():
     vectorstore = initialize_faiss_index(pdf_documents, embeddings)
     retriever = vectorstore.as_retriever(
         search_type="similarity",
-        search_kwargs={"k": 5}
+        search_kwargs={"k": 20}
     )
 
 @app.route('/upload-pdf', methods=['POST', 'OPTIONS'])
@@ -942,7 +931,7 @@ def load_uploaded_pdfs():
     existing_pdfs_in_index = set()
 
     # Try to load existing FAISS index to get sources
-    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+    embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2")  # Multilingual support
     if os.path.exists("faiss_index"):
         try:
             vectorstore = FAISS.load_local("faiss_index", embeddings, allow_dangerous_deserialization=True)
@@ -1038,6 +1027,21 @@ def add_agent():
         AGENTS_DATA[agent_id] = agent_data
         save_agents_to_json()
         logger.info(f"Added new agent: {agent_id}")
+
+        # --- PATCH START: Build retriever for new agent ---
+        # Load PDFs and build retriever for the new agent
+        pdfs = agent_data.get('pdfSources', [])
+        agent_docs = []
+        for pdf in pdfs:
+            agent_docs.extend(load_pdf_as_documents(pdf))
+        if agent_docs:
+            agent_vectorstore = initialize_faiss_index(agent_docs, embeddings)
+            agent_retrievers[agent_id] = agent_vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 20})
+            logger.info(f"[PATCH] Built retriever for new agent {agent_id} with {len(agent_docs)} docs.")
+        else:
+            logger.warning(f"[PATCH] No documents found for new agent {agent_id}. Retriever not built.")
+        # --- PATCH END ---
+
         return jsonify({
             'message': 'Agent created successfully',
             'agent': agent_data,
@@ -1168,6 +1172,30 @@ def elevenlabs_stt():
     except Exception as e:
         logger.error(f"ElevenLabs STT error: {e}")
         return jsonify({'error': str(e)}), 500
+
+# --- Translation Consistency Helper (for future use) ---
+def sarvam_translate_consistent(text, target_language_code, source_language_code="auto"):
+    """
+    Use Sarvam Translate with a prompt for legal/official queries to improve translation consistency.
+    Accepts BCP-47 codes for language.
+    """
+    import requests
+    SARVAM_API_KEY = os.getenv("SARVAM_API_KEY", "sk_y9798qpa_JJoiaSJY4GWdgVWW8Gs0LGN5")
+    SARVAM_URL = "https://api.sarvam.ai/translate"
+    headers = {
+        "api-subscription-key": SARVAM_API_KEY,
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "input": text,
+        "source_language_code": source_language_code,
+        "target_language_code": target_language_code
+    }
+    response = requests.post(SARVAM_URL, headers=headers, json=payload)
+    if response.status_code == 200:
+        return response.json().get("translated_text")
+    else:
+        return text  # fallback
 
 if __name__ == '__main__':
     print("Starting Flask app...")

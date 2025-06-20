@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import './App.css';
 import './styles/backgrounds.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport } from 'react-icons/fa';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe } from 'react-icons/fa';
 import HomeView from './components/HomeView';
 import KnowledgeSourcesView from './components/KnowledgeSourcesView';
 import PDFViewer from './components/PDFViewer';
@@ -12,6 +12,8 @@ import DOMPurify from 'dompurify';
 import { getIconComponent } from './utils/iconUtils';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from './hooks/useSpeechSynthesis';
+import { sarvamTranslate } from './utils/sarvamTranslate';
+import SupportedLanguages from './components/SupportedLanguages';
 
 // Helper to save current cursor selection
 function saveSelection(element) {
@@ -658,8 +660,8 @@ function App() {
   };
 
   const handleSend = async (overrideInput) => {
-    const messageToSend = overrideInput !== undefined ? String(overrideInput) : inputRef.current.innerText;
-    if (!messageToSend.trim() || loading) return;
+    let userInput = overrideInput !== undefined ? String(overrideInput) : inputRef.current.innerText;
+    if (!userInput.trim() || loading) return;
 
     setInput('');
     if (inputRef.current) {
@@ -679,7 +681,7 @@ function App() {
     let contextualAgentAssignment = false;
 
     const agentMentionRegex = /^@([^\s]+(?:\s[^\s]+)*)\s*(.*)$/;
-    const agentMentionMatch = messageToSend.match(agentMentionRegex);
+    const agentMentionMatch = userInput.match(agentMentionRegex);
 
     const isFirstMessageInNewSession = messages.length === 0 && !currentSessionId;
 
@@ -696,7 +698,6 @@ function App() {
         setActiveAgentDetails(matchedAgent);
         localStorage.setItem('activeAgentId', matchedAgent.id);
       } else {
-        console.warn(`Unknown agent mentioned: @${mentionedAgentName}`);
         agentIdToSend = null;
         agentFullNameToSend = null;
         agentIconToSend = null;
@@ -707,7 +708,6 @@ function App() {
         agentIdToSend = null;
         contextualAgentAssignment = true;
       } else if (activeAgentDetails) {
-        // Keep using the current activeAgentDetails
         agentIdToSend = activeAgentDetails.id;
         agentFullNameToSend = activeAgentDetails.fullName;
         agentIconToSend = activeAgentDetails.iconType;
@@ -720,16 +720,31 @@ function App() {
       }
     }
 
+    // Sarvam Translate integration
+    let detectedLang = 'en';
+    let translatedInput = userInput;
+    let translationError = false;
+    try {
+      const sarvamResult = await sarvamTranslate(userInput, 'en', 'auto');
+      detectedLang = sarvamResult.detected_source_language || 'en';
+      translatedInput = sarvamResult.translated_text || userInput;
+    } catch (err) {
+      console.error('Sarvam Translate failed (input)', err);
+      translationError = true;
+      detectedLang = 'en';
+      translatedInput = userInput;
+    }
+
     const userMessage = {
       sender: 'user',
-      content: String(messageToSend),
+      content: userInput,
       id: tempMessageId,
       agentId: agentIdToSend,
       agentName: agentFullNameToSend,
       agentIcon: agentIconToSend,
+      lang: detectedLang
     };
 
-    console.log(`User message object before adding to state:`, userMessage);
     setMessages(msgs => [...msgs, userMessage]);
     setChatStarted(true);
 
@@ -742,35 +757,28 @@ function App() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            message: messageToSend,
+            message: translatedInput,
             userName: userName, 
             agentId: agentIdToSend,
             pdfSource: pdfSourceToSend,
-            contextualAgentAssignment: contextualAgentAssignment
+            contextualAgentAssignment: contextualAgentAssignment,
+            lang: detectedLang
           })
         });
 
         if (res.ok) {
           const data = await res.json();
-          const assistantContent = data && data.response !== undefined ? String(data.response) : 'Error: Could not retrieve response from backend.';
+          let assistantContent = data && data.response !== undefined ? String(data.response) : 'Error: Could not retrieve response from backend.';
           const assistantAgentId = data.metadata && data.metadata.agent_id ? data.metadata.agent_id : null;
-          
-          console.log('Backend response data:', data); // DEBUG LOG
-          console.log('Assistant Agent ID from backend:', assistantAgentId); // DEBUG LOG
 
-          if (assistantAgentId && (!activeAgentDetails || activeAgentDetails.id !== assistantAgentId)) {
-            const assignedAgent = currentAgents.find(agent => agent.id === assistantAgentId);
-            
-            console.log('Attempting to assign agent. Assigned agent:', assignedAgent); // DEBUG LOG
-            console.log('Current activeAgentDetails before update:', activeAgentDetails); // DEBUG LOG
-
-            if (assignedAgent) {
-              setActiveAgentDetails(assignedAgent);
-              localStorage.setItem(`sessionAgent_${sessionId}`, assignedAgent.id);
-              console.log('Active agent assigned/updated:', assignedAgent.fullName); // DEBUG LOG
-              console.log('New activeAgentDetails after update:', assignedAgent); // DEBUG LOG
-            } else {
-              console.warn('Assigned agent not found in currentAgents list:', assistantAgentId); // DEBUG LOG
+          // Translate back if needed
+          if (detectedLang !== 'en') {
+            try {
+              const backTrans = await sarvamTranslate(assistantContent, detectedLang, 'en');
+              assistantContent = backTrans.translated_text || assistantContent;
+            } catch (err) {
+              console.error('Sarvam Translate failed (output)', err);
+              // Fallback: show English
             }
           }
 
@@ -778,7 +786,7 @@ function App() {
           const assistantAgentFullName = responseAgent ? responseAgent.fullName : null;
           const assistantAgentIcon = responseAgent ? responseAgent.iconType : null;
 
-          setMessages([userMessage, { sender: 'assistant', content: assistantContent, agentId: assistantAgentId, agentName: assistantAgentFullName, agentIcon: assistantAgentIcon }]);
+          setMessages([userMessage, { sender: 'assistant', content: assistantContent, agentId: assistantAgentId, agentName: assistantAgentFullName, agentIcon: assistantAgentIcon, lang: detectedLang }]);
           if (data && data.session) {
             setSessions(sessions => sessions.map(session =>
               session.id === data.session.id ? data.session : session
@@ -786,7 +794,6 @@ function App() {
           }
         } else {
           const errorData = await res.json();
-          console.error('Backend error response:', errorData);
           throw new Error(errorData.error || `Failed to send message: ${res.status}`);
         }
       } else {
@@ -794,24 +801,26 @@ function App() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
-            message: messageToSend,
+            message: translatedInput,
             userName: userName, 
             agentId: agentIdToSend,
-            pdfSource: pdfSourceToSend
+            pdfSource: pdfSourceToSend,
+            lang: detectedLang
           })
         });
 
         if (res.ok) {
           const data = await res.json();
-          const assistantContent = data && data.response !== undefined ? String(data.response) : 'Error: Could not retrieve response from backend.';
+          let assistantContent = data && data.response !== undefined ? String(data.response) : 'Error: Could not retrieve response from backend.';
           const assistantAgentId = data.metadata && data.metadata.agent_id ? data.metadata.agent_id : null;
 
-          if (assistantAgentId && (!activeAgentDetails || activeAgentDetails.id !== assistantAgentId)) {
-            const usedAgent = currentAgents.find(agent => agent.id === assistantAgentId);
-            if (usedAgent) {
-              setActiveAgentDetails(usedAgent);
-              localStorage.setItem('activeAgentId', usedAgent.id);
-              console.log('Active agent updated from backend response (existing session):', usedAgent.fullName);
+          if (detectedLang !== 'en') {
+            try {
+              const backTrans = await sarvamTranslate(assistantContent, detectedLang, 'en');
+              assistantContent = backTrans.translated_text || assistantContent;
+            } catch (err) {
+              console.error('Sarvam Translate failed (output)', err);
+              // Fallback: show English
             }
           }
 
@@ -819,7 +828,7 @@ function App() {
           const assistantAgentFullName = responseAgent ? responseAgent.fullName : null;
           const assistantAgentIcon = responseAgent ? responseAgent.iconType : null;
 
-          setMessages(msgs => [...msgs, { sender: 'assistant', content: assistantContent, agentId: assistantAgentId, agentName: assistantAgentFullName, agentIcon: assistantAgentIcon }]);
+          setMessages(msgs => [...msgs, { sender: 'assistant', content: assistantContent, agentId: assistantAgentId, agentName: assistantAgentFullName, agentIcon: assistantAgentIcon, lang: detectedLang }]);
           if (data && data.session) {
             setSessions(sessions => sessions.map(session =>
               session.id === data.session.id ? data.session : session
@@ -827,13 +836,12 @@ function App() {
           }
         } else {
           const errorData = await res.json();
-          console.error('Backend error response:', errorData);
           throw new Error(errorData.error || `Failed to send message: ${res.status}`);
         }
       }
     } catch (err) {
       console.error("Error sending message:", err);
-      setMessages(msgs => [...msgs, { sender: 'assistant', content: `Sorry, there was an error: ${err.message}` }]);
+      setMessages(msgs => [...msgs, { sender: 'assistant', content: `Sorry, there was an error: ${err.message}`, lang: detectedLang }]);
     } finally {
       setLoading(false);
       setIsTyping(false);
@@ -1155,6 +1163,13 @@ function App() {
               title="Select different knowledge sources or agents"
             >
               <FaCube style={{ marginRight: '10px' }} /> Knowledge Sources
+            </button>
+            <button
+              className="sidebar-nav-item"
+              onClick={() => setCurrentView('supported-languages')}
+              title="View supported languages"
+            >
+              <FaGlobe style={{ marginRight: '10px' }} /> Supported Languages
             </button>
             <button
               className="sidebar-nav-item theme-toggle"
@@ -1530,7 +1545,6 @@ function App() {
                           
                           // Construct the new plain text for the input using agent.fullName
                           const newPlainText = currentText.substring(0, lastAtIndex) + `@${agent.fullName} `;
-                          
                           // Calculate the new caret offset
                           const newCaretOffset = newPlainText.length;
 
@@ -1548,7 +1562,6 @@ function App() {
 
                           // Update the input state to keep it in sync for send button etc.
                           setInput(newPlainText);
-                          
                           // Restore cursor position
                           restoreSelection(div, newCaretOffset);
 
@@ -1581,31 +1594,6 @@ function App() {
                     ))}
                   </div>
                 )}
-                <button
-                  className="lang-toggle-btn"
-                  type="button"
-                  title={voiceLang === 'en-US' ? 'Switch to Hindi' : 'Switch to English'}
-                  onClick={() => setVoiceLang(voiceLang === 'en-US' ? 'hi-IN' : 'en-US')}
-                  style={{
-                    background: '#007BFF',
-                    color: '#F9FAFB',
-                    border: 'none',
-                    borderRadius: '8px',
-                    width: 44,
-                    height: 44,
-                    marginLeft: 8,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    fontWeight: 700,
-                    fontSize: 16,
-                    transition: 'background 0.2s, color 0.2s',
-                  }}
-                  disabled={loading}
-                >
-                  {voiceLang === 'en-US' ? 'EN' : 'HI'}
-                </button>
                 <button
                   className="voice-input-btn"
                   type="button"
@@ -1645,6 +1633,9 @@ function App() {
             onStartChatWithAgent={handleStartChatWithAgent} 
             onAgentDataChange={handleAgentDataChange}
           />
+        )}
+        {currentView === 'supported-languages' && (
+          <SupportedLanguages />
         )}
 
         {/* Render PdfViewer when currentView is 'pdf-viewer' */}
@@ -1703,4 +1694,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;

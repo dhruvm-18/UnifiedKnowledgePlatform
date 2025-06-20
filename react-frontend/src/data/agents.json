@@ -73,9 +73,9 @@
       ]
     },
     {
-      "agentId": "agent_1750232163568",
-      "name": "GST Act",
-      "description": "Get insights from CGST,IGST,UGST Acts of Indian Government from 2017",
+      "agentId": "agent_1750273531574",
+      "name": "GST Knowledge Agent",
+      "description": "Get insights from CGST,IGST,UGST Acts of Indian Government from 2017\n\n",
       "iconType": "FaLightbulb",
       "buttonText": "Start Chat",
       "pdfSources": [
@@ -83,7 +83,7 @@
         "IGST.pdf",
         "CGST.pdf"
       ],
-      "tileLineStartColor": "White",
+      "tileLineStartColor": "Violet",
       "tileLineEndColor": "Black"
     }
   ]
