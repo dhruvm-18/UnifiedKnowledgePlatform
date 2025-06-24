@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import './App.css';
 import './styles/backgrounds.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe } from 'react-icons/fa';
+import './styles/modal.css';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain } from 'react-icons/fa';
 import HomeView from './components/HomeView';
 import KnowledgeSourcesView from './components/KnowledgeSourcesView';
 import PDFViewer from './components/PDFViewer';
@@ -1131,6 +1132,33 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  const [showModelSelector, setShowModelSelector] = useState(false);
+  const modelOptions = [
+    {
+      name: 'Gemini 2.5 Flash',
+      icon: <img src="/gemini.png" alt="Gemini" className="model-icon-img" />,
+      description: "Google's latest, fastest model, best for simple or large context tasks."
+    },
+    {
+      name: 'Meta Llama 3',
+      icon: <img src="/meta.png" alt="Meta Llama 3" className="model-icon-img" />,
+      description: "Meta's most advanced open-source LLM, great for reasoning and coding."
+    },
+  ];
+  const [selectedModel, setSelectedModel] = useState('Gemini 2.5 Flash');
+  const [modelSearch, setModelSearch] = useState('');
+
+  const filteredModels = modelOptions.filter(m => m.name.toLowerCase().includes(modelSearch.toLowerCase()));
+
+  const [underlineActive, setUnderlineActive] = useState(true);
+  useEffect(() => {
+    setUnderlineActive(false);
+    const timeout = setTimeout(() => setUnderlineActive(true), 10);
+    return () => clearTimeout(timeout);
+  }, [selectedModel]);
+
+  const [viewMode, setViewMode] = useState('tiles'); // 'tiles' or 'list'
+
   return (
     <div className={`app-layout ${theme}-mode${leftCollapsed ? ' left-collapsed' : ''}${rightCollapsed ? ' right-collapsed' : ''}`}>
       <aside className={`left-sidebar${leftCollapsed ? ' collapsed' : ''}`}>
@@ -1450,182 +1478,272 @@ function App() {
                 </div>
               )}
               <div className="chat-wave-bg" />
-            <div className="floating-input-row anchored-bottom">
-              <div className="floating-input-inner">
-                <label htmlFor="file-upload" className="media-upload-btn" style={{ cursor: 'pointer', marginRight: 12 }}>
-                  <FaPaperclip size={22} color="#60A5FA" />
-                  <input id="file-upload" type="file" style={{ display: 'none' }} onChange={handleFileUpload} />
-                </label>
-                <div
-                  ref={inputRef}
-                  className="chat-input"
-                  contentEditable={true}
-                  data-placeholder="Your entire knowledge base, one question away..."
-                  onInput={e => {
-                    const div = e.target;
-                    const savedCaretOffset = saveSelection(div);
-                    let plainText = div.innerText; // Get plain text content
+              <div className="floating-input-row anchored-bottom">
+                <div className="floating-input-inner">
+                  <label htmlFor="file-upload" className="media-upload-btn" style={{ cursor: 'pointer', marginRight: 12 }}>
+                    <FaPaperclip size={22} color="#60A5FA" />
+                    <input id="file-upload" type="file" style={{ display: 'none' }} onChange={handleFileUpload} />
+                  </label>
+                  <div
+                    ref={inputRef}
+                    className="chat-input"
+                    contentEditable={true}
+                    data-placeholder="Your entire knowledge base, one question away..."
+                    onInput={e => {
+                      const div = e.target;
+                      const savedCaretOffset = saveSelection(div);
+                      let plainText = div.innerText; // Get plain text content
 
-                    // Update the input state for send button and other logic that might depend on it
-                    setInput(plainText);
+                      // Update the input state for send button and other logic that might depend on it
+                      setInput(plainText);
 
-                    // Only allow agent mention highlighting and dropdown in General Chat (when isDedicatedChat is false)
-                    const isDedicatedChat = localStorage.getItem('isDedicatedChat') === 'true';
-                    if (!isDedicatedChat) {
-                      // General Chat: allow highlighting and dropdown
-                      // Dynamically build regex for highlighting based on currentAgents for input field
-                      const agentNamesForInputRegex = currentAgents
-                        .filter(agent => agent && typeof agent.fullName === 'string' && agent.fullName.trim() !== '')
-                        .map(agent => agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-                        .sort((a, b) => b.length - a.length) // Sort by length DESC to match longest names first
-                        .join('|');
-                      // Regex: @ followed by any agent name (including spaces), with word boundary or end
-                      const dynamicHighlightRegexInput = new RegExp(`@(${agentNamesForInputRegex})(?=\\b|\\s|$)`, 'g');
+                      // Only allow agent mention highlighting and dropdown in General Chat (when isDedicatedChat is false)
+                      const isDedicatedChat = localStorage.getItem('isDedicatedChat') === 'true';
+                      if (!isDedicatedChat) {
+                        // General Chat: allow highlighting and dropdown
+                        // Dynamically build regex for highlighting based on currentAgents for input field
+                        const agentNamesForInputRegex = currentAgents
+                          .filter(agent => agent && typeof agent.fullName === 'string' && agent.fullName.trim() !== '')
+                          .map(agent => agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                          .sort((a, b) => b.length - a.length) // Sort by length DESC to match longest names first
+                          .join('|');
+                        // Regex: @ followed by any agent name (including spaces), with word boundary or end
+                        const dynamicHighlightRegexInput = new RegExp(`@(${agentNamesForInputRegex})(?=\\b|\\s|$)`, 'g');
 
-                      // Highlight ALL agent mentions in the input, not just the one being typed
-                      let highlightedHtml = plainText.replace(dynamicHighlightRegexInput, '<span class="agent-mention">@$1</span>');
+                        // Highlight ALL agent mentions in the input, not just the one being typed
+                        let highlightedHtml = plainText.replace(dynamicHighlightRegexInput, '<span class="agent-mention">@$1</span>');
 
-                      // Sanitize the HTML before setting it back
-                      const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
-                          ADD_TAGS: ['span'],
-                          ADD_ATTR: ['class']
-                      });
-                      div.innerHTML = cleanHtml;
+                        // Sanitize the HTML before setting it back
+                        const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
+                            ADD_TAGS: ['span'],
+                            ADD_ATTR: ['class']
+                        });
+                        div.innerHTML = cleanHtml;
 
-                      // Dropdown logic for General Chat
-                      if (plainText.includes('@')) {
-                        const lastAtIndex = plainText.lastIndexOf('@');
-                        const mentionPart = plainText.substring(lastAtIndex + 1).trim(); // Get text after last @ and trim whitespace
-                        // Filter against currentAgents for dynamic updates (for dropdown)
-                        const currentFilteredAgents = currentAgents.filter(agent =>
-                          agent && agent.fullName && 
-                          agent.fullName.toLowerCase().startsWith(mentionPart.toLowerCase())
-                        );
-                        setFilteredAgents(currentFilteredAgents);
-                        setShowAgentDropdown(currentFilteredAgents.length > 0);
+                        // Dropdown logic for General Chat
+                        if (plainText.includes('@')) {
+                          const lastAtIndex = plainText.lastIndexOf('@');
+                          const mentionPart = plainText.substring(lastAtIndex + 1).trim(); // Get text after last @ and trim whitespace
+                          // Filter against currentAgents for dynamic updates (for dropdown)
+                          const currentFilteredAgents = currentAgents.filter(agent =>
+                            agent && agent.fullName && 
+                            agent.fullName.toLowerCase().startsWith(mentionPart.toLowerCase())
+                          );
+                          setFilteredAgents(currentFilteredAgents);
+                          setShowAgentDropdown(currentFilteredAgents.length > 0);
+                        } else {
+                          setShowAgentDropdown(false);
+                          setFilteredAgents([]);
+                        }
                       } else {
+                        // Dedicated Chat: no highlighting, no dropdown
+                        div.innerHTML = DOMPurify.sanitize(plainText);
                         setShowAgentDropdown(false);
                         setFilteredAgents([]);
                       }
-                    } else {
-                      // Dedicated Chat: no highlighting, no dropdown
-                      div.innerHTML = DOMPurify.sanitize(plainText);
-                      setShowAgentDropdown(false);
-                      setFilteredAgents([]);
-                    }
-                    // Restore cursor position
-                    restoreSelection(div, savedCaretOffset);
-                  }}
-                  onKeyDown={handleInputKeyDown}
-                  disabled={loading}
-                ></div>
-                {showAgentDropdown && filteredAgents.length > 0 && (
-                  <div className="agent-dropdown" style={{
-                    position: 'absolute',
-                    bottom: '100%',
-                    left: '0',
-                    backgroundColor: 'var(--bg-primary)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                    maxHeight: '200px',
-                    overflowY: 'auto',
-                    zIndex: 1000,
-                    marginBottom: '8px',
-                    width: '100%'
-                  }}>
-                    {filteredAgents.map(agent => (
-                      <div
-                        key={agent.id}
-                        className="agent-dropdown-item"
-                        onClick={() => {
-                          const div = inputRef.current;
-                          const currentText = div.innerText;
-                          const lastAtIndex = currentText.lastIndexOf('@');
-                          
-                          // Construct the new plain text for the input using agent.fullName
-                          const newPlainText = currentText.substring(0, lastAtIndex) + `@${agent.fullName} `;
-                          // Calculate the new caret offset
-                          const newCaretOffset = newPlainText.length;
+                      // Restore cursor position
+                      restoreSelection(div, savedCaretOffset);
+                    }}
+                    onKeyDown={handleInputKeyDown}
+                    disabled={loading}
+                  ></div>
+                  {showAgentDropdown && filteredAgents.length > 0 && (
+                    <div className="agent-dropdown" style={{
+                      position: 'absolute',
+                      bottom: '100%',
+                      left: '0',
+                      backgroundColor: 'var(--bg-primary)',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '8px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      zIndex: 1000,
+                      marginBottom: '8px',
+                      width: '100%'
+                    }}>
+                      {filteredAgents.map(agent => (
+                        <div
+                          key={agent.id}
+                          className="agent-dropdown-item"
+                          onClick={() => {
+                            const div = inputRef.current;
+                            const currentText = div.innerText;
+                            const lastAtIndex = currentText.lastIndexOf('@');
+                            
+                            // Construct the new plain text for the input using agent.fullName
+                            const newPlainText = currentText.substring(0, lastAtIndex) + `@${agent.fullName} `;
+                            // Calculate the new caret offset
+                            const newCaretOffset = newPlainText.length;
 
-                          // Dynamically build regex for highlighting based on the selected agent's full name
-                          const escapedAgentFullName = agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                          const agentMentionRegex = new RegExp(`@${escapedAgentFullName}`, 'gi');
-                          const highlightedHtml = newPlainText.replace(agentMentionRegex, '<span class="agent-mention">$&</span>');
+                            // Dynamically build regex for highlighting based on the selected agent's full name
+                            const escapedAgentFullName = agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                            const agentMentionRegex = new RegExp(`@${escapedAgentFullName}`, 'gi');
+                            const highlightedHtml = newPlainText.replace(agentMentionRegex, '<span class="agent-mention">$&</span>');
 
-                          // Sanitize and set the new HTML content
-                          const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
-                              ADD_TAGS: ['span'],
-                              ADD_ATTR: ['class']
-                          });
-                          div.innerHTML = cleanHtml;
+                            // Sanitize and set the new HTML content
+                            const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
+                                ADD_TAGS: ['span'],
+                                ADD_ATTR: ['class']
+                            });
+                            div.innerHTML = cleanHtml;
 
-                          // Update the input state to keep it in sync for send button etc.
-                          setInput(newPlainText);
-                          // Restore cursor position
-                          restoreSelection(div, newCaretOffset);
+                            // Update the input state to keep it in sync for send button etc.
+                            setInput(newPlainText);
+                            // Restore cursor position
+                            restoreSelection(div, newCaretOffset);
 
-                          setShowAgentDropdown(false);
-                          setFilteredAgents([]);
-                          div.focus(); // Ensure the div remains focused
+                            setShowAgentDropdown(false);
+                            setFilteredAgents([]);
+                            div.focus(); // Ensure the div remains focused
 
-                          // NEW: Set active agent details for general chat and persist in localStorage
-                          setActiveAgentDetails(agent);
-                          localStorage.setItem('activeAgentId', agent.id);
-                          if (currentSessionId) {
-                            localStorage.setItem(`sessionAgent_${currentSessionId}`, agent.id);
-                          }
-                        }}
-                        style={{
-                          padding: '8px 12px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          color: 'var(--text-primary)',
-                          ':hover': {
-                            backgroundColor: 'var(--bg-secondary)'
-                          }
-                        }}
-                      >
-                        {agent.iconType && <span>{getIconComponent(agent.iconType)}</span>}
-                        <span>@{agent.fullName}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <button
-                  className="voice-input-btn"
-                  type="button"
-                  title={listening ? 'Stop listening' : 'Speak'}
-                  onClick={listening ? stopListening : startListening}
-                  style={{
-                    border: 'none',
-                    width: 44,
-                    height: 44,
-                    marginLeft: 8,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
-                  }}
-                  disabled={loading}
-                >
-                  <FaMicrophone size={20} style={{ color: listening ? '#007BFF' : 'var(--text-secondary)' }} />
-                </button>
-                <button
-                  className="send-btn send-arrow"
-                  onClick={handleSend}
-                  disabled={loading || !input.trim()}
-                  title="Send"
-                  type="button"
-                >
-                  <FaPaperPlane color={input.trim() ? '#3B82F6' : '#6B7280'} size={24} />
-                </button>
+                            // NEW: Set active agent details for general chat and persist in localStorage
+                            setActiveAgentDetails(agent);
+                            localStorage.setItem('activeAgentId', agent.id);
+                            if (currentSessionId) {
+                              localStorage.setItem(`sessionAgent_${currentSessionId}`, agent.id);
+                            }
+                          }}
+                          style={{
+                            padding: '8px 12px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            color: 'var(--text-primary)',
+                            ':hover': {
+                              backgroundColor: 'var(--bg-secondary)'
+                            }
+                          }}
+                        >
+                          {agent.iconType && <span>{getIconComponent(agent.iconType)}</span>}
+                          <span>@{agent.fullName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    className="model-selector-btn-flex bg-transparent border-none shadow-none focus:outline-none cursor-pointer p-0 m-0"
+                    title="Select Model"
+                    type="button"
+                    onClick={() => setShowModelSelector(true)}
+                    style={{ background: 'none', border: 'none', boxShadow: 'none' }}
+                  >
+                    {modelOptions.find(m => m.name === selectedModel)?.icon}
+                    <span key={selectedModel} className={`model-text-underline model-underline-animate${underlineActive ? ' underline-active' : ''}`}>{selectedModel}</span>
+                  </button>
+                  <button
+                    className="voice-input-btn"
+                    type="button"
+                    title={listening ? 'Stop listening' : 'Speak'}
+                    onClick={listening ? stopListening : startListening}
+                    style={{
+                      border: 'none',
+                      width: 44,
+                      height: 44,
+                      marginLeft: 8,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
+                    }}
+                    disabled={loading}
+                  >
+                    <FaMicrophone size={20} style={{ color: listening ? '#007BFF' : 'var(--text-secondary)' }} />
+                  </button>
+                  <button
+                    className="send-btn send-arrow"
+                    onClick={handleSend}
+                    disabled={loading || !input.trim()}
+                    title="Send"
+                    type="button"
+                  >
+                    <FaPaperPlane color={input.trim() ? '#3B82F6' : '#6B7280'} size={24} />
+                  </button>
                 </div>
               </div>
             </div>
+            {showModelSelector && (
+              <div className="modal-overlay" onClick={() => setShowModelSelector(false)}>
+                <div className="modal-content" onClick={e => e.stopPropagation()}>
+                  <button
+                    className="close-modal-btn"
+                    onClick={() => setShowModelSelector(false)}
+                    aria-label="Close"
+                  >
+                    &times;
+                  </button>
+                  <div className="model-search-toggle-row">
+                    <div className="model-search-input-wrapper">
+                      <svg className="model-search-icon" width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" stroke="#A0A4AB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                      <input
+                        type="text"
+                        className="model-search-input"
+                        placeholder="Search models"
+                        value={modelSearch}
+                        onChange={e => setModelSearch(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="model-view-toggle-row">
+                      <button className={`model-view-toggle-btn${viewMode === 'tiles' ? ' active' : ''}`} onClick={() => setViewMode('tiles')} aria-label="Grid view">
+                        <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2" fill="currentColor"/><rect x="14" y="3" width="7" height="7" rx="2" fill="currentColor"/><rect x="14" y="14" width="7" height="7" rx="2" fill="currentColor"/><rect x="3" y="14" width="7" height="7" rx="2" fill="currentColor"/></svg>
+                      </button>
+                      <button className={`model-view-toggle-btn${viewMode === 'list' ? ' active' : ''}`} onClick={() => setViewMode('list')} aria-label="List view">
+                        <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="2.5" rx="1.25" fill="currentColor"/><rect x="4" y="10.75" width="16" height="2.5" rx="1.25" fill="currentColor"/><rect x="4" y="16.5" width="16" height="2.5" rx="1.25" fill="currentColor"/></svg>
+                      </button>
+                    </div>
+                  </div>
+                  {viewMode === 'tiles' ? (
+                    <div className="model-tiles-list">
+                      {filteredModels.map((model, idx) => (
+                        <div
+                          key={model.name + modelSearch}
+                          className="model-tile model-tile-animate"
+                          style={{ animationDelay: `${idx * 60}ms` }}
+                          onClick={() => { setSelectedModel(model.name); setShowModelSelector(false); }}
+                          role="button"
+                          aria-label={`Select ${model.name}`}
+                        >
+                          <div className="model-tile-icon-row">
+                            <div className="model-tile-icon">{model.icon}</div>
+                          </div>
+                          <div className="model-tile-name">{model.name}</div>
+                          <div className="model-tile-desc">{model.description}</div>
+                        </div>
+                      ))}
+                      {filteredModels.length === 0 && (
+                        <div className="model-tile-empty">No models found.</div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="model-list-view">
+                      {filteredModels.map((model, idx) => (
+                        <div
+                          key={model.name + modelSearch}
+                          className={`model-list-row model-tile-animate${viewMode === 'list' ? ' list-animate' : ''}`}
+                          style={{ animationDelay: `${idx * 60}ms` }}
+                          onClick={() => { setSelectedModel(model.name); setShowModelSelector(false); }}
+                          tabIndex={0}
+                          role="button"
+                          aria-label={`Select ${model.name}`}
+                        >
+                          <div className="model-list-icon">{model.icon}</div>
+                          <div className="model-list-info">
+                            <div className="model-list-name">{model.name}</div>
+                            <div className="model-list-desc">{model.description}</div>
+                          </div>
+                        </div>
+                      ))}
+                      {filteredModels.length === 0 && (
+                        <div className="model-tile-empty">No models found.</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
         {currentView === 'knowledge-sources' && (
