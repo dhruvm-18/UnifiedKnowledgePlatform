@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import './App.css';
 import './styles/backgrounds.css';
 import './styles/modal.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain } from 'react-icons/fa';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave } from 'react-icons/fa';
 import HomeView from './components/HomeView';
 import KnowledgeSourcesView from './components/KnowledgeSourcesView';
 import PDFViewer from './components/PDFViewer';
@@ -15,6 +15,7 @@ import { useSpeechRecognition } from './hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from './hooks/useSpeechSynthesis';
 import { sarvamTranslate } from './utils/sarvamTranslate';
 import SupportedLanguages from './components/SupportedLanguages';
+import AgentOverlay from './components/AgentOverlay';
 
 // Helper to save current cursor selection
 function saveSelection(element) {
@@ -1159,6 +1160,142 @@ function App() {
 
   const [viewMode, setViewMode] = useState('tiles'); // 'tiles' or 'list'
 
+  // Overlay state for KnowledgeSourcesView
+  const [showNewAgentOverlay, setShowNewAgentOverlay] = useState(false);
+  const [agentToEdit, setAgentToEdit] = useState(null);
+  const [overlaySuccessMessage, setOverlaySuccessMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newAgentName, setNewAgentName] = useState('');
+  const [newAgentDescription, setNewAgentDescription] = useState('');
+  const [newAgentTileLineStartColor, setNewAgentTileLineStartColor] = useState('');
+  const [newAgentTileLineEndColor, setNewAgentTileLineEndColor] = useState('');
+  const [newAgentIconType, setNewAgentIconType] = useState('FaFileAlt');
+  const [selectedPdfs, setSelectedPdfs] = useState([]);
+  const [editedName, setEditedName] = useState('');
+  const [editedDescription, setEditedDescription] = useState('');
+  const [editedTileLineStartColor, setEditedTileLineStartColor] = useState('');
+  const [editedTileLineEndColor, setEditedTileLineEndColor] = useState('');
+
+  // Handler: PDF file input change
+  const handlePdfChange = (e) => {
+    const files = Array.from(e.target.files).filter(file => file.type === 'application/pdf');
+    if (files.length > 0) {
+      setSelectedPdfs(files);
+    } else {
+      alert('Please select PDF files');
+    }
+  };
+
+  // Handler: Cancel edit overlay
+  const handleCancelEdit = () => {
+    setAgentToEdit(null);
+  };
+
+  // Handler: Save edit agent
+  const handleSaveEdit = async () => {
+    if (!agentToEdit) return;
+    setIsSubmitting(true);
+    try {
+      const updatedAgent = {
+        agentId: agentToEdit.agentId,
+        name: editedName,
+        description: editedDescription,
+        tileLineStartColor: editedTileLineStartColor,
+        tileLineEndColor: editedTileLineEndColor,
+      };
+      const response = await fetch(`${BACKEND_BASE}/agents/${agentToEdit.agentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedAgent),
+      });
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update agent');
+      }
+      // Optionally re-fetch agents here if needed
+      setAgentToEdit(null);
+    } catch (error) {
+      console.error('Error saving agent:', error);
+      alert(`Failed to save agent: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Handler: New agent form submit
+  const handleNewAgentSubmit = async (e) => {
+    e.preventDefault();
+    if (!newAgentName || !newAgentDescription || selectedPdfs.length === 0) {
+      alert('Please fill in all fields and select at least one PDF file');
+      return;
+    }
+    setIsSubmitting(true);
+    setOverlaySuccessMessage('');
+    try {
+      // Upload PDFs
+      const formData = new FormData();
+      selectedPdfs.forEach((file) => {
+        formData.append('files', file);
+      });
+      const uploadResponse = await fetch(`${BACKEND_BASE}/upload-pdf`, {
+        method: 'POST',
+        body: formData,
+        headers: { 'Accept': 'application/json' },
+      });
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.error || 'Failed to upload PDFs');
+      }
+      const uploadData = await uploadResponse.json();
+      if (!uploadData.success) {
+        throw new Error(uploadData.error || 'Failed to upload PDFs');
+      }
+      const pdfFilenames = uploadData.filenames;
+      // Create new agent
+      const newAgentPayload = {
+        iconType: newAgentIconType,
+        name: newAgentName,
+        description: newAgentDescription,
+        buttonText: 'Start Chat',
+        agentId: `agent_${Date.now()}`,
+        pdfSources: pdfFilenames,
+        tileLineStartColor: newAgentTileLineStartColor,
+        tileLineEndColor: newAgentTileLineEndColor,
+      };
+      const agentResponse = await fetch(`${BACKEND_BASE}/agents`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newAgentPayload),
+      });
+      if (!agentResponse.ok) {
+        const errorData = await agentResponse.json();
+        throw new Error(errorData.error || 'Failed to create new agent');
+      }
+      const agentData = await agentResponse.json();
+      if (agentData.success) {
+        setOverlaySuccessMessage('Agent created successfully! ✓');
+        setNewAgentName('');
+        setNewAgentDescription('');
+        setSelectedPdfs([]);
+        setNewAgentTileLineStartColor('');
+        setNewAgentTileLineEndColor('');
+        setTimeout(() => {
+          setShowNewAgentOverlay(false);
+          setOverlaySuccessMessage('');
+        }, 2000);
+      } else {
+        throw new Error(agentData.error || 'Failed to create agent');
+      }
+    } catch (error) {
+      console.error('Error creating new agent:', error);
+      alert(`Failed to create new agent: ${error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+
   return (
     <div className={`app-layout ${theme}-mode${leftCollapsed ? ' left-collapsed' : ''}${rightCollapsed ? ' right-collapsed' : ''}`}>
       <aside className={`left-sidebar${leftCollapsed ? ' collapsed' : ''}`}>
@@ -1478,150 +1615,150 @@ function App() {
                 </div>
               )}
               <div className="chat-wave-bg" />
-              <div className="floating-input-row anchored-bottom">
-                <div className="floating-input-inner">
-                  <label htmlFor="file-upload" className="media-upload-btn" style={{ cursor: 'pointer', marginRight: 12 }}>
-                    <FaPaperclip size={22} color="#60A5FA" />
-                    <input id="file-upload" type="file" style={{ display: 'none' }} onChange={handleFileUpload} />
-                  </label>
-                  <div
-                    ref={inputRef}
-                    className="chat-input"
-                    contentEditable={true}
-                    data-placeholder="Your entire knowledge base, one question away..."
-                    onInput={e => {
-                      const div = e.target;
-                      const savedCaretOffset = saveSelection(div);
-                      let plainText = div.innerText; // Get plain text content
+            <div className="floating-input-row anchored-bottom">
+              <div className="floating-input-inner">
+                <label htmlFor="file-upload" className="media-upload-btn" style={{ cursor: 'pointer', marginRight: 12 }}>
+                  <FaPaperclip size={22} color="#60A5FA" />
+                  <input id="file-upload" type="file" style={{ display: 'none' }} onChange={handleFileUpload} />
+                </label>
+                <div
+                  ref={inputRef}
+                  className="chat-input"
+                  contentEditable={true}
+                  data-placeholder="Your entire knowledge base, one question away..."
+                  onInput={e => {
+                    const div = e.target;
+                    const savedCaretOffset = saveSelection(div);
+                    let plainText = div.innerText; // Get plain text content
 
-                      // Update the input state for send button and other logic that might depend on it
-                      setInput(plainText);
+                    // Update the input state for send button and other logic that might depend on it
+                    setInput(plainText);
 
-                      // Only allow agent mention highlighting and dropdown in General Chat (when isDedicatedChat is false)
-                      const isDedicatedChat = localStorage.getItem('isDedicatedChat') === 'true';
-                      if (!isDedicatedChat) {
-                        // General Chat: allow highlighting and dropdown
-                        // Dynamically build regex for highlighting based on currentAgents for input field
-                        const agentNamesForInputRegex = currentAgents
-                          .filter(agent => agent && typeof agent.fullName === 'string' && agent.fullName.trim() !== '')
-                          .map(agent => agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-                          .sort((a, b) => b.length - a.length) // Sort by length DESC to match longest names first
-                          .join('|');
-                        // Regex: @ followed by any agent name (including spaces), with word boundary or end
-                        const dynamicHighlightRegexInput = new RegExp(`@(${agentNamesForInputRegex})(?=\\b|\\s|$)`, 'g');
+                    // Only allow agent mention highlighting and dropdown in General Chat (when isDedicatedChat is false)
+                    const isDedicatedChat = localStorage.getItem('isDedicatedChat') === 'true';
+                    if (!isDedicatedChat) {
+                      // General Chat: allow highlighting and dropdown
+                      // Dynamically build regex for highlighting based on currentAgents for input field
+                      const agentNamesForInputRegex = currentAgents
+                        .filter(agent => agent && typeof agent.fullName === 'string' && agent.fullName.trim() !== '')
+                        .map(agent => agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                        .sort((a, b) => b.length - a.length) // Sort by length DESC to match longest names first
+                        .join('|');
+                      // Regex: @ followed by any agent name (including spaces), with word boundary or end
+                      const dynamicHighlightRegexInput = new RegExp(`@(${agentNamesForInputRegex})(?=\\b|\\s|$)`, 'g');
 
-                        // Highlight ALL agent mentions in the input, not just the one being typed
-                        let highlightedHtml = plainText.replace(dynamicHighlightRegexInput, '<span class="agent-mention">@$1</span>');
+                      // Highlight ALL agent mentions in the input, not just the one being typed
+                      let highlightedHtml = plainText.replace(dynamicHighlightRegexInput, '<span class="agent-mention">@$1</span>');
 
-                        // Sanitize the HTML before setting it back
-                        const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
-                            ADD_TAGS: ['span'],
-                            ADD_ATTR: ['class']
-                        });
-                        div.innerHTML = cleanHtml;
+                      // Sanitize the HTML before setting it back
+                      const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
+                          ADD_TAGS: ['span'],
+                          ADD_ATTR: ['class']
+                      });
+                      div.innerHTML = cleanHtml;
 
-                        // Dropdown logic for General Chat
-                        if (plainText.includes('@')) {
-                          const lastAtIndex = plainText.lastIndexOf('@');
-                          const mentionPart = plainText.substring(lastAtIndex + 1).trim(); // Get text after last @ and trim whitespace
-                          // Filter against currentAgents for dynamic updates (for dropdown)
-                          const currentFilteredAgents = currentAgents.filter(agent =>
-                            agent && agent.fullName && 
-                            agent.fullName.toLowerCase().startsWith(mentionPart.toLowerCase())
-                          );
-                          setFilteredAgents(currentFilteredAgents);
-                          setShowAgentDropdown(currentFilteredAgents.length > 0);
-                        } else {
-                          setShowAgentDropdown(false);
-                          setFilteredAgents([]);
-                        }
+                      // Dropdown logic for General Chat
+                      if (plainText.includes('@')) {
+                        const lastAtIndex = plainText.lastIndexOf('@');
+                        const mentionPart = plainText.substring(lastAtIndex + 1).trim(); // Get text after last @ and trim whitespace
+                        // Filter against currentAgents for dynamic updates (for dropdown)
+                        const currentFilteredAgents = currentAgents.filter(agent =>
+                          agent && agent.fullName && 
+                          agent.fullName.toLowerCase().startsWith(mentionPart.toLowerCase())
+                        );
+                        setFilteredAgents(currentFilteredAgents);
+                        setShowAgentDropdown(currentFilteredAgents.length > 0);
                       } else {
-                        // Dedicated Chat: no highlighting, no dropdown
-                        div.innerHTML = DOMPurify.sanitize(plainText);
                         setShowAgentDropdown(false);
                         setFilteredAgents([]);
                       }
-                      // Restore cursor position
-                      restoreSelection(div, savedCaretOffset);
-                    }}
-                    onKeyDown={handleInputKeyDown}
-                    disabled={loading}
-                  ></div>
-                  {showAgentDropdown && filteredAgents.length > 0 && (
-                    <div className="agent-dropdown" style={{
-                      position: 'absolute',
-                      bottom: '100%',
-                      left: '0',
-                      backgroundColor: 'var(--bg-primary)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '8px',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                      maxHeight: '200px',
-                      overflowY: 'auto',
-                      zIndex: 1000,
-                      marginBottom: '8px',
-                      width: '100%'
-                    }}>
-                      {filteredAgents.map(agent => (
-                        <div
-                          key={agent.id}
-                          className="agent-dropdown-item"
-                          onClick={() => {
-                            const div = inputRef.current;
-                            const currentText = div.innerText;
-                            const lastAtIndex = currentText.lastIndexOf('@');
-                            
-                            // Construct the new plain text for the input using agent.fullName
-                            const newPlainText = currentText.substring(0, lastAtIndex) + `@${agent.fullName} `;
-                            // Calculate the new caret offset
-                            const newCaretOffset = newPlainText.length;
+                    } else {
+                      // Dedicated Chat: no highlighting, no dropdown
+                      div.innerHTML = DOMPurify.sanitize(plainText);
+                      setShowAgentDropdown(false);
+                      setFilteredAgents([]);
+                    }
+                    // Restore cursor position
+                    restoreSelection(div, savedCaretOffset);
+                  }}
+                  onKeyDown={handleInputKeyDown}
+                  disabled={loading}
+                ></div>
+                {showAgentDropdown && filteredAgents.length > 0 && (
+                  <div className="agent-dropdown" style={{
+                    position: 'absolute',
+                    bottom: '100%',
+                    left: '0',
+                    backgroundColor: 'var(--bg-primary)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                    maxHeight: '200px',
+                    overflowY: 'auto',
+                    zIndex: 1000,
+                    marginBottom: '8px',
+                    width: '100%'
+                  }}>
+                    {filteredAgents.map(agent => (
+                      <div
+                        key={agent.id}
+                        className="agent-dropdown-item"
+                        onClick={() => {
+                          const div = inputRef.current;
+                          const currentText = div.innerText;
+                          const lastAtIndex = currentText.lastIndexOf('@');
+                          
+                          // Construct the new plain text for the input using agent.fullName
+                          const newPlainText = currentText.substring(0, lastAtIndex) + `@${agent.fullName} `;
+                          // Calculate the new caret offset
+                          const newCaretOffset = newPlainText.length;
 
-                            // Dynamically build regex for highlighting based on the selected agent's full name
-                            const escapedAgentFullName = agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                            const agentMentionRegex = new RegExp(`@${escapedAgentFullName}`, 'gi');
-                            const highlightedHtml = newPlainText.replace(agentMentionRegex, '<span class="agent-mention">$&</span>');
+                          // Dynamically build regex for highlighting based on the selected agent's full name
+                          const escapedAgentFullName = agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                          const agentMentionRegex = new RegExp(`@${escapedAgentFullName}`, 'gi');
+                          const highlightedHtml = newPlainText.replace(agentMentionRegex, '<span class="agent-mention">$&</span>');
 
-                            // Sanitize and set the new HTML content
-                            const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
-                                ADD_TAGS: ['span'],
-                                ADD_ATTR: ['class']
-                            });
-                            div.innerHTML = cleanHtml;
+                          // Sanitize and set the new HTML content
+                          const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
+                              ADD_TAGS: ['span'],
+                              ADD_ATTR: ['class']
+                          });
+                          div.innerHTML = cleanHtml;
 
-                            // Update the input state to keep it in sync for send button etc.
-                            setInput(newPlainText);
-                            // Restore cursor position
-                            restoreSelection(div, newCaretOffset);
+                          // Update the input state to keep it in sync for send button etc.
+                          setInput(newPlainText);
+                          // Restore cursor position
+                          restoreSelection(div, newCaretOffset);
 
-                            setShowAgentDropdown(false);
-                            setFilteredAgents([]);
-                            div.focus(); // Ensure the div remains focused
+                          setShowAgentDropdown(false);
+                          setFilteredAgents([]);
+                          div.focus(); // Ensure the div remains focused
 
-                            // NEW: Set active agent details for general chat and persist in localStorage
-                            setActiveAgentDetails(agent);
-                            localStorage.setItem('activeAgentId', agent.id);
-                            if (currentSessionId) {
-                              localStorage.setItem(`sessionAgent_${currentSessionId}`, agent.id);
-                            }
-                          }}
-                          style={{
-                            padding: '8px 12px',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            color: 'var(--text-primary)',
-                            ':hover': {
-                              backgroundColor: 'var(--bg-secondary)'
-                            }
-                          }}
-                        >
-                          {agent.iconType && <span>{getIconComponent(agent.iconType)}</span>}
-                          <span>@{agent.fullName}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                          // NEW: Set active agent details for general chat and persist in localStorage
+                          setActiveAgentDetails(agent);
+                          localStorage.setItem('activeAgentId', agent.id);
+                          if (currentSessionId) {
+                            localStorage.setItem(`sessionAgent_${currentSessionId}`, agent.id);
+                          }
+                        }}
+                        style={{
+                          padding: '8px 12px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          color: 'var(--text-primary)',
+                          ':hover': {
+                            backgroundColor: 'var(--bg-secondary)'
+                          }
+                        }}
+                      >
+                        {agent.iconType && <span>{getIconComponent(agent.iconType)}</span>}
+                        <span>@{agent.fullName}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                   <button
                     className="model-selector-btn-flex bg-transparent border-none shadow-none focus:outline-none cursor-pointer p-0 m-0"
                     title="Select Model"
@@ -1632,35 +1769,35 @@ function App() {
                     {modelOptions.find(m => m.name === selectedModel)?.icon}
                     <span key={selectedModel} className={`model-text-underline model-underline-animate${underlineActive ? ' underline-active' : ''}`}>{selectedModel}</span>
                   </button>
-                  <button
-                    className="voice-input-btn"
-                    type="button"
-                    title={listening ? 'Stop listening' : 'Speak'}
-                    onClick={listening ? stopListening : startListening}
-                    style={{
-                      border: 'none',
-                      width: 44,
-                      height: 44,
-                      marginLeft: 8,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
-                    }}
-                    disabled={loading}
-                  >
-                    <FaMicrophone size={20} style={{ color: listening ? '#007BFF' : 'var(--text-secondary)' }} />
-                  </button>
-                  <button
-                    className="send-btn send-arrow"
-                    onClick={handleSend}
-                    disabled={loading || !input.trim()}
-                    title="Send"
-                    type="button"
-                  >
-                    <FaPaperPlane color={input.trim() ? '#3B82F6' : '#6B7280'} size={24} />
-                  </button>
+                <button
+                  className="voice-input-btn"
+                  type="button"
+                  title={listening ? 'Stop listening' : 'Speak'}
+                  onClick={listening ? stopListening : startListening}
+                  style={{
+                    border: 'none',
+                    width: 44,
+                    height: 44,
+                    marginLeft: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
+                  }}
+                  disabled={loading}
+                >
+                  <FaMicrophone size={20} style={{ color: listening ? '#007BFF' : 'var(--text-secondary)' }} />
+                </button>
+                <button
+                  className="send-btn send-arrow"
+                  onClick={handleSend}
+                  disabled={loading || !input.trim()}
+                  title="Send"
+                  type="button"
+                >
+                  <FaPaperPlane color={input.trim() ? '#3B82F6' : '#6B7280'} size={24} />
+                </button>
                 </div>
               </div>
             </div>
@@ -1747,9 +1884,41 @@ function App() {
           </>
         )}
         {currentView === 'knowledge-sources' && (
-          <KnowledgeSourcesView 
-            onStartChatWithAgent={handleStartChatWithAgent} 
+          <KnowledgeSourcesView
+            onStartChatWithAgent={handleStartChatWithAgent}
             onAgentDataChange={handleAgentDataChange}
+            showNewAgentOverlay={showNewAgentOverlay}
+            setShowNewAgentOverlay={setShowNewAgentOverlay}
+            agentToEdit={agentToEdit}
+            setAgentToEdit={setAgentToEdit}
+            overlaySuccessMessage={overlaySuccessMessage}
+            setOverlaySuccessMessage={setOverlaySuccessMessage}
+            isSubmitting={isSubmitting}
+            setIsSubmitting={setIsSubmitting}
+            newAgentName={newAgentName}
+            setNewAgentName={setNewAgentName}
+            newAgentDescription={newAgentDescription}
+            setNewAgentDescription={setNewAgentDescription}
+            newAgentTileLineStartColor={newAgentTileLineStartColor}
+            setNewAgentTileLineStartColor={setNewAgentTileLineStartColor}
+            newAgentTileLineEndColor={newAgentTileLineEndColor}
+            setNewAgentTileLineEndColor={setNewAgentTileLineEndColor}
+            newAgentIconType={newAgentIconType}
+            setNewAgentIconType={setNewAgentIconType}
+            selectedPdfs={selectedPdfs}
+            setSelectedPdfs={setSelectedPdfs}
+            handleNewAgentSubmit={handleNewAgentSubmit}
+            handlePdfChange={handlePdfChange}
+            handleCancelEdit={handleCancelEdit}
+            handleSaveEdit={handleSaveEdit}
+            editedName={editedName}
+            setEditedName={setEditedName}
+            editedDescription={editedDescription}
+            setEditedDescription={setEditedDescription}
+            editedTileLineStartColor={editedTileLineStartColor}
+            setEditedTileLineStartColor={setEditedTileLineStartColor}
+            editedTileLineEndColor={editedTileLineEndColor}
+            setEditedTileLineEndColor={setEditedTileLineEndColor}
           />
         )}
         {currentView === 'supported-languages' && (
@@ -1807,6 +1976,179 @@ function App() {
             </>
           )}
         </aside>
+      )}
+      {/* Overlay Portal for New/Edit Agent */}
+      {showNewAgentOverlay && (
+        <AgentOverlay onClose={() => setShowNewAgentOverlay(false)}>
+          <div className="overlay-header">
+            <h2>New Agent</h2>
+            <button className="close-overlay-btn" onClick={() => setShowNewAgentOverlay(false)}>
+              <FaTimes />
+            </button>
+          </div>
+          {overlaySuccessMessage && (
+            <div className="overlay-success-message">
+              {overlaySuccessMessage}
+            </div>
+          )}
+          <form onSubmit={handleNewAgentSubmit}>
+            <input
+              type="text"
+              placeholder="Agent Name"
+              value={newAgentName}
+              onChange={(e) => setNewAgentName(e.target.value)}
+              required
+              disabled={isSubmitting}
+            />
+            <textarea
+              placeholder="Agent Description"
+              value={newAgentDescription}
+              onChange={(e) => setNewAgentDescription(e.target.value)}
+              required
+              disabled={isSubmitting}
+            />
+            <input
+              type="text"
+              placeholder="Tile Line Start Color (e.g., #3498db or red)"
+              value={newAgentTileLineStartColor}
+              onChange={(e) => setNewAgentTileLineStartColor(e.target.value)}
+              disabled={isSubmitting}
+            />
+            <input
+              type="text"
+              placeholder="Tile Line End Color (e.g., #8e44ad or blue)"
+              value={newAgentTileLineEndColor}
+              onChange={(e) => setNewAgentTileLineEndColor(e.target.value)}
+              disabled={isSubmitting}
+            />
+            <button
+              type="button"
+              className="advanced-toggle-btn"
+              style={{ margin: '12px 0', padding: '8px 18px', borderRadius: '20px', border: '1px solid #ddd', background: '#f3f4f6', color: '#2563eb', fontWeight: 600, cursor: 'pointer' }}
+              onClick={() => setShowAdvancedOptions(v => !v)}
+            >
+              {showAdvancedOptions ? 'Hide Advanced Options' : 'Show Advanced Options'}
+            </button>
+            {showAdvancedOptions && (
+              <div style={{ maxHeight: '180px', overflowY: 'auto', marginBottom: 12, border: '1px solid #eee', borderRadius: '12px', padding: '12px', background: '#fafbfc' }}>
+                <div className="icon-selection-container">
+                  <label htmlFor="icon-select" className="icon-select-label">Choose an Icon:</label>
+                  <select
+                    id="icon-select"
+                    value={newAgentIconType}
+                    onChange={(e) => setNewAgentIconType(e.target.value)}
+                    disabled={isSubmitting}
+                  >
+                    <option value="FaFileAlt">Document (Default)</option>
+                    <option value="FaShieldAlt">Shield</option>
+                    <option value="FaGavel">Gavel</option>
+                    <option value="FaRobot">Robot</option>
+                    <option value="FaBook">Book</option>
+                    <option value="FaLightbulb">Lightbulb</option>
+                    <option value="FaFlask">Flask</option>
+                    <option value="FaUserTie">User Tie</option>
+                  </select>
+                  <div className="selected-icon-preview">
+                    {getIconComponent(newAgentIconType, { size: '24px' })}
+                  </div>
+                </div>
+                <div className="pdf-upload-section">
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    multiple
+                    onChange={handlePdfChange}
+                    id="pdf-upload"
+                    className="pdf-upload-input-hidden"
+                    required
+                    disabled={isSubmitting}
+                  />
+                  <label htmlFor="pdf-upload" className="file-upload-button">
+                    <FaFileAlt /> Choose Files
+                  </label>
+                  <span className="file-chosen-text">
+                    {selectedPdfs.length > 0
+                      ? selectedPdfs.map(f => f.name).join(', ')
+                      : 'No files chosen'}
+                  </span>
+                </div>
+              </div>
+            )}
+            <div className="overlay-actions">
+              <button
+                type="submit"
+                className="create-agent-btn"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Creating...' : <><FaSave /> Create Agent</>}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowNewAgentOverlay(false)}
+                className="cancel-btn"
+                disabled={isSubmitting}
+              >
+                <FaTimes /> Cancel
+              </button>
+            </div>
+          </form>
+        </AgentOverlay>
+      )}
+      {agentToEdit && (
+        <AgentOverlay onClose={handleCancelEdit}>
+          <div className="overlay-header">
+            <h2>Edit Agent</h2>
+            <button className="close-overlay-btn" onClick={handleCancelEdit}>
+              <FaTimes />
+            </button>
+          </div>
+          <form onSubmit={e => { e.preventDefault(); handleSaveEdit(); }}>
+            <input
+              type="text"
+              value={editedName}
+              onChange={e => setEditedName(e.target.value)}
+              required
+              disabled={isSubmitting}
+            />
+            <textarea
+              value={editedDescription}
+              onChange={e => setEditedDescription(e.target.value)}
+              required
+              disabled={isSubmitting}
+            />
+            <input
+              type="text"
+              placeholder="Tile Line Start Color (e.g., #3498db or red)"
+              value={editedTileLineStartColor}
+              onChange={e => setEditedTileLineStartColor(e.target.value)}
+              disabled={isSubmitting}
+            />
+            <input
+              type="text"
+              placeholder="Tile Line End Color (e.g., #8e44ad or blue)"
+              value={editedTileLineEndColor}
+              onChange={e => setEditedTileLineEndColor(e.target.value)}
+              disabled={isSubmitting}
+            />
+            <div className="overlay-actions">
+              <button
+                type="submit"
+                className="create-agent-btn"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Saving...' : <><FaSave /> Save</>}
+              </button>
+              <button
+                type="button"
+                onClick={handleCancelEdit}
+                className="cancel-btn"
+                disabled={isSubmitting}
+              >
+                <FaTimes /> Cancel
+              </button>
+            </div>
+          </form>
+        </AgentOverlay>
       )}
     </div>
   );

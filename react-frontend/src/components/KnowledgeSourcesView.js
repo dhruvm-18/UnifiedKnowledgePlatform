@@ -9,28 +9,12 @@ import { Element, scroller } from 'react-scroll';
 // but agents will be fetched from backend for actual state.
 export const KNOWLEDGE_AGENT_CONST = []; // Will be populated by backend
 
-function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
+function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNewAgentOverlay, setShowNewAgentOverlay, agentToEdit, setAgentToEdit, overlaySuccessMessage, setOverlaySuccessMessage, isSubmitting, setIsSubmitting, newAgentName, setNewAgentName, newAgentDescription, setNewAgentDescription, newAgentTileLineStartColor, setNewAgentTileLineStartColor, newAgentTileLineEndColor, setNewAgentTileLineEndColor, newAgentIconType, setNewAgentIconType, selectedPdfs, setSelectedPdfs, editedName, setEditedName, editedDescription, setEditedDescription, editedTileLineStartColor, setEditedTileLineStartColor, editedTileLineEndColor, setEditedTileLineEndColor }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [agents, setAgents] = useState([]); // Initialize as empty, will fetch from backend
-  const [editingAgentId, setEditingAgentId] = useState(null);
-  const [editedName, setEditedName] = useState('');
-  const [editedDescription, setEditedDescription] = useState('');
   const [showNewAgentForm, setShowNewAgentForm] = useState(false);
-  const [newAgentName, setNewAgentName] = useState('');
-  const [newAgentDescription, setNewAgentDescription] = useState('');
-  const [selectedPdfs, setSelectedPdfs] = useState([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
-  const [newAgentIconType, setNewAgentIconType] = useState('FaFileAlt'); // New state for icon type
-  const [showNewAgentOverlay, setShowNewAgentOverlay] = useState(false);
-  const [overlaySuccessMessage, setOverlaySuccessMessage] = useState('');
-  const [agentToEdit, setAgentToEdit] = useState(null); // New state to hold the agent being edited
   const [overlayScrollTop, setOverlayScrollTop] = useState(0); // State to store the scroll position for overlay
   const knowledgeSourcesViewRef = useRef(null); // Ref for the main scrollable div
-  const [newAgentTileLineStartColor, setNewAgentTileLineStartColor] = useState('');
-  const [newAgentTileLineEndColor, setNewAgentTileLineEndColor] = useState('');
-  const [editedTileLineStartColor, setEditedTileLineStartColor] = useState(''); // New state for edit form
-  const [editedTileLineEndColor, setEditedTileLineEndColor] = useState('');     // New state for edit form
 
   const BACKEND_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
@@ -95,152 +79,6 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
     }
   };
 
-  const handleSaveEdit = async () => {
-    if (!agentToEdit) return; // Should not happen if button is correctly rendered
-
-    setIsSubmitting(true);
-    try {
-      const updatedAgent = {
-        agentId: agentToEdit.agentId,
-        name: editedName,
-        description: editedDescription,
-        tileLineStartColor: editedTileLineStartColor,
-        tileLineEndColor: editedTileLineEndColor,
-      };
-
-      const response = await fetch(`${BACKEND_BASE}/agents/${agentToEdit.agentId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedAgent),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to update agent');
-      }
-      fetchAgents(); // Re-fetch agents to update state with latest data from backend
-      setAgentToEdit(null); // Close the edit overlay
-    } catch (error) {
-      console.error('Error saving agent:', error);
-      alert(`Failed to save agent: ${error.message}`);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setAgentToEdit(null); // Close the edit overlay
-  };
-
-  const handlePdfChange = (e) => {
-    const files = Array.from(e.target.files).filter(file => file.type === 'application/pdf');
-    if (files.length > 0) {
-      setSelectedPdfs(files);
-    } else {
-      alert('Please select PDF files');
-    }
-  };
-
-  const handleNewAgentSubmit = async (e) => {
-    e.preventDefault();
-    if (!newAgentName || !newAgentDescription || selectedPdfs.length === 0) {
-      alert('Please fill in all fields and select at least one PDF file');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setOverlaySuccessMessage('');
-
-    try {
-      // Create FormData and append files
-      const formData = new FormData();
-      selectedPdfs.forEach((file) => {
-        formData.append('files', file);
-      });
-
-      // 1. Upload PDFs to backend
-      const uploadResponse = await fetch(`${BACKEND_BASE}/upload-pdf`, {
-        method: 'POST',
-        body: formData,
-        // Remove Content-Type header to let the browser set it with the boundary
-        headers: {
-          'Accept': 'application/json',
-        },
-      });
-
-      if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json();
-        throw new Error(errorData.error || 'Failed to upload PDFs');
-      }
-
-      const uploadData = await uploadResponse.json();
-      console.log('Upload response:', uploadData); // Debug log
-
-      if (!uploadData.success) {
-        throw new Error(uploadData.error || 'Failed to upload PDFs');
-      }
-
-      const pdfFilenames = uploadData.filenames; // Expecting an array
-      console.log('PDF filenames:', pdfFilenames); // Debug log
-
-      // 2. Create new agent via backend API
-      const newAgentPayload = {
-        iconType: newAgentIconType,
-        name: newAgentName,
-        description: newAgentDescription,
-        buttonText: 'Start Chat',
-        agentId: `agent_${Date.now()}`,
-        pdfSources: pdfFilenames,
-        tileLineStartColor: newAgentTileLineStartColor,
-        tileLineEndColor: newAgentTileLineEndColor,
-      };
-
-      console.log('Creating agent with payload:', newAgentPayload); // Debug log
-
-      const agentResponse = await fetch(`${BACKEND_BASE}/agents`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(newAgentPayload),
-      });
-
-      if (!agentResponse.ok) {
-        const errorData = await agentResponse.json();
-        throw new Error(errorData.error || 'Failed to create new agent');
-      }
-
-      const agentData = await agentResponse.json();
-      console.log('Agent creation response:', agentData); // Debug log
-      
-      if (agentData.success) {
-        // Call fetchAgents to update the list
-        await fetchAgents();
-        setOverlaySuccessMessage('Agent created successfully! ✓');
-        // Reset form after successful creation
-        setNewAgentName('');
-        setNewAgentDescription('');
-        setSelectedPdfs([]);
-        setNewAgentTileLineStartColor('');
-        setNewAgentTileLineEndColor('');
-        // Close overlay after a delay
-        setTimeout(() => {
-          setShowNewAgentOverlay(false);
-          setOverlaySuccessMessage('');
-        }, 2000);
-      } else {
-        throw new Error(agentData.error || 'Failed to create agent');
-      }
-    } catch (error) {
-      console.error('Error creating new agent:', error);
-      alert(`Failed to create new agent: ${error.message}`);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleDeleteAgent = async (agentId) => {
     if (window.confirm('Are you sure you want to delete this agent?')) {
       try {
@@ -276,12 +114,6 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
         Browse available knowledge sources, each representing an AI Agent trained on specific datasets.
         Click 'Start Chat' to begin a conversation with an agent and explore its knowledge.
       </p>
-
-      {successMessage && (
-        <div className="success-message">
-          {successMessage}
-        </div>
-      )}
 
       {/* Search Input with Icon */}
       <div className="search-bar">
@@ -354,174 +186,6 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
           <p>No agents found matching your search.</p>
         )}
       </Element>
-
-      {/* New Agent Creation Overlay */}
-      {showNewAgentOverlay && (
-        <div className="new-agent-overlay" style={{ top: `20px` }}>
-          <div className="new-agent-overlay-content">
-            <div className="overlay-header">
-              <h2>New Agent</h2>
-              <button className="close-overlay-btn" onClick={() => setShowNewAgentOverlay(false)}>
-                <FaTimes />
-              </button>
-            </div>
-            {overlaySuccessMessage && (
-              <div className="overlay-success-message">
-                {overlaySuccessMessage}
-              </div>
-            )}
-            <form onSubmit={handleNewAgentSubmit}>
-              <input
-                type="text"
-                placeholder="Agent Name"
-                value={newAgentName}
-                onChange={(e) => setNewAgentName(e.target.value)}
-                required
-                disabled={isSubmitting}
-              />
-              <textarea
-                placeholder="Agent Description"
-                value={newAgentDescription}
-                onChange={(e) => setNewAgentDescription(e.target.value)}
-                required
-                disabled={isSubmitting}
-              />
-              <input
-                type="text"
-                placeholder="Tile Line Start Color (e.g., #3498db or red)"
-                value={newAgentTileLineStartColor}
-                onChange={(e) => setNewAgentTileLineStartColor(e.target.value)}
-                disabled={isSubmitting}
-              />
-              <input
-                type="text"
-                placeholder="Tile Line End Color (e.g., #8e44ad or blue)"
-                value={newAgentTileLineEndColor}
-                onChange={(e) => setNewAgentTileLineEndColor(e.target.value)}
-                disabled={isSubmitting}
-              />
-              <div className="icon-selection-container">
-                <label htmlFor="icon-select" className="icon-select-label">Choose an Icon:</label>
-                <select
-                  id="icon-select"
-                  value={newAgentIconType}
-                  onChange={(e) => setNewAgentIconType(e.target.value)}
-                  disabled={isSubmitting}
-                >
-                  <option value="FaFileAlt">Document (Default)</option>
-                  <option value="FaShieldAlt">Shield</option>
-                  <option value="FaGavel">Gavel</option>
-                  <option value="FaRobot">Robot</option>
-                  <option value="FaBook">Book</option>
-                  <option value="FaLightbulb">Lightbulb</option>
-                  <option value="FaFlask">Flask</option>
-                  <option value="FaUserTie">User Tie</option>
-                </select>
-                <div className="selected-icon-preview">
-                  {getIconComponent(newAgentIconType, { size: '24px' })} 
-                </div>
-              </div>
-              <div className="pdf-upload-section">
-                <input
-                  type="file"
-                  accept=".pdf"
-                  multiple
-                  onChange={handlePdfChange}
-                  id="pdf-upload"
-                  className="pdf-upload-input-hidden"
-                  required
-                  disabled={isSubmitting}
-                />
-                <label htmlFor="pdf-upload" className="file-upload-button">
-                  <FaFileAlt /> Choose Files
-                </label>
-                <span className="file-chosen-text">
-                  {selectedPdfs.length > 0
-                    ? selectedPdfs.map(f => f.name).join(', ')
-                    : 'No files chosen'}
-                </span>
-              </div>
-              <div className="overlay-actions">
-                <button 
-                  type="submit" 
-                  className="create-agent-btn"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Creating...' : <><FaSave /> Create Agent</>}
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => setShowNewAgentOverlay(false)} 
-                  className="cancel-btn"
-                  disabled={isSubmitting}
-                >
-                  <FaTimes /> Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Agent Overlay */}
-      {agentToEdit && (
-        <div className="new-agent-overlay" style={{ top: `${overlayScrollTop}px` }}>
-          <div className="new-agent-overlay-content">
-            <div className="overlay-header">
-              <h2>Edit Agent</h2>
-              <button className="close-overlay-btn" onClick={handleCancelEdit}>
-                <FaTimes />
-              </button>
-            </div>
-            <form onSubmit={(e) => { e.preventDefault(); handleSaveEdit(); }}>
-              <input
-                type="text"
-                value={editedName}
-                onChange={(e) => setEditedName(e.target.value)}
-                required
-                disabled={isSubmitting}
-              />
-              <textarea
-                value={editedDescription}
-                onChange={(e) => setEditedDescription(e.target.value)}
-                required
-                disabled={isSubmitting}
-              />
-              <input
-                type="text"
-                placeholder="Tile Line Start Color (e.g., #3498db or red)"
-                value={editedTileLineStartColor}
-                onChange={(e) => setEditedTileLineStartColor(e.target.value)}
-                disabled={isSubmitting}
-              />
-              <input
-                type="text"
-                placeholder="Tile Line End Color (e.g., #8e44ad or blue)"
-                value={editedTileLineEndColor}
-                onChange={(e) => setEditedTileLineEndColor(e.target.value)}
-                disabled={isSubmitting}
-              />
-              <div className="overlay-actions">
-                <button 
-                  type="submit" 
-                  className="create-agent-btn"
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? 'Saving...' : <><FaSave /> Save</>}
-                </button>
-                <button 
-                  type="button" 
-                  onClick={handleCancelEdit} 
-                  className="cancel-btn"
-                  disabled={isSubmitting}
-                >
-                  <FaTimes /> Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -529,6 +193,34 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange }) {
 KnowledgeSourcesView.propTypes = {
   onStartChatWithAgent: PropTypes.func.isRequired,
   onAgentDataChange: PropTypes.func.isRequired,
+  showNewAgentOverlay: PropTypes.bool.isRequired,
+  setShowNewAgentOverlay: PropTypes.func.isRequired,
+  agentToEdit: PropTypes.object,
+  setAgentToEdit: PropTypes.func.isRequired,
+  overlaySuccessMessage: PropTypes.string.isRequired,
+  setOverlaySuccessMessage: PropTypes.func.isRequired,
+  isSubmitting: PropTypes.bool.isRequired,
+  setIsSubmitting: PropTypes.func.isRequired,
+  newAgentName: PropTypes.string.isRequired,
+  setNewAgentName: PropTypes.func.isRequired,
+  newAgentDescription: PropTypes.string.isRequired,
+  setNewAgentDescription: PropTypes.func.isRequired,
+  newAgentTileLineStartColor: PropTypes.string.isRequired,
+  setNewAgentTileLineStartColor: PropTypes.func.isRequired,
+  newAgentTileLineEndColor: PropTypes.string.isRequired,
+  setNewAgentTileLineEndColor: PropTypes.func.isRequired,
+  newAgentIconType: PropTypes.string.isRequired,
+  setNewAgentIconType: PropTypes.func.isRequired,
+  selectedPdfs: PropTypes.array.isRequired,
+  setSelectedPdfs: PropTypes.func.isRequired,
+  editedName: PropTypes.string.isRequired,
+  setEditedName: PropTypes.func.isRequired,
+  editedDescription: PropTypes.string.isRequired,
+  setEditedDescription: PropTypes.func.isRequired,
+  editedTileLineStartColor: PropTypes.string.isRequired,
+  setEditedTileLineStartColor: PropTypes.func.isRequired,
+  editedTileLineEndColor: PropTypes.string.isRequired,
+  setEditedTileLineEndColor: PropTypes.func.isRequired,
 };
 
 export default KnowledgeSourcesView; 

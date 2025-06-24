@@ -658,56 +658,47 @@
 
 /* New Agent Overlay */
 .new-agent-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  background-color: transparent;
+  position: fixed;
+  inset: 0;
   z-index: 1000;
-  animation: fadeIn 0.3s ease-out;
-  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.92);
+  cursor: pointer;
+  animation: fadeIn 0.3s cubic-bezier(.4,2,.6,1);
+  height: 100vh;
+  width: 100vw;
 }
 
 .new-agent-overlay-content {
-  background: white;
-  padding: 30px;
-  border-radius: 20px;
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  background: #fff;
+  border-radius: 1.5rem;
+  box-shadow: 0 8px 40px 0 rgba(0,0,0,0.18), 0 1.5px 8px 0 rgba(0,0,0,0.10);
+  padding: 2.5rem 2rem 2rem 2rem;
+  max-width: 30rem;
+  width: 100%;
   position: relative;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  box-sizing: border-box;
-  word-break: break-word;
-  margin: 20px auto;
   display: flex;
   flex-direction: column;
-}
-
-.new-agent-overlay-content form {
-  flex: 1;
+  align-items: center;
+  border: 1.5px solid rgba(0,0,0,0.08);
+  animation: agent-modal-pop-in 0.25s cubic-bezier(.4,2,.6,1) both;
+  cursor: auto;
+  max-height: 90vh;
   overflow-y: auto;
-  padding-right: 10px;
+  margin: 0;
 }
 
-.new-agent-overlay-content form::-webkit-scrollbar {
-  width: 8px;
+@keyframes agent-modal-pop-in {
+  0% { opacity: 0; transform: scale(0.95) translateY(30px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-.new-agent-overlay-content form::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-.new-agent-overlay-content form::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 4px;
-}
-
-.new-agent-overlay-content form::-webkit-scrollbar-thumb:hover {
-  background: #555;
+.dark-mode .new-agent-overlay-content {
+  background: #18181b;
+  border: 1.5px solid rgba(255,255,255,0.10);
+  box-shadow: 0 8px 40px 0 rgba(0,0,0,0.55), 0 1.5px 8px 0 rgba(0,0,0,0.18);
 }
 
 .overlay-header {
