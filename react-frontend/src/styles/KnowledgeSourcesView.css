@@ -579,28 +579,15 @@
 
 .icon-select-dropdown {
   width: 100%;
-  padding: 12px 15px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1rem;
-  background-color: white;
-  color: #333;
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%233498db%22%20d%3D%22M287%2C197.398L150.398%2C60.796c-3.618-3.617-8.484-5.617-13.623-5.617c-5.14%2C0-10.007%2C2-13.624%2C5.617L5.396%2C197.398c-7.35%2C7.35-7.35%2C19.27%2C0%2C26.621l13.62%2C13.62c7.35%2C7.35%2C19.27%2C7.35%2C26.62%2C0l92.56-92.56L246.76%2C237.64c7.35%2C7.35%2C19.27%2C7.35%2C26.62%2C0l13.62-13.62C294.35%2C216.668%2C294.35%2C204.748%2C287%2C197.398z%22%2F%3E%3C%2Fsvg%3E');
-  background-repeat: no-repeat;
-  background-position: right 15px center;
-  background-size: 10px auto;
-  padding-right: 40px;
-  cursor: pointer;
   transition: all 0.3s ease;
   box-sizing: border-box;
-}
-
-.icon-select-dropdown:hover {
-  border-color: #3498db;
-  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+  height: 42px;
+  background: #fff;
 }
 
 .icon-select-dropdown:focus {
@@ -675,7 +662,7 @@
   background: #fff;
   border-radius: 1.5rem;
   box-shadow: 0 8px 40px 0 rgba(0,0,0,0.18), 0 1.5px 8px 0 rgba(0,0,0,0.10);
-  padding: 2.5rem 2rem 2rem 2rem;
+  padding: 1.2rem 2rem 1.2rem 2rem;
   max-width: 30rem;
   width: 100%;
   position: relative;
@@ -696,9 +683,8 @@
 }
 
 .dark-mode .new-agent-overlay-content {
-  background: #18181b;
-  border: 1.5px solid rgba(255,255,255,0.10);
-  box-shadow: 0 8px 40px 0 rgba(0,0,0,0.55), 0 1.5px 8px 0 rgba(0,0,0,0.18);
+  background: #3a3a3a; /* Dark background for overlay content */
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4); /* Darker shadow */
 }
 
 .overlay-header {
@@ -744,7 +730,7 @@
   display: flex;
   justify-content: center;
   gap: 15px;
-  margin-top: 25px;
+  margin-top: 15px;
   flex-wrap: wrap;
 }
 
@@ -752,8 +738,8 @@
 .new-agent-overlay-content input[type="text"],
 .new-agent-overlay-content textarea {
   width: 100%;
-  padding: 12px 15px;
-  margin-bottom: 15px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1rem;
@@ -779,7 +765,7 @@
   flex-direction: column;
   align-items: center;
   gap: 10px;
-  margin: 20px 0;
+  margin: 10px 0;
 }
 
 .file-upload-button {

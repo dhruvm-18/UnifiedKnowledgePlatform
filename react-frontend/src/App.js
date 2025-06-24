@@ -1294,8 +1294,6 @@ function App() {
     }
   };
 
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
-
   return (
     <div className={`app-layout ${theme}-mode${leftCollapsed ? ' left-collapsed' : ''}${rightCollapsed ? ' right-collapsed' : ''}`}>
       <aside className={`left-sidebar${leftCollapsed ? ' collapsed' : ''}`}>
@@ -1982,9 +1980,6 @@ function App() {
         <AgentOverlay onClose={() => setShowNewAgentOverlay(false)}>
           <div className="overlay-header">
             <h2>New Agent</h2>
-            <button className="close-overlay-btn" onClick={() => setShowNewAgentOverlay(false)}>
-              <FaTimes />
-            </button>
           </div>
           {overlaySuccessMessage && (
             <div className="overlay-success-message">
@@ -2021,59 +2016,63 @@ function App() {
               onChange={(e) => setNewAgentTileLineEndColor(e.target.value)}
               disabled={isSubmitting}
             />
-            <button
-              type="button"
-              className="advanced-toggle-btn"
-              style={{ margin: '12px 0', padding: '8px 18px', borderRadius: '20px', border: '1px solid #ddd', background: '#f3f4f6', color: '#2563eb', fontWeight: 600, cursor: 'pointer' }}
-              onClick={() => setShowAdvancedOptions(v => !v)}
-            >
-              {showAdvancedOptions ? 'Hide Advanced Options' : 'Show Advanced Options'}
-            </button>
-            {showAdvancedOptions && (
-              <div style={{ maxHeight: '180px', overflowY: 'auto', marginBottom: 12, border: '1px solid #eee', borderRadius: '12px', padding: '12px', background: '#fafbfc' }}>
-                <div className="icon-selection-container">
-                  <label htmlFor="icon-select" className="icon-select-label">Choose an Icon:</label>
-                  <select
-                    id="icon-select"
-                    value={newAgentIconType}
-                    onChange={(e) => setNewAgentIconType(e.target.value)}
-                    disabled={isSubmitting}
-                  >
-                    <option value="FaFileAlt">Document (Default)</option>
-                    <option value="FaShieldAlt">Shield</option>
-                    <option value="FaGavel">Gavel</option>
-                    <option value="FaRobot">Robot</option>
-                    <option value="FaBook">Book</option>
-                    <option value="FaLightbulb">Lightbulb</option>
-                    <option value="FaFlask">Flask</option>
-                    <option value="FaUserTie">User Tie</option>
-                  </select>
-                  <div className="selected-icon-preview">
-                    {getIconComponent(newAgentIconType, { size: '24px' })}
-                  </div>
-                </div>
-                <div className="pdf-upload-section">
-                  <input
-                    type="file"
-                    accept=".pdf"
-                    multiple
-                    onChange={handlePdfChange}
-                    id="pdf-upload"
-                    className="pdf-upload-input-hidden"
-                    required
-                    disabled={isSubmitting}
-                  />
-                  <label htmlFor="pdf-upload" className="file-upload-button">
-                    <FaFileAlt /> Choose Files
-                  </label>
-                  <span className="file-chosen-text">
-                    {selectedPdfs.length > 0
-                      ? selectedPdfs.map(f => f.name).join(', ')
-                      : 'No files chosen'}
-                  </span>
-                </div>
+            <div className="icon-selection-container">
+              <label htmlFor="icon-select" className="icon-select-label">Choose an Icon:</label>
+              <select
+                id="icon-select"
+                className="icon-select-dropdown"
+                value={newAgentIconType}
+                onChange={(e) => setNewAgentIconType(e.target.value)}
+                disabled={isSubmitting}
+              >
+                <option value="FaFileAlt">Document (Default)</option>
+                <option value="FaShieldAlt">Shield</option>
+                <option value="FaGavel">Gavel</option>
+                <option value="FaRobot">Robot</option>
+                <option value="FaBook">Book</option>
+                <option value="FaLightbulb">Lightbulb</option>
+                <option value="FaFlask">Flask</option>
+                <option value="FaUserTie">User Tie</option>
+                <option value="FaDatabase">Database</option>
+                <option value="FaCloud">Cloud</option>
+                <option value="FaUser">User</option>
+                <option value="FaLock">Lock</option>
+                <option value="FaChartBar">Chart</option>
+                <option value="FaCog">Settings</option>
+                <option value="FaComments">Comments</option>
+                <option value="FaStar">Star</option>
+                <option value="FaBell">Bell</option>
+                <option value="FaCalendar">Calendar</option>
+                <option value="FaEnvelope">Envelope</option>
+                <option value="FaMap">Map</option>
+                <option value="FaHeart">Heart</option>
+                <option value="FaCheck">Check</option>
+                <option value="FaTimes">Times</option>
+              </select>
+              <div className="selected-icon-preview">
+                {getIconComponent(newAgentIconType, { size: '24px' })}
               </div>
-            )}
+            </div>
+            <div className="pdf-upload-section">
+              <input
+                type="file"
+                accept=".pdf"
+                multiple
+                onChange={handlePdfChange}
+                id="pdf-upload"
+                className="pdf-upload-input-hidden"
+                required
+                disabled={isSubmitting}
+              />
+              <label htmlFor="pdf-upload" className="file-upload-button">
+                <FaFileAlt /> Choose Files
+              </label>
+              <span className="file-chosen-text">
+                {selectedPdfs.length > 0
+                  ? selectedPdfs.map(f => f.name).join(', ')
+                  : 'No files chosen'}
+              </span>
+            </div>
             <div className="overlay-actions">
               <button
                 type="submit"
@@ -2098,9 +2097,6 @@ function App() {
         <AgentOverlay onClose={handleCancelEdit}>
           <div className="overlay-header">
             <h2>Edit Agent</h2>
-            <button className="close-overlay-btn" onClick={handleCancelEdit}>
-              <FaTimes />
-            </button>
           </div>
           <form onSubmit={e => { e.preventDefault(); handleSaveEdit(); }}>
             <input
