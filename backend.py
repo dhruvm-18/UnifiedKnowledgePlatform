@@ -802,57 +802,86 @@ REMEMBER: Start your answer with "Thank you for asking. As per the information a
             ]
         )['message']['content']
         model_used = 'llama3'
-        # --- LOG RAW LLAMA OUTPUT FOR DEBUGGING ---
-        logger.info(f"[LLAMA RAW OUTPUT] {response}")
-        # ENFORCEMENT: If the response does not cite any valid source, post-process as fallback
+        # ENFORCEMENT: Only skip post-processing if a valid markdown link is present
         valid_filenames = set(doc.metadata.get('source') for doc in docs)
-        found_valid_source = False
-        for fname in valid_filenames:
-            if not fname:
-                continue
-            # Case-insensitive match, and also check for markdown-style pdf:// links
-            if (fname.lower() in response.lower()) or (f"pdf://{fname.lower()}" in response.lower()):
-                found_valid_source = True
-                break
-        if not found_valid_source:
-            logger.warning(f"[LLAMA ENFORCEMENT] No valid source found in response. Valid filenames: {valid_filenames}")
+        found_valid_markdown_link = False
+        markdown_link_pattern = re.compile(r'\(pdf://[\w\-.]+\.pdf(?:/page/\d+)?(?:#section=[^&\s)]+)?(?:&highlight=[^\s)]+)?\)')
+        if markdown_link_pattern.search(response):
+            found_valid_markdown_link = True
+        if not found_valid_markdown_link:
+            logger.warning(f"[LLAMA ENFORCEMENT] No valid markdown link found in response. Valid filenames: {valid_filenames}")
             answer_text = response.strip()
-            # Aggressively scan the entire answer for all (filename, page, section) patterns
-            source_pattern = re.compile(r'(\b[\w\-]+\.pdf)\s*,?\s*Page:?\s*(\d+)(?:\s*,?\s*Section:?\s*([\w\-]+))?', re.IGNORECASE)
+            # Ultra-flexible regex to match various citation patterns
+            source_pattern = re.compile(r"""
+                (?:
+                    (?P<filename>[\w\-]+\.pdf)[\s,;:()\n]*
+                    (?:Section[:\s]*?(?P<section1>[\w\-]+)[\s,;:()\n]*)?
+                    (?:Page[:\s]*?(?P<page1>\d+))?
+                )|
+                (?:
+                    (?:Page[:\s]*?(?P<page2>\d+)[\s,;:()\n]*)
+                    (?:Section[:\s]*?(?P<section2>[\w\-]+)[\s,;:()\n]*)?
+                    (?P<filename2>[\w\-]+\.pdf)
+                )|
+                (?:
+                    (?:Section[:\s]*?(?P<section3>[\w\-]+)[\s,;:()\n]*)
+                    (?P<filename3>[\w\-]+\.pdf)[\s,;:()\n]*
+                    (?:Page[:\s]*?(?P<page3>\d+))?
+                )|
+                (?:
+                    (?P<filename4>[\w\-]+\.pdf)[\s,;:()\n]*\(\s*Page\s*(?P<page4>\d+)\s*\)
+                )|
+                (?:
+                    Page\s*(?P<page5>\d+)\s*of\s*(?P<filename5>[\w\-]+\.pdf)
+                )
+            """, re.IGNORECASE | re.VERBOSE)
             matches = list(source_pattern.finditer(answer_text))
             links = []
+            spans_to_remove = []
             for match in matches:
-                filename = match.group(1)
-                page = match.group(2)
-                section = match.group(3) if match.lastindex >= 3 else None
-                # Find the doc for this filename and page
-                highlight = ''
-                for doc in docs:
-                    doc_filename = doc.metadata.get('source', '')
-                    doc_page = str(doc.metadata.get('page', ''))
-                    if doc_filename.lower() == filename.lower() and (not page or doc_page == page):
-                        words = doc.page_content.split()
+                filename = (
+                    match.group('filename') or match.group('filename2') or match.group('filename3') or match.group('filename4') or match.group('filename5')
+                )
+                page = (
+                    match.group('page1') or match.group('page2') or match.group('page3') or match.group('page4') or match.group('page5')
+                )
+                section = (
+                    match.group('section1') or match.group('section2') or match.group('section3')
+                )
+                if filename:
+                    highlight = ''
+                    for doc in docs:
+                        doc_filename = doc.metadata.get('source', '')
+                        doc_page = str(doc.metadata.get('page', ''))
+                        if doc_filename.lower() == filename.lower() and (not page or doc_page == page):
+                            words = doc.page_content.split()
+                            highlight = ' '.join(words[:20]) if words else ''
+                            break
+                    if not highlight and docs:
+                        words = docs[0].page_content.split()
                         highlight = ' '.join(words[:20]) if words else ''
-                        break
-                if not highlight and docs:
-                    words = docs[0].page_content.split()
-                    highlight = ' '.join(words[:20]) if words else ''
-                link = f"(pdf://{filename}"
-                if page:
-                    link += f"/page/{page}"
-                if section:
-                    link += f"#section={section}"
-                if highlight:
-                    from urllib.parse import quote
-                    link += f"&highlight={quote(highlight)}"
-                link += ")"
-                links.append(f"- {link}")
+                    link = f"(pdf://{filename}"
+                    if page:
+                        link += f"/page/{page}"
+                    if section:
+                        link += f"#section={section}"
+                    if highlight:
+                        from urllib.parse import quote
+                        link += f"&highlight={quote(highlight)}"
+                    link += ")"
+                    links.append(f"- {link}")
+                    # Record the span to remove
+                    spans_to_remove.append(match.span())
+            # Remove all matched citation spans from the answer text
+            if spans_to_remove:
+                # Remove from end to start to avoid messing up indices
+                for start, end in sorted(spans_to_remove, reverse=True):
+                    answer_text = answer_text[:start] + answer_text[end:]
             if links:
-                # Remove any existing 'Sources:' line (case-insensitive, with or without colon)
-                answer_text = re.sub(r'(?i)\n?Sources?:.*', '', answer_text)
+                # Remove any line that starts with (optionally bolded) 'Sources', with or without a colon, and any text after it
+                answer_text = re.sub(r'(?im)^\s*(\*\*\s*)?Sources\*\*?\s*:?.*$', '', answer_text)
                 response = f"{answer_text.strip()}\n\n**Sources:**\n" + '\n'.join(links)
             else:
-                # Fallback: always append a markdown link for the top doc
                 if docs:
                     top_doc = docs[0]
                     filename = top_doc.metadata.get('source', 'Unknown.pdf')
@@ -869,11 +898,22 @@ REMEMBER: Start your answer with "Thank you for asking. As per the information a
                         from urllib.parse import quote
                         link += f"&highlight={quote(highlight)}"
                     link += ")"
-                    # Remove any existing 'Sources:' line
-                    answer_text = re.sub(r'(?i)\n?Sources?:.*', '', answer_text)
+                    answer_text = re.sub(r'(?im)^\s*(\*\*\s*)?Sources\*\*?\s*:?.*$', '', answer_text)
                     response = f"{answer_text.strip()}\n\n**Sources:**\n- {link}"
                 else:
                     response = "I cannot answer based on the provided information."
+        # Log the final response string before returning
+        logger.info(f"[FINAL LLAMA RESPONSE TO FRONTEND] {response}")
+        # Remove all but the last 'Sources:' section (optionally bolded, with or without colon)
+        # Split by lines, keep only the last occurrence of a 'Sources:' line and its following lines
+        lines = response.splitlines()
+        sources_indices = [i for i, line in enumerate(lines) if re.match(r'(?i)^\s*(\*\*\s*)?Sources\*\*?\s*:?.*$', line)]
+        if len(sources_indices) > 1:
+            # Remove all but the last 'Sources:' line and its following lines
+            last_idx = sources_indices[-1]
+            # Keep everything up to the last 'Sources:' line, then only the last 'Sources:' section
+            lines = lines[:last_idx] + lines[last_idx:]
+            response = '\n'.join(lines)
     else:
         # Default: Gemini
         # Create the chain
