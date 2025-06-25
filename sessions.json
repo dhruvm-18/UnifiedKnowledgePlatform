@@ -1,1 +1,34 @@
-{}
+{
+    "ed5ff185-7846-456a-8487-5c7f91aa996c": {
+        "id": "ed5ff185-7846-456a-8487-5c7f91aa996c",
+        "title": "What constitutes a GST offence under the Act?",
+        "createdAt": "2025-06-25T23:42:15.854227",
+        "messages": [
+            {
+                "sender": "user",
+                "content": "What constitutes a GST offence under the Act?",
+                "agentId": "agent_1750842676918",
+                "lang": "en"
+            },
+            {
+                "sender": "assistant",
+                "content": "Thank you for asking. As per the information available to me:\n\n**GST offence** under the Act refers to an act or omission that is considered an infringement of the Goods and Services Tax (GST) laws, regulations, or rules. The Act provides for various types of GST offences, including but not limited to:\n\n* Fraudulent transactions or misrepresentation\n* Failure to maintain proper records or submit returns\n* Non-payment of taxes or delayed payment\n* Misuse of input tax credit\n* Violation of certain provisions related to registration, invoicing, and supply of goods or services\n\nThese offences are punishable under the Act, which may result in fines, penalties, or even imprisonment.\n\n**Sources:**\n",
+                "agentId": "agent_1750842676918",
+                "lang": "en"
+            },
+            {
+                "sender": "user",
+                "content": "What constitutes a GST offence under the Act?",
+                "agentId": "agent_1750842676918",
+                "lang": "en"
+            },
+            {
+                "sender": "assistant",
+                "content": "I appreciate your question.\n\nUnder the Central Goods and Services Tax (CGST) Act, a GST offence generally involves actions taken with the intent to evade tax or defraud the system. Key offences include:\n\n*   **Supplying goods or services without issuing an invoice** with the intention to evade tax.\n*   **Issuing an invoice or bill without the actual supply of goods or services**, leading to wrongful availment or utilisation of **__input tax credit__** or tax refunds.\n*   **Fraudulently availing input tax credit** using an improper invoice or without one.\n*   **Collecting any amount as tax but failing to pay it to the Government** beyond three months from the due date.\n*   **Evading tax** or **fraudulently obtaining a refund**.\n*   **Falsifying or substituting financial records**, producing fake accounts or documents, or furnishing false information with the intention to evade tax.\n*   **Acquiring, transporting, concealing, supplying, or purchasing goods** known or believed to be liable to confiscation.\n*   **Attempting to commit or abetting** the commission of such offences.\n\nAdditionally, various other actions listed in the Act may incur penalties.\n\n**Sources:**\n- (pdf://CGST.pdf/page/102#section=132._Punishment_for_certain_offences&highlight=102%20imposed%20under%20the%20provisions%20of%20this%20Act%20or%20the%20rules%20made%20thereunder%20shall%20prevent%20the%20infliction%20of%20any%20other)\n- (pdf://CGST.pdf/page/96#section=122._Penalty_for_certain_offences&highlight=96%20%28c%29%20an%20order%20sanctioning%20prosecution%20under%20this%20Act%3B%20or%20%28d%29%20an%20order%20passed%20under%20section%2080.%20CHAPTER%20XIX%20OFFENCES)",
+                "agentId": "agent_1750842676918",
+                "lang": "en"
+            }
+        ],
+        "agentId": null
+    }
+}

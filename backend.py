@@ -31,6 +31,8 @@ from prompts import (
     GENERAL_INSTRUCTION,
     DPDP_INSTRUCTION,
     PARLIAMENT_INSTRUCTION,
+    HOW_TO_USE,
+    EXAMPLE_USAGE,
     generate_source_link
 )
 from backend.utils import initialize_faiss_index, update_faiss_index
@@ -51,6 +53,7 @@ from langchain.prompts import PromptTemplate
 from elevenlabs import play # Keep play for local playback if needed
 from elevenlabs.client import ElevenLabs # Import the client class
 import requests
+from ollama import Client as OllamaClient
 
 # Suppress Faiss GPU warnings
 warnings.filterwarnings("ignore", message=".*GpuIndexIVFFlat.*")
@@ -330,7 +333,7 @@ def get_label_to_page_map(pdf_path):
         return {}
 
 def format_response_with_sources(response, sources):
-    """Format the response with source information"""
+    """Format the response with source information, always outputting PDF links in markdown (parentheses) format for frontend parsing. Tries to match section/page to the correct filename from docs. Adds &highlight=... for frontend highlighting."""
     if not response:
         return None
         
@@ -343,73 +346,106 @@ def format_response_with_sources(response, sources):
     sources_block = parts[1].strip()
 
     formatted_sources = []
-    # Regex to match source lines:
-    # - **[Section/Page/Reference]** (pdf://<filename>/page/<page_number>#section=<section>)
-    source_line_regex = r'^-?\s*\*\*\[(.*?)\]\*\*\s*\(pdf:\/\/(.*?)(?:\/page\/(\d+))?(?:#section=(.*?))?\)(?:\s*:\s*.*)?$'
+    # Regex to match pdf:// links
+    pdf_link_regex = r'pdf://([^/]+)(?:/page/(\d+))?(?:#section=([^\s)]+))?'
+    # Regex to match Gemini's [label] (Section ..., Page ...)
+    gemini_source_regex = r'\[(.*?)\]\s*\(Section ([^,]+), Page (\d+)\)'
+    # Regex to match [Source: ...; pdf://...]
+    llama_source_regex = r'pdf://([^/]+)(?:/page/(\d+))?(?:#section=([^\s\]]+))?'
+
+    def get_highlight_text(filename, page):
+        # Try to find the matching doc and return the first 10-20 words as highlight
+        for doc in sources:
+            doc_filename = doc.metadata.get('source', filename)
+            doc_page = str(doc.metadata.get('page', ''))
+            if page and doc_page == str(page):
+                # Use the first 20 words of the page content
+                words = doc.page_content.split()
+                highlight = ' '.join(words[:20])
+                return highlight
+        return None
 
     for line in sources_block.split('\n'):
         line = line.strip()
         if not line:
             continue
-
-        match = re.search(source_line_regex, line, re.IGNORECASE)
+        # Try pdf://... link
+        match = re.search(pdf_link_regex, line)
         if match:
-            display_text_content = match.group(1).strip() 
-            filename = match.group(2).strip() 
-            page_number = match.group(3) # This is the page number captured by regex
-            section = match.group(4) # This is the section fragment captured by regex
-            
-            # Get the actual physical PDF page
-            actual_pdf_page = None
-            if page_number:
-                actual_pdf_page = int(page_number) # Use the page number directly
-            else:
-                actual_pdf_page = 1 # Default to page 1 if no page number found
-            
-            # Format the display text
-            display_text = display_text_content
-            if str(actual_pdf_page) != page_number:
-                display_text = f"{display_text_content} (PDF Pg {actual_pdf_page})"
-
-            # Construct the source link in the format expected by the frontend
-            # The goal is to send only the pdf:// link, and let the frontend format the button text
-            formatted_source_line = f"- (pdf://{filename}/page/{actual_pdf_page}{'#section=' + section if section else ''})"
-            formatted_sources.append(formatted_source_line)
-        else:
-            # Handle the new pattern: [TEXT1](TEXT2)
-            # Where TEXT2 contains Section/Rule and Page info
-            general_markdown_link_regex = r'\[(.*?)\]\((.*?)\)'
-            general_match = re.search(general_markdown_link_regex, line)
-            if general_match:
-                llm_display_text = general_match.group(1).strip() # e.g., 303(4, Page 111)
-                llm_link_content = general_match.group(2).strip() # e.g., Section 303(4), Page 111
-
-                # Try to extract section and page from llm_link_content
-                section_page_extract_regex = r'(?:Section|Rule)\s*([\d\.\(\)]+),\s*Page\s*(\d+)'
-                section_page_match = re.search(section_page_extract_regex, llm_link_content)
-
-                extracted_section = None
-                extracted_page = None
-
-                if section_page_match:
-                    extracted_section = section_page_match.group(1) # e.g., 303(4)
-                    extracted_page = section_page_match.group(2) # e.g., 111
-                
-                # Determine the filename to use (heuristic: use the first source's filename)
-                filename_to_use = "document.pdf" # Fallback
-                if sources and len(sources) > 0 and 'source' in sources[0].metadata:
-                    filename_to_use = sources[0].metadata['source']
-                
-                if extracted_section and extracted_page:
-                    # Construct the pdf:// link
-                    formatted_source_line = f"- (pdf://{filename_to_use}/page/{extracted_page}#section={extracted_section})"
-                    formatted_sources.append(formatted_source_line)
-                else:
-                    # If parsing from [TEXT](TEXT) failed, append the original line
-                    formatted_sources.append(line)
-            else:
-                # If no pattern matched, append the original line
-                formatted_sources.append(line)
+            filename, page, section = match.groups()
+            corrected_filename = filename
+            if sources:
+                for doc in sources:
+                    doc_filename = doc.metadata.get('source', filename)
+                    doc_page = str(doc.metadata.get('page', ''))
+                    doc_section = str(doc.metadata.get('section', '')).replace(' ', '_')
+                    if page and doc_page == page:
+                        corrected_filename = doc_filename
+                        break
+            link = f"- (pdf://{corrected_filename}"
+            if page:
+                link += f"/page/{page}"
+            if section:
+                link += f"#section={section}"
+            # Add highlight param if possible
+            highlight = get_highlight_text(corrected_filename, page)
+            if highlight:
+                from urllib.parse import quote
+                link += f"&highlight={quote(highlight)}"
+            link += ")"
+            formatted_sources.append(link)
+            continue
+        # Try Gemini format: [label] (Section ..., Page ...)
+        match = re.search(gemini_source_regex, line)
+        if match:
+            label, section, page = match.groups()
+            # Try to find doc with matching page and section
+            corrected_filename = None
+            for doc in sources:
+                doc_page = str(doc.metadata.get('page', ''))
+                doc_section = str(doc.metadata.get('section', '')).replace(' ', '_')
+                if doc_page == page and (not section or section.replace(' ', '_') in doc_section):
+                    corrected_filename = doc.metadata.get('source')
+                    break
+            if not corrected_filename and sources:
+                corrected_filename = sources[0].metadata.get('source', 'Unknown')
+            link = f"- (pdf://{corrected_filename}/page/{page}#section={section.replace(' ', '_')}"
+            # Add highlight param if possible
+            highlight = get_highlight_text(corrected_filename, page)
+            if highlight:
+                from urllib.parse import quote
+                link += f"&highlight={quote(highlight)}"
+            link += ")"
+            formatted_sources.append(link)
+            continue
+        # Try Llama format: [Source: ...; pdf://...]
+        match = re.search(llama_source_regex, line)
+        if match:
+            filename, page, section = match.groups()
+            corrected_filename = filename
+            if sources:
+                for doc in sources:
+                    doc_filename = doc.metadata.get('source', filename)
+                    doc_page = str(doc.metadata.get('page', ''))
+                    doc_section = str(doc.metadata.get('section', '')).replace(' ', '_')
+                    if page and doc_page == page:
+                        corrected_filename = doc_filename
+                        break
+            link = f"- (pdf://{corrected_filename}"
+            if page:
+                link += f"/page/{page}"
+            if section:
+                link += f"#section={section}"
+            # Add highlight param if possible
+            highlight = get_highlight_text(corrected_filename, page)
+            if highlight:
+                from urllib.parse import quote
+                link += f"&highlight={quote(highlight)}"
+            link += ")"
+            formatted_sources.append(link)
+            continue
+        # Fallback: append the original line
+            formatted_sources.append(line)
 
     # Reconstruct the response with formatted sources
     formatted_response = f"{content}\n\n**Sources:**\n" + "\n".join(formatted_sources)
@@ -662,6 +698,8 @@ for agent_id, agent in AGENTS_DATA.items():
 general_vectorstore = initialize_faiss_index(all_documents, embeddings) if all_documents else None
 general_retriever = general_vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 20}) if general_vectorstore else None
 
+ollama_client = OllamaClient()
+
 @app.route('/sessions/<session_id>/messages', methods=['POST'])
 def add_message(session_id):
     """Add a message to a session"""
@@ -676,6 +714,7 @@ def add_message(session_id):
     pdf_source_from_frontend = data.get('pdfSource', None)
     original_message = data.get('original_message', user_message)  # Optionally store original message for display
     lang = data.get('lang', 'en-IN')  # Default to BCP-47 code
+    model_name = data.get('model', 'gemini')
     
     logger.info(f"Processing user message: {user_message} for agent: {agent_id}, pdfSource: {pdf_source_from_frontend}")
     
@@ -689,7 +728,19 @@ def add_message(session_id):
     docs = all_docs  # No post-retrieval filtering needed
     logger.info(f"Documents returned: {[doc.metadata.get('source') for doc in docs]}")
     
-    context = "\n\n".join([doc.page_content for doc in docs])
+    # Build context with source metadata for each chunk
+    def format_source(doc):
+        filename = doc.metadata.get('source', 'Unknown')
+        page = doc.metadata.get('page', None)
+        section = doc.metadata.get('section', None)
+        meta = f"[Source: {filename}"
+        if page is not None:
+            meta += f", Page: {page}"
+        if section is not None:
+            meta += f", Section: {section}"
+        meta += "]"
+        return f"{meta}\n{doc.page_content}"
+    context = "\n\n".join([format_source(doc) for doc in docs])
     # Escape curly braces in the context to prevent them from being misinterpreted as variables by Langchain
     escaped_context = context.replace('{', '{{').replace('}', '}}')
     logger.info(f"Retrieved context (first 500 chars): {escaped_context[:500]}...")
@@ -707,27 +758,142 @@ def add_message(session_id):
     # Get document ID from the first retrieved document's metadata (still useful for prompt metadata)
     document_id = docs[0].metadata.get('source', '') if docs else ''
     
-    # Get the structured prompt
-    prompt_data = create_structured_prompt(user_message, escaped_context, doc_id=document_id, DOCUMENT_HEADING=current_doc_heading, USER_NAME=user_name, AGENT_ID=agent_id)
-    
-    # Create the chain
-    chain = (
-        {"context": RunnablePassthrough(), "user_message": RunnablePassthrough()}
-        | ChatPromptTemplate.from_template(prompt_data["prompt"])
-        | llm
-        | StrOutputParser()
+    # Get the structured prompt, with extra explicit instruction for PDF links
+    pdf_link_instruction = (
+        "IMPORTANT: Always cite your sources using the exact filename, page, and section as shown in the context below. "
+        "Always use the format: pdf://<filename>/page/<page_number>#section=<section_name>. Do not invent filenames or page numbers. "
+        "Do not add disclaimers, do not repeat instructions, and do not add extra commentary.\n\n"
     )
+    prompt_data = create_structured_prompt(user_message, escaped_context, doc_id=document_id, DOCUMENT_HEADING=current_doc_heading, USER_NAME=user_name, AGENT_ID=agent_id)
+    if 'prompt' in prompt_data:
+        prompt_data['prompt'] = pdf_link_instruction + prompt_data['prompt']
     
-    # Generate response
-    response = chain.invoke({
-        "context": escaped_context,
-        "user_message": user_message
-    })
+    if model_name == 'llama3':
+        llama_system_prompt = """
+You are an AI assistant. You MUST follow these rules:
+
+1. Only answer using the provided context. Do NOT use outside knowledge.
+2. Every answer MUST start with: "Thank you for asking. As per the information available to me:"
+3. You MUST use **bold** for key concepts, __underline__ for critical details, and **__both__** for the highest emphasis.
+4. Every answer MUST end with a markdown Sources section, listing the exact filename(s), page, section, and a highlight from the context, in this format:
+   **Sources:**
+   - (pdf://<filename>.pdf/page/<page_number>#section=<section>&highlight=<highlight_text>)
+5. DO NOT use [Source: ...], plain text, or any other format for sources. DO NOT just write "Sources:" without a link. You MUST use the exact markdown link format above, or your answer will be rejected.
+
+Example:
+Thank you for asking. As per the information available to me:
+
+**GST Offence** is constituted when an individual or entity fails to comply with the provisions of the Act. __Non-payment of GST__ is a **__critical offence__**.
+
+**Sources:**
+- (pdf://Sample.pdf/page/12#section=Section_3&highlight=Non-payment of GST ...)
+"""
+        llama_user_message = f"""{context}
+
+User's Question: {user_message}
+
+REMEMBER: Start your answer with "Thank you for asking. As per the information available to me:", use **bold** and __underline__ as shown in the example, and end with a markdown Sources section as shown in the example above, using the actual filename, page, section, and a highlight from the context. Do NOT use [Source: ...] or any other format for sources.
+"""
+        response = ollama_client.chat(
+            model='llama3',
+            messages=[
+                {"role": "system", "content": llama_system_prompt},
+                {"role": "user", "content": llama_user_message}
+            ]
+        )['message']['content']
+        model_used = 'llama3'
+        # --- LOG RAW LLAMA OUTPUT FOR DEBUGGING ---
+        logger.info(f"[LLAMA RAW OUTPUT] {response}")
+        # ENFORCEMENT: If the response does not cite any valid source, post-process as fallback
+        valid_filenames = set(doc.metadata.get('source') for doc in docs)
+        found_valid_source = False
+        for fname in valid_filenames:
+            if not fname:
+                continue
+            # Case-insensitive match, and also check for markdown-style pdf:// links
+            if (fname.lower() in response.lower()) or (f"pdf://{fname.lower()}" in response.lower()):
+                found_valid_source = True
+                break
+        if not found_valid_source:
+            logger.warning(f"[LLAMA ENFORCEMENT] No valid source found in response. Valid filenames: {valid_filenames}")
+            answer_text = response.strip()
+            # Aggressively scan the entire answer for all (filename, page, section) patterns
+            source_pattern = re.compile(r'(\b[\w\-]+\.pdf)\s*,?\s*Page:?\s*(\d+)(?:\s*,?\s*Section:?\s*([\w\-]+))?', re.IGNORECASE)
+            matches = list(source_pattern.finditer(answer_text))
+            links = []
+            for match in matches:
+                filename = match.group(1)
+                page = match.group(2)
+                section = match.group(3) if match.lastindex >= 3 else None
+                # Find the doc for this filename and page
+                highlight = ''
+                for doc in docs:
+                    doc_filename = doc.metadata.get('source', '')
+                    doc_page = str(doc.metadata.get('page', ''))
+                    if doc_filename.lower() == filename.lower() and (not page or doc_page == page):
+                        words = doc.page_content.split()
+                        highlight = ' '.join(words[:20]) if words else ''
+                        break
+                if not highlight and docs:
+                    words = docs[0].page_content.split()
+                    highlight = ' '.join(words[:20]) if words else ''
+                link = f"(pdf://{filename}"
+                if page:
+                    link += f"/page/{page}"
+                if section:
+                    link += f"#section={section}"
+                if highlight:
+                    from urllib.parse import quote
+                    link += f"&highlight={quote(highlight)}"
+                link += ")"
+                links.append(f"- {link}")
+            if links:
+                # Remove any existing 'Sources:' line (case-insensitive, with or without colon)
+                answer_text = re.sub(r'(?i)\n?Sources?:.*', '', answer_text)
+                response = f"{answer_text.strip()}\n\n**Sources:**\n" + '\n'.join(links)
+            else:
+                # Fallback: always append a markdown link for the top doc
+                if docs:
+                    top_doc = docs[0]
+                    filename = top_doc.metadata.get('source', 'Unknown.pdf')
+                    page = top_doc.metadata.get('page', None)
+                    section = top_doc.metadata.get('section', None)
+                    words = top_doc.page_content.split()
+                    highlight = ' '.join(words[:20]) if words else ''
+                    link = f"(pdf://{filename}"
+                    if page:
+                        link += f"/page/{page}"
+                    if section:
+                        link += f"#section={section}"
+                    if highlight:
+                        from urllib.parse import quote
+                        link += f"&highlight={quote(highlight)}"
+                    link += ")"
+                    # Remove any existing 'Sources:' line
+                    answer_text = re.sub(r'(?i)\n?Sources?:.*', '', answer_text)
+                    response = f"{answer_text.strip()}\n\n**Sources:**\n- {link}"
+                else:
+                    response = "I cannot answer based on the provided information."
+    else:
+        # Default: Gemini
+        # Create the chain
+        chain = (
+            {"context": RunnablePassthrough(), "user_message": RunnablePassthrough()}
+            | ChatPromptTemplate.from_template(prompt_data["prompt"])
+            | llm
+            | StrOutputParser()
+        )
+        # Generate response
+        response = chain.invoke({
+            "context": escaped_context,
+            "user_message": user_message
+        })
+        model_used = 'gemini'
     
     logger.info(f"Raw model response (first 500 chars): {response[:500]}...")
     
     # Format the response with source information
-    formatted_response = format_response_with_sources(response, [doc.metadata.get('source', 'Unknown') for doc in docs])
+    formatted_response = format_response_with_sources(response, docs)
     logger.info(f"Formatted sources after processing: {formatted_response.split('**Sources:**')[1] if '**Sources:**' in formatted_response else 'No sources block'}")
     
     # Log the formatted response (first 500 chars)
@@ -780,7 +946,8 @@ def add_message(session_id):
         'query_type': prompt_data['query_type'],
         'metadata': prompt_data['metadata'],
         'session': sessions[session_id],
-        'agentId': agent_id
+        'agentId': agent_id,
+        'model_used': model_used
     })
 
 # Add route to serve PDF files

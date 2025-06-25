@@ -110,7 +110,13 @@ function formatSectionOrRule(raw) {
 
 function renderAssistantContent(content) {
   // Ensure content is a string before processing
-  const stringContent = String(content);
+  let stringContent = String(content);
+
+  // Add: Replace all raw pdf://... links with markdown links
+  const pdfRawLinkPattern = /pdf:\/\/[\w\-.]+\.pdf(?:\/page\/\d+)?(?:#section=[^&\s)]+)?(?:&highlight=[^\s)]+)?/g;
+  stringContent = stringContent.replace(pdfRawLinkPattern, (match) => {
+    return `${match}`;
+  });
 
   const lines = stringContent.split(/\n/);
   const processedLines = lines.map(line => {
@@ -118,16 +124,23 @@ function renderAssistantContent(content) {
     const cleanedLine = line.replace(/source:\[([^\]]+)\]\((.*?)\)/gi, (match, p1) => `**Sources:** ${p1}`);
 
     // Regex to find parenthesized pdf:// links, capturing the content inside
+    // Now also capture highlight param
     const pdfLinkPattern = /\(pdf:\/\/([^)]+)\)/g; // Matches (pdf://...) and captures content inside parentheses
 
     if (cleanedLine.match(pdfLinkPattern)) {
       // Replace all (pdf://...) links in the line with a markdown link format that ReactMarkdown will process
       const processedLine = cleanedLine.replace(pdfLinkPattern, (fullMatch, contentInsideParentheses) => {
-        // contentInsideParentheses will be like "filename.pdf/page/N#section=Section_X"
-        const urlParts = contentInsideParentheses.match(/([^/]+)(?:\/page\/(\d+)(?:#section=(.*))?)?/);
+        // contentInsideParentheses will be like "filename.pdf/page/N#section=Section_X&highlight=..."
+        // Parse filename, page, section, highlight
+        const urlParts = contentInsideParentheses.match(/([^/]+)(?:\/page\/(\d+))?(?:#section=([^&)]*))?(?:&highlight=([^)]*))?/);
         if (urlParts) {
-          const [, filename, page, section] = urlParts;
-          const linkUrl = `${BACKEND_BASE}/pdfs/${filename}${page ? `#page=${page}` : ''}${section ? `&section=${encodeURIComponent(section)}` : ''}`;
+          const [, filename, page, section, highlight] = urlParts;
+          let linkUrl = `${BACKEND_BASE}/pdfs/${filename}`;
+          let hash = '';
+          if (page) hash += `#page=${page}`;
+          if (section) hash += `${hash ? '&' : '#'}section=${encodeURIComponent(section)}`;
+          if (highlight) hash += `${hash ? '&' : '#'}highlight=${encodeURIComponent(highlight)}`;
+          linkUrl += hash;
           // Return a markdown link with a zero-width space as text, our 'a' renderer will populate the text
           return `[](\u200B)(${linkUrl})`; // Using zero-width space
         }
@@ -507,6 +520,12 @@ function App() {
                 console.warn(`Agent details not found in agentList for assistant agentId: ${msg.agentId}`);
               }
             }
+            processedMsg.modelUsed = msg.modelUsed || msg.model_used;
+            if (processedMsg.modelUsed) {
+              const modelOption = modelOptions.find(m => m.backendName === processedMsg.modelUsed);
+              processedMsg.modelDisplayName = modelOption ? modelOption.name : processedMsg.modelUsed;
+              processedMsg.modelDisplayIcon = modelOption ? modelOption.icon : null;
+            }
           }
           return processedMsg;
         });
@@ -632,17 +651,18 @@ function App() {
         setChatStarted(true);
         
         // Send the message to the backend
+        const modelBackendName = modelOptions.find(m => m.name === selectedModel)?.backendName || 'gemini';
         const res = await fetch(`${BACKEND_BASE}/sessions/${newSession.id}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: value, userName: userName })
+          body: JSON.stringify({ message: value, userName: userName, model: modelBackendName })
         });
 
         if (res.ok) {
           const data = await res.json();
           const assistantContent = data && data.response !== undefined ? String(data.response) : 'Error: Could not retrieve response from backend.';
           const assistantAgentId = data.metadata && data.metadata.agent_id ? data.metadata.agent_id : null;
-          setMessages(msgs => [...msgs, { sender: 'assistant', content: assistantContent, agentId: assistantAgentId }]);
+          setMessages(msgs => [...msgs, { sender: 'assistant', content: assistantContent, agentId: assistantAgentId, modelUsed: data.model_used, modelDisplayName: data.model_used ? modelOptions.find(m => m.backendName === data.model_used).name : null, modelDisplayIcon: data.model_used ? modelOptions.find(m => m.backendName === data.model_used).icon : null }]);
           if (data.session) {
             setSessions(sessions => sessions.map(session =>
               session.id === data.session.id ? data.session : session
@@ -755,6 +775,7 @@ function App() {
         const newSessionData = await startNewSession();
         sessionId = newSessionData.id;
 
+        const modelBackendName = modelOptions.find(m => m.name === selectedModel)?.backendName || 'gemini';
         const res = await fetch(`${BACKEND_BASE}/sessions/${sessionId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -763,8 +784,8 @@ function App() {
             userName: userName, 
             agentId: agentIdToSend,
             pdfSource: pdfSourceToSend,
-            contextualAgentAssignment: contextualAgentAssignment,
-            lang: detectedLang
+            lang: detectedLang,
+            model: modelBackendName, // <-- always include model
           })
         });
 
@@ -788,7 +809,7 @@ function App() {
           const assistantAgentFullName = responseAgent ? responseAgent.fullName : null;
           const assistantAgentIcon = responseAgent ? responseAgent.iconType : null;
 
-          setMessages([userMessage, { sender: 'assistant', content: assistantContent, agentId: assistantAgentId, agentName: assistantAgentFullName, agentIcon: assistantAgentIcon, lang: detectedLang }]);
+          setMessages([userMessage, { sender: 'assistant', content: assistantContent, agentId: assistantAgentId, agentName: assistantAgentFullName, agentIcon: assistantAgentIcon, lang: detectedLang, modelUsed: data.model_used, modelDisplayName: data.model_used ? modelOptions.find(m => m.backendName === data.model_used).name : null, modelDisplayIcon: data.model_used ? modelOptions.find(m => m.backendName === data.model_used).icon : null }]);
           if (data && data.session) {
             setSessions(sessions => sessions.map(session =>
               session.id === data.session.id ? data.session : session
@@ -799,6 +820,7 @@ function App() {
           throw new Error(errorData.error || `Failed to send message: ${res.status}`);
         }
       } else {
+        const modelBackendName = modelOptions.find(m => m.name === selectedModel)?.backendName || 'gemini';
         const res = await fetch(`${BACKEND_BASE}/sessions/${sessionId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -807,7 +829,8 @@ function App() {
             userName: userName, 
             agentId: agentIdToSend,
             pdfSource: pdfSourceToSend,
-            lang: detectedLang
+            lang: detectedLang,
+            model: modelBackendName // <-- now included for existing sessions
           })
         });
 
@@ -830,7 +853,7 @@ function App() {
           const assistantAgentFullName = responseAgent ? responseAgent.fullName : null;
           const assistantAgentIcon = responseAgent ? responseAgent.iconType : null;
 
-          setMessages(msgs => [...msgs, { sender: 'assistant', content: assistantContent, agentId: assistantAgentId, agentName: assistantAgentFullName, agentIcon: assistantAgentIcon, lang: detectedLang }]);
+          setMessages(msgs => [...msgs, { sender: 'assistant', content: assistantContent, agentId: assistantAgentId, agentName: assistantAgentFullName, agentIcon: assistantAgentIcon, lang: detectedLang, modelUsed: data.model_used, modelDisplayName: data.model_used ? modelOptions.find(m => m.backendName === data.model_used).name : null, modelDisplayIcon: data.model_used ? modelOptions.find(m => m.backendName === data.model_used).icon : null }]);
           if (data && data.session) {
             setSessions(sessions => sessions.map(session =>
               session.id === data.session.id ? data.session : session
@@ -1044,29 +1067,23 @@ function App() {
   // Function to handle opening a PDF link
   const handleOpenPdfLink = (e, href) => {
     e.preventDefault();
-    
     try {
       // Parse the full HTTP URL generated by renderAssistantContent
-    const url = new URL(href);
-      
+      const url = new URL(href);
       // Extract the filename from the pathname (e.g., /pdfs/DPDP_act.pdf -> DPDP_act.pdf)
       const pdfFilename = url.pathname.split('/').pop();
-      
-      // Parse hash parameters for page and section
+      // Parse hash parameters for page, section, highlight
       const hashParams = new URLSearchParams(url.hash.substring(1));
       const pdfPage = hashParams.get('page');
       const pdfSection = hashParams.get('section');
-    
-      console.log('Opening PDF:', { pdfFilename, pdfPage, pdfSection });
-      
+      const pdfHighlight = hashParams.get('highlight');
+      console.log('Opening PDF:', { pdfFilename, pdfPage, pdfSection, pdfHighlight });
       // Construct the URL for the PDF viewer, using the correct filename
       const pdfViewerUrl = `${BACKEND_BASE}/pdfs/${pdfFilename}`;
-      const pageParam = pdfPage ? `#page=${pdfPage}` : '';
-      // Encode the section parameter for the URL if it exists
-      const sectionParam = pdfSection ? `${pageParam ? '&' : '#'}section=${encodeURIComponent(pdfSection)}` : '';
-      
-      // Open PDF in a new window
-      window.open(`${pdfViewerUrl}${pageParam}${sectionParam}`, '_blank');
+      setViewedPdfUrl(pdfViewerUrl);
+      setViewedPdfPage(pdfPage);
+      setViewedHighlightText(pdfHighlight);
+      setCurrentView('pdf-viewer');
     } catch (error) {
       console.error('Error handling PDF link:', error);
     }
@@ -1138,12 +1155,14 @@ function App() {
     {
       name: 'Gemini 2.5 Flash',
       icon: <img src="/gemini.png" alt="Gemini" className="model-icon-img" />,
-      description: "Google's latest, fastest model, best for simple or large context tasks."
+      description: "Google's latest, fastest model, best for simple or large context tasks.",
+      backendName: 'gemini',
     },
     {
       name: 'Meta Llama 3',
       icon: <img src="/meta.png" alt="Meta Llama 3" className="model-icon-img" />,
-      description: "Meta's most advanced open-source LLM, great for reasoning and coding."
+      description: "Meta's most advanced open-source LLM, great for reasoning and coding.",
+      backendName: 'llama3',
     },
   ];
   const [selectedModel, setSelectedModel] = useState('Gemini 2.5 Flash');
@@ -1471,6 +1490,13 @@ function App() {
                           <div className="avatar assistant"><img src="/unified-knowledge-platform.png" alt="avatar" /></div>
                           <div className="bubble assistant">
                             <div className="message-content">
+                              {/* Model name and icon above agent name */}
+                              {msg.modelDisplayName && (
+                                <div className="model-info-display" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                                  {msg.modelDisplayIcon && <span className="model-info-icon">{msg.modelDisplayIcon}</span>}
+                                  <span className="model-info-name" style={{ fontWeight: 600, fontSize: '0.98em', color: '#2563eb' }}>{msg.modelDisplayName}</span>
+                                </div>
+                              )}
                               {msg.agentName && (
                                 <div className="agent-info-display">
                                   {msg.agentIcon && <span className="agent-info-icon">{getIconComponent(msg.agentIcon)}</span>}

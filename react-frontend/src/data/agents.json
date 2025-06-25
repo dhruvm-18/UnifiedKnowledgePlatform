@@ -73,10 +73,10 @@
       ]
     },
     {
-      "agentId": "agent_1750273531574",
+      "agentId": "agent_1750842676918",
       "name": "GST Knowledge Agent",
-      "description": "Get insights from CGST,IGST,UGST Acts of Indian Government from 2017\n\n",
-      "iconType": "FaLightbulb",
+      "description": "Get insights from GST agent",
+      "iconType": "FaEnvelope",
       "buttonText": "Start Chat",
       "pdfSources": [
         "UGST.pdf",
