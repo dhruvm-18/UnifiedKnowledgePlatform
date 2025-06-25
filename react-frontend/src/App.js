@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import './App.css';
 import './styles/backgrounds.css';
 import './styles/modal.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave } from 'react-icons/fa';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop } from 'react-icons/fa';
 import HomeView from './components/HomeView';
 import KnowledgeSourcesView from './components/KnowledgeSourcesView';
 import PDFViewer from './components/PDFViewer';
@@ -681,6 +681,17 @@ function App() {
     }
   };
 
+  const abortControllerRef = useRef(null);
+
+  const handleStopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsTyping(false);
+      setLoading(false);
+    }
+  };
+
   const handleSend = async (overrideInput) => {
     let userInput = overrideInput !== undefined ? String(overrideInput) : inputRef.current.innerText;
     if (!userInput.trim() || loading) return;
@@ -776,6 +787,7 @@ function App() {
         sessionId = newSessionData.id;
 
         const modelBackendName = modelOptions.find(m => m.name === selectedModel)?.backendName || 'gemini';
+        abortControllerRef.current = new AbortController();
         const res = await fetch(`${BACKEND_BASE}/sessions/${sessionId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -786,8 +798,10 @@ function App() {
             pdfSource: pdfSourceToSend,
             lang: detectedLang,
             model: modelBackendName, // <-- always include model
-          })
+          }),
+          signal: abortControllerRef.current.signal
         });
+        abortControllerRef.current = null;
 
         if (res.ok) {
           const data = await res.json();
@@ -821,6 +835,7 @@ function App() {
         }
       } else {
         const modelBackendName = modelOptions.find(m => m.name === selectedModel)?.backendName || 'gemini';
+        abortControllerRef.current = new AbortController();
         const res = await fetch(`${BACKEND_BASE}/sessions/${sessionId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -831,8 +846,10 @@ function App() {
             pdfSource: pdfSourceToSend,
             lang: detectedLang,
             model: modelBackendName // <-- now included for existing sessions
-          })
+          }),
+          signal: abortControllerRef.current.signal
         });
+        abortControllerRef.current = null;
 
         if (res.ok) {
           const data = await res.json();
@@ -865,11 +882,16 @@ function App() {
         }
       }
     } catch (err) {
-      console.error("Error sending message:", err);
-      setMessages(msgs => [...msgs, { sender: 'assistant', content: `Sorry, there was an error: ${err.message}`, lang: detectedLang }]);
+      if (err.name === 'AbortError') {
+        setMessages(msgs => [...msgs, { sender: 'assistant', content: 'Generation stopped by user.', lang: detectedLang }]);
+      } else {
+        console.error("Error sending message:", err);
+        setMessages(msgs => [...msgs, { sender: 'assistant', content: `Sorry, there was an error: ${err.message}`, lang: detectedLang }]);
+      }
     } finally {
       setLoading(false);
       setIsTyping(false);
+      abortControllerRef.current = null;
       if (inputRef.current) inputRef.current.focus();
     }
   };
@@ -1813,15 +1835,27 @@ function App() {
                 >
                   <FaMicrophone size={20} style={{ color: listening ? '#007BFF' : 'var(--text-secondary)' }} />
                 </button>
-                <button
-                  className="send-btn send-arrow"
-                  onClick={handleSend}
-                  disabled={loading || !input.trim()}
-                  title="Send"
-                  type="button"
-                >
-                  <FaPaperPlane color={input.trim() ? '#3B82F6' : '#6B7280'} size={24} />
-                </button>
+                {isTyping ? (
+                  <button
+                    className="send-btn stop-btn"
+                    onClick={handleStopGeneration}
+                    title="Stop generating"
+                    type="button"
+                    style={{ background: 'none', border: 'none', color: '#EF4444' }}
+                  >
+                    <FaStop size={24} />
+                  </button>
+                ) : (
+                  <button
+                    className="send-btn send-arrow"
+                    onClick={handleSend}
+                    disabled={loading || !input.trim()}
+                    title="Send"
+                    type="button"
+                  >
+                    <FaPaperPlane color={input.trim() ? '#3B82F6' : '#6B7280'} size={24} />
+                  </button>
+                )}
                 </div>
               </div>
             </div>
