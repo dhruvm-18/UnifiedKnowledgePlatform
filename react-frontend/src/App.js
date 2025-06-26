@@ -1999,10 +1999,6 @@ function App() {
             setNewAgentIconType={setNewAgentIconType}
             selectedPdfs={selectedPdfs}
             setSelectedPdfs={setSelectedPdfs}
-            handleNewAgentSubmit={handleNewAgentSubmit}
-            handlePdfChange={handlePdfChange}
-            handleCancelEdit={handleCancelEdit}
-            handleSaveEdit={handleSaveEdit}
             editedName={editedName}
             setEditedName={setEditedName}
             editedDescription={editedDescription}
@@ -2011,6 +2007,7 @@ function App() {
             setEditedTileLineStartColor={setEditedTileLineStartColor}
             editedTileLineEndColor={editedTileLineEndColor}
             setEditedTileLineEndColor={setEditedTileLineEndColor}
+            refreshKey={currentView}
           />
         )}
         {currentView === 'supported-languages' && (

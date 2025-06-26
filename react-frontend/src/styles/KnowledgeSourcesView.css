@@ -22,6 +22,11 @@
   }
 }
 
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
 /* New styles for KnowledgeSourcesView */
 .knowledge-sources-view {
   padding: 30px;
@@ -580,10 +585,10 @@
 
 .icon-select-dropdown {
   width: 100%;
-  height: 62px;
+  height: 40px;
   display: flex;
   align-items: center;
-  padding: 0 18px;
+  padding: 0 12px;
   margin-top: 10px;
   margin-bottom: 10px;
   border: 1px solid #ddd;
@@ -687,8 +692,9 @@
 }
 
 .dark-mode .new-agent-overlay-content {
-  background: #3a3a3a; /* Dark background for overlay content */
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4); /* Darker shadow */
+  background: #23233a !important;
+  color: #f0f0f0 !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
 .overlay-header {
@@ -946,8 +952,9 @@
 }
 
 .dark-mode .new-agent-overlay-content {
-  background: #3a3a3a; /* Dark background for overlay content */
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4); /* Darker shadow */
+  background: #23233a !important;
+  color: #f0f0f0 !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
 
 .dark-mode .overlay-header h2 {
@@ -968,20 +975,25 @@
 }
 
 .dark-mode .new-agent-overlay-content input[type="text"],
-.dark-mode .new-agent-overlay-content textarea {
-  background-color: #4a4a4a; /* Darker input background */
-  border-color: #6a6a6a; /* Darker border */
-  color: #f0f0f0; /* Light text */
+.dark-mode .new-agent-overlay-content textarea,
+.dark-mode .new-agent-overlay-content select,
+.dark-mode .icon-select-dropdown {
+  background-color: #23233a;
+  color: #f0f0f0;
+  border-color: #444;
 }
 
 .dark-mode .new-agent-overlay-content input[type="text"]:focus,
-.dark-mode .new-agent-overlay-content textarea:focus {
-  border-color: #9c27b0; /* Primary color for focus */
-  box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.3); /* Matching shadow */
+.dark-mode .new-agent-overlay-content textarea:focus,
+.dark-mode .new-agent-overlay-content select:focus,
+.dark-mode .icon-select-dropdown:focus {
+  border-color: #9c27b0;
+  box-shadow: 0 0 0 3px rgba(156, 39, 176, 0.3);
+  outline: none;
 }
 
 .dark-mode .icon-select-label {
-  color: #f0f0f0; /* Light label text */
+  color: #bdbdbd;
 }
 
 .dark-mode .icon-select-dropdown {
@@ -1101,7 +1113,7 @@
 
 /* Remove overlay background darkening in dark mode */
 .dark-mode .new-agent-overlay {
-  background-color: transparent !important;
+  background: rgba(0,0,0,0.92) !important;
 }
 
 .app-layout.left-collapsed .knowledge-sources-view {

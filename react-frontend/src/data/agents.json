@@ -48,7 +48,9 @@
       "pdfSource": "National_Cyber_Secruity.pdf",
       "pdfSources": [
         "National_Cyber_Secruity.pdf"
-      ]
+      ],
+      "tileLineStartColor": "#0099ff",
+      "tileLineEndColor": "#000000"
     },
     {
       "iconType": "FaFileAlt",
@@ -59,7 +61,9 @@
       "pdfSource": "Aadhar_Act.pdf",
       "pdfSources": [
         "Aadhar_Act.pdf"
-      ]
+      ],
+      "tileLineStartColor": "#ff0000",
+      "tileLineEndColor": "#000000"
     },
     {
       "iconType": "FaFileAlt",
@@ -70,7 +74,9 @@
       "pdfSource": "National_Strategy_AI.pdf",
       "pdfSources": [
         "National_Strategy_AI.pdf"
-      ]
+      ],
+      "tileLineStartColor": "#0afffb",
+      "tileLineEndColor": "#000000"
     },
     {
       "agentId": "agent_1750842676918",
