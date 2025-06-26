@@ -1864,106 +1864,113 @@ function App() {
             </div>
             {showModelSelector && (
               <div className="modal-overlay" onClick={() => setShowModelSelector(false)}>
-                <div className="modal-content" onClick={e => e.stopPropagation()} style={{
-                  width: '700px',
-                  maxWidth: '90vw',
-                  maxHeight: '80vh',
-                  overflowY: 'auto',
-                  minHeight: 'unset',
-                  borderRadius: 18,
-                  boxShadow: '0 4px 32px #0002',
-                  background: '#fff',
-                  margin: '0 auto',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'stretch',
-                  padding: '2.5rem 2.5rem 2rem 2.5rem',
-                }}>
-                  <div className="model-search-toggle-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, marginTop: 0 }}>
-                    <div className="model-search-input-wrapper" style={{ flex: 1, marginRight: 16 }}>
-                      <svg className="model-search-icon" width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" stroke="#A0A4AB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                      <input
-                        type="text"
-                        className="model-search-input"
-                        placeholder="Search models"
-                        value={modelSearch}
-                        onChange={e => setModelSearch(e.target.value)}
-                        autoFocus
-                      />
-                    </div>
-                    <div className="model-view-toggle-row" style={{ display: 'flex', gap: 8 }}>
-                      <button className={`model-view-toggle-btn${viewMode === 'tiles' ? ' active' : ''}`} onClick={() => setViewMode('tiles')} aria-label="Grid view">
-                        <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2" fill="currentColor"/><rect x="14" y="3" width="7" height="7" rx="2" fill="currentColor"/><rect x="14" y="14" width="7" height="7" rx="2" fill="currentColor"/><rect x="3" y="14" width="7" height="7" rx="2" fill="currentColor"/></svg>
-                      </button>
-                      <button className={`model-view-toggle-btn${viewMode === 'list' ? ' active' : ''}`} onClick={() => setViewMode('list')} aria-label="List view">
-                        <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="2.5" rx="1.25" fill="currentColor"/><rect x="4" y="10.75" width="16" height="2.5" rx="1.25" fill="currentColor"/><rect x="4" y="16.5" width="16" height="2.5" rx="1.25" fill="currentColor"/></svg>
-                      </button>
-                    </div>
-                  </div>
-                  {viewMode === 'tiles' ? (
-                    <div className="model-tiles-list">
-                      {filteredModels.map((model, idx) => (
-                        <div
-                          key={model.name + modelSearch}
-                          className={`model-tile model-tile-animate${model.comingSoon ? ' model-tile-coming-soon' : ''}`}
-                          style={{ animationDelay: `${idx * 60}ms`, opacity: model.comingSoon ? 0.6 : 1, cursor: model.comingSoon ? 'not-allowed' : 'pointer', position: 'relative' }}
-                          onClick={model.comingSoon ? undefined : () => { setSelectedModel(model.name); setShowModelSelector(false); }}
-                          role={model.comingSoon ? undefined : 'button'}
-                          aria-label={model.comingSoon ? undefined : `Select ${model.name}`}
-                          tabIndex={model.comingSoon ? -1 : 0}
-                        >
-                          <div className="model-tile-icon-row">
-                            <div className="model-tile-icon">{model.icon}</div>
-                          </div>
-                          <div className="model-tile-name">{model.name}</div>
-                          <div className="model-tile-desc">{model.description}</div>
-                          {model.comingSoon && (
-                            <div style={{
-                              position: 'absolute',
-                              top: 10,
-                              right: 10,
-                              background: '#6c2eb7',
-                              color: '#fff',
-                              borderRadius: 8,
-                              padding: '2px 10px',
-                              fontSize: '0.85em',
-                              fontWeight: 600,
-                              letterSpacing: 1,
-                              boxShadow: '0 2px 8px #0002',
-                              zIndex: 2
-                            }}>Coming Soon</div>
+                {(() => {
+                  const isDarkMode = document.body.classList.contains('dark-mode') || document.documentElement.classList.contains('dark-mode');
+                  return (
+                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{
+                      width: '700px',
+                      maxWidth: '90vw',
+                      maxHeight: '80vh',
+                      overflowY: 'auto',
+                      minHeight: 'unset',
+                      borderRadius: 18,
+                      boxShadow: isDarkMode ? '0 4px 32px #0008' : '0 4px 32px #0002',
+                      background: isDarkMode ? '#181a20' : '#fff',
+                      color: isDarkMode ? '#f3f4f6' : '#222',
+                      margin: '0 auto',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      alignItems: 'stretch',
+                      padding: '2.5rem 2.5rem 2rem 2.5rem',
+                      transition: 'background 0.2s, color 0.2s',
+                    }}>
+                      <div className="model-search-toggle-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, marginTop: 0 }}>
+                        <div className="model-search-input-wrapper" style={{ flex: 1, marginRight: 16 }}>
+                          <svg className="model-search-icon" width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" stroke="#A0A4AB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                          <input
+                            type="text"
+                            className="model-search-input"
+                            placeholder="Search models"
+                            value={modelSearch}
+                            onChange={e => setModelSearch(e.target.value)}
+                            autoFocus
+                          />
+                        </div>
+                        <div className="model-view-toggle-row" style={{ display: 'flex', gap: 8 }}>
+                          <button className={`model-view-toggle-btn${viewMode === 'tiles' ? ' active' : ''}`} onClick={() => setViewMode('tiles')} aria-label="Grid view">
+                            <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2" fill="currentColor"/><rect x="14" y="3" width="7" height="7" rx="2" fill="currentColor"/><rect x="14" y="14" width="7" height="7" rx="2" fill="currentColor"/><rect x="3" y="14" width="7" height="7" rx="2" fill="currentColor"/></svg>
+                          </button>
+                          <button className={`model-view-toggle-btn${viewMode === 'list' ? ' active' : ''}`} onClick={() => setViewMode('list')} aria-label="List view">
+                            <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="2.5" rx="1.25" fill="currentColor"/><rect x="4" y="10.75" width="16" height="2.5" rx="1.25" fill="currentColor"/><rect x="4" y="16.5" width="16" height="2.5" rx="1.25" fill="currentColor"/></svg>
+                          </button>
+                        </div>
+                      </div>
+                      {viewMode === 'tiles' ? (
+                        <div className="model-tiles-list">
+                          {filteredModels.map((model, idx) => (
+                            <div
+                              key={model.name + modelSearch}
+                              className={`model-tile model-tile-animate${model.comingSoon ? ' model-tile-coming-soon' : ''}`}
+                              style={{ animationDelay: `${idx * 60}ms`, opacity: model.comingSoon ? 0.6 : 1, cursor: model.comingSoon ? 'not-allowed' : 'pointer', position: 'relative' }}
+                              onClick={model.comingSoon ? undefined : () => { setSelectedModel(model.name); setShowModelSelector(false); }}
+                              role={model.comingSoon ? undefined : 'button'}
+                              aria-label={model.comingSoon ? undefined : `Select ${model.name}`}
+                              tabIndex={model.comingSoon ? -1 : 0}
+                            >
+                              <div className="model-tile-icon-row">
+                                <div className="model-tile-icon">{model.icon}</div>
+                              </div>
+                              <div className="model-tile-name">{model.name}</div>
+                              <div className="model-tile-desc">{model.description}</div>
+                              {model.comingSoon && (
+                                <div style={{
+                                  position: 'absolute',
+                                  top: 10,
+                                  right: 10,
+                                  background: '#6c2eb7',
+                                  color: '#fff',
+                                  borderRadius: 8,
+                                  padding: '2px 10px',
+                                  fontSize: '0.85em',
+                                  fontWeight: 600,
+                                  letterSpacing: 1,
+                                  boxShadow: '0 2px 8px #0002',
+                                  zIndex: 2
+                                }}>Coming Soon</div>
+                              )}
+                            </div>
+                          ))}
+                          {filteredModels.length === 0 && (
+                            <div className="model-tile-empty">No models found.</div>
                           )}
                         </div>
-                      ))}
-                      {filteredModels.length === 0 && (
-                        <div className="model-tile-empty">No models found.</div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="model-list-view">
-                      {filteredModels.map((model, idx) => (
-                        <div
-                          key={model.name + modelSearch}
-                          className={`model-list-row model-tile-animate${viewMode === 'list' ? ' list-animate' : ''}`}
-                          style={{ animationDelay: `${idx * 60}ms` }}
-                          onClick={() => { setSelectedModel(model.name); setShowModelSelector(false); }}
-                          tabIndex={0}
-                          role="button"
-                          aria-label={`Select ${model.name}`}
-                        >
-                          <div className="model-list-icon">{model.icon}</div>
-                          <div className="model-list-info">
-                            <div className="model-list-name">{model.name}</div>
-                            <div className="model-list-desc">{model.description}</div>
-                          </div>
+                      ) : (
+                        <div className="model-list-view">
+                          {filteredModels.map((model, idx) => (
+                            <div
+                              key={model.name + modelSearch}
+                              className={`model-list-row model-tile-animate${viewMode === 'list' ? ' list-animate' : ''}`}
+                              style={{ animationDelay: `${idx * 60}ms` }}
+                              onClick={() => { setSelectedModel(model.name); setShowModelSelector(false); }}
+                              tabIndex={0}
+                              role="button"
+                              aria-label={`Select ${model.name}`}
+                            >
+                              <div className="model-list-icon">{model.icon}</div>
+                              <div className="model-list-info">
+                                <div className="model-list-name">{model.name}</div>
+                                <div className="model-list-desc">{model.description}</div>
+                              </div>
+                            </div>
+                          ))}
+                          {filteredModels.length === 0 && (
+                            <div className="model-tile-empty">No models found.</div>
+                          )}
                         </div>
-                      ))}
-                      {filteredModels.length === 0 && (
-                        <div className="model-tile-empty">No models found.</div>
                       )}
                     </div>
-                  )}
-                </div>
+                  );
+                })()}
               </div>
             )}
           </>
@@ -2065,15 +2072,46 @@ function App() {
       {/* Overlay Portal for New/Edit Agent */}
       {showNewAgentOverlay && (
         <AgentOverlay onClose={() => setShowNewAgentOverlay(false)}>
-          <div className="overlay-header">
-            <h2>New Agent</h2>
+          <div className="overlay-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>New Agent</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="color"
+                value={newAgentTileLineStartColor || '#3498db'}
+                onChange={e => setNewAgentTileLineStartColor(e.target.value)}
+                disabled={isSubmitting}
+                style={{ width: 24, height: 24, border: 'none', marginRight: 4, cursor: 'pointer', background: 'none', padding: 0 }}
+                title="Tile Line Start Color"
+              />
+              <input
+                type="color"
+                value={newAgentTileLineEndColor || '#8e44ad'}
+                onChange={e => setNewAgentTileLineEndColor(e.target.value)}
+                disabled={isSubmitting}
+                style={{ width: 24, height: 24, border: 'none', marginLeft: 4, cursor: 'pointer', background: 'none', padding: 0 }}
+                title="Tile Line End Color"
+              />
+            </div>
+          </div>
+          <div style={{ width: '100%', padding: 0, margin: 0 }}>
+            <div
+              style={{
+                display: 'block',
+                width: '100%',
+                height: 16,
+                borderRadius: 12,
+                marginBottom: 18,
+                background: `linear-gradient(90deg, ${newAgentTileLineStartColor || '#3498db'}, ${newAgentTileLineEndColor || '#8e44ad'})`,
+                transition: 'background 0.2s',
+              }}
+            />
           </div>
           {overlaySuccessMessage && (
             <div className="overlay-success-message">
               {overlaySuccessMessage}
             </div>
           )}
-          <form onSubmit={handleNewAgentSubmit}>
+          <form onSubmit={handleNewAgentSubmit} style={{ fontSize: '0.98rem' }}>
             <input
               type="text"
               placeholder="Agent Name"
@@ -2081,6 +2119,7 @@ function App() {
               onChange={(e) => setNewAgentName(e.target.value)}
               required
               disabled={isSubmitting}
+              style={{ height: 36, fontSize: '1rem', marginBottom: 10 }}
             />
             <textarea
               placeholder="Agent Description"
@@ -2088,20 +2127,7 @@ function App() {
               onChange={(e) => setNewAgentDescription(e.target.value)}
               required
               disabled={isSubmitting}
-            />
-            <input
-              type="text"
-              placeholder="Tile Line Start Color (e.g., #3498db or red)"
-              value={newAgentTileLineStartColor}
-              onChange={(e) => setNewAgentTileLineStartColor(e.target.value)}
-              disabled={isSubmitting}
-            />
-            <input
-              type="text"
-              placeholder="Tile Line End Color (e.g., #8e44ad or blue)"
-              value={newAgentTileLineEndColor}
-              onChange={(e) => setNewAgentTileLineEndColor(e.target.value)}
-              disabled={isSubmitting}
+              style={{ minHeight: 70, fontSize: '1rem', marginBottom: 10 }}
             />
             <div className="icon-selection-container">
               <label htmlFor="icon-select" className="icon-select-label">Choose an Icon:</label>
@@ -2110,6 +2136,149 @@ function App() {
                 className="icon-select-dropdown"
                 value={newAgentIconType}
                 onChange={(e) => setNewAgentIconType(e.target.value)}
+                disabled={isSubmitting}
+                style={{ height: 36, fontSize: '1rem' }}
+              >
+                <option value="FaFileAlt">Document (Default)</option>
+                <option value="FaShieldAlt">Shield</option>
+                <option value="FaGavel">Gavel</option>
+                <option value="FaRobot">Robot</option>
+                <option value="FaBook">Book</option>
+                <option value="FaLightbulb">Lightbulb</option>
+                <option value="FaFlask">Flask</option>
+                <option value="FaUserTie">User Tie</option>
+                <option value="FaDatabase">Database</option>
+                <option value="FaCloud">Cloud</option>
+                <option value="FaUser">User</option>
+                <option value="FaLock">Lock</option>
+                <option value="FaChartBar">Chart</option>
+                <option value="FaCog">Settings</option>
+                <option value="FaComments">Comments</option>
+                <option value="FaStar">Star</option>
+                <option value="FaBell">Bell</option>
+                <option value="FaCalendar">Calendar</option>
+                <option value="FaEnvelope">Envelope</option>
+                <option value="FaMap">Map</option>
+                <option value="FaHeart">Heart</option>
+                <option value="FaCheck">Check</option>
+                <option value="FaTimes">Times</option>
+              </select>
+              <div className="selected-icon-preview">
+                {getIconComponent(newAgentIconType, { size: '22px' })}
+              </div>
+            </div>
+            <div className="pdf-upload-section" style={{ margin: '10px 0' }}>
+              <input
+                type="file"
+                accept=".pdf"
+                multiple
+                onChange={handlePdfChange}
+                id="pdf-upload"
+                className="pdf-upload-input-hidden"
+                required
+                disabled={isSubmitting}
+              />
+              <label htmlFor="pdf-upload" className="file-upload-button" style={{ fontSize: '1rem', padding: '10px 18px' }}>
+                <FaFileAlt /> Choose Files
+              </label>
+              <span className="file-chosen-text" style={{ fontSize: '0.95em' }}>
+                {selectedPdfs.length > 0
+                  ? selectedPdfs.map(f => f.name).join(', ')
+                  : 'No files chosen'}
+              </span>
+            </div>
+            <div className="overlay-actions" style={{ gap: 10, marginTop: 18 }}>
+              <button
+                type="submit"
+                className="create-agent-btn"
+                disabled={isSubmitting}
+                style={{ fontSize: '1rem', padding: '10px 24px', minWidth: 120, height: 38 }}
+              >
+                {isSubmitting ? 'Creating...' : <><FaSave /> Create Agent</>}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowNewAgentOverlay(false)}
+                className="cancel-btn"
+                disabled={isSubmitting}
+                style={{ fontSize: '1rem', padding: '10px 24px', minWidth: 120, height: 38 }}
+              >
+                <FaTimes /> Cancel
+              </button>
+            </div>
+          </form>
+        </AgentOverlay>
+      )}
+      {agentToEdit && (
+        <AgentOverlay onClose={handleCancelEdit}>
+          <div className="overlay-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h2 style={{ margin: 0 }}>Edit Agent</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <input
+                type="color"
+                value={editedTileLineStartColor || '#3498db'}
+                onChange={e => setEditedTileLineStartColor(e.target.value)}
+                disabled={isSubmitting}
+                style={{ width: 28, height: 28, border: 'none', marginRight: 4, cursor: 'pointer', background: 'none', padding: 0 }}
+                title="Tile Line Start Color"
+              />
+              <input
+                type="color"
+                value={editedTileLineEndColor || '#8e44ad'}
+                onChange={e => setEditedTileLineEndColor(e.target.value)}
+                disabled={isSubmitting}
+                style={{ width: 28, height: 28, border: 'none', marginLeft: 4, cursor: 'pointer', background: 'none', padding: 0 }}
+                title="Tile Line End Color"
+              />
+            </div>
+          </div>
+          {/* Visual gradient line preview for Edit Agent */}
+          {(() => {
+            const isDarkMode = document.body.classList.contains('dark-mode') || document.documentElement.classList.contains('dark-mode');
+            const start = editedTileLineStartColor || (isDarkMode ? '#5e35b1' : '#3498db');
+            const end = editedTileLineEndColor || (isDarkMode ? '#7b1fa2' : '#8e44ad');
+            return (
+              <div
+                style={{
+                  height: 16,
+                  borderRadius: 12,
+                  marginBottom: 28,
+                  background: `linear-gradient(90deg, ${start}, ${end})`,
+                  width: '100%',
+                  boxShadow: isDarkMode
+                    ? '0 2px 8px rgba(124, 58, 237, 0.18)'
+                    : '0 2px 8px rgba(52, 152, 219, 0.12)',
+                  transition: 'background 0.2s',
+                }}
+              />
+            );
+          })()}
+          {overlaySuccessMessage && (
+            <div className="overlay-success-message">
+              {overlaySuccessMessage}
+            </div>
+          )}
+          <form onSubmit={e => { e.preventDefault(); handleSaveEdit(); }}>
+            <input
+              type="text"
+              value={editedName}
+              onChange={e => setEditedName(e.target.value)}
+              required
+              disabled={isSubmitting}
+            />
+            <textarea
+              value={editedDescription}
+              onChange={e => setEditedDescription(e.target.value)}
+              required
+              disabled={isSubmitting}
+            />
+            <div className="icon-selection-container">
+              <label htmlFor="icon-select" className="icon-select-label">Choose an Icon:</label>
+              <select
+                id="icon-select"
+                className="icon-select-dropdown"
+                value={agentToEdit.iconType}
+                onChange={e => setNewAgentIconType(e.target.value)}
                 disabled={isSubmitting}
               >
                 <option value="FaFileAlt">Document (Default)</option>
@@ -2137,82 +2306,9 @@ function App() {
                 <option value="FaTimes">Times</option>
               </select>
               <div className="selected-icon-preview">
-                {getIconComponent(newAgentIconType, { size: '24px' })}
+                {getIconComponent(agentToEdit.iconType, { size: '24px' })}
               </div>
             </div>
-            <div className="pdf-upload-section">
-              <input
-                type="file"
-                accept=".pdf"
-                multiple
-                onChange={handlePdfChange}
-                id="pdf-upload"
-                className="pdf-upload-input-hidden"
-                required
-                disabled={isSubmitting}
-              />
-              <label htmlFor="pdf-upload" className="file-upload-button">
-                <FaFileAlt /> Choose Files
-              </label>
-              <span className="file-chosen-text">
-                {selectedPdfs.length > 0
-                  ? selectedPdfs.map(f => f.name).join(', ')
-                  : 'No files chosen'}
-              </span>
-            </div>
-            <div className="overlay-actions">
-              <button
-                type="submit"
-                className="create-agent-btn"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Creating...' : <><FaSave /> Create Agent</>}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowNewAgentOverlay(false)}
-                className="cancel-btn"
-                disabled={isSubmitting}
-              >
-                <FaTimes /> Cancel
-              </button>
-            </div>
-          </form>
-        </AgentOverlay>
-      )}
-      {agentToEdit && (
-        <AgentOverlay onClose={handleCancelEdit}>
-          <div className="overlay-header">
-            <h2>Edit Agent</h2>
-          </div>
-          <form onSubmit={e => { e.preventDefault(); handleSaveEdit(); }}>
-            <input
-              type="text"
-              value={editedName}
-              onChange={e => setEditedName(e.target.value)}
-              required
-              disabled={isSubmitting}
-            />
-            <textarea
-              value={editedDescription}
-              onChange={e => setEditedDescription(e.target.value)}
-              required
-              disabled={isSubmitting}
-            />
-            <input
-              type="text"
-              placeholder="Tile Line Start Color (e.g., #3498db or red)"
-              value={editedTileLineStartColor}
-              onChange={e => setEditedTileLineStartColor(e.target.value)}
-              disabled={isSubmitting}
-            />
-            <input
-              type="text"
-              placeholder="Tile Line End Color (e.g., #8e44ad or blue)"
-              value={editedTileLineEndColor}
-              onChange={e => setEditedTileLineEndColor(e.target.value)}
-              disabled={isSubmitting}
-            />
             <div className="overlay-actions">
               <button
                 type="submit"

@@ -9,6 +9,30 @@ import { Element, scroller } from 'react-scroll';
 // but agents will be fetched from backend for actual state.
 export const KNOWLEDGE_AGENT_CONST = []; // Will be populated by backend
 
+// Add a helper to convert color names to hex codes for color pickers
+const colorNameToHex = (color) => {
+  const colors = {
+    red: '#ff0000',
+    gold: '#ffd700',
+    violet: '#8f00ff',
+    blue: '#3498db',
+    black: '#000000',
+    green: '#4caf50',
+    orange: '#ffa500',
+    purple: '#800080',
+    yellow: '#ffff00',
+    pink: '#ff69b4',
+    brown: '#a52a2a',
+    gray: '#808080',
+    white: '#ffffff',
+    // Add more as needed
+  };
+  if (!color) return '';
+  if (color.startsWith('#')) return color;
+  const lower = color.toLowerCase();
+  return colors[lower] || color;
+};
+
 function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNewAgentOverlay, setShowNewAgentOverlay, agentToEdit, setAgentToEdit, overlaySuccessMessage, setOverlaySuccessMessage, isSubmitting, setIsSubmitting, newAgentName, setNewAgentName, newAgentDescription, setNewAgentDescription, newAgentTileLineStartColor, setNewAgentTileLineStartColor, newAgentTileLineEndColor, setNewAgentTileLineEndColor, newAgentIconType, setNewAgentIconType, selectedPdfs, setSelectedPdfs, editedName, setEditedName, editedDescription, setEditedDescription, editedTileLineStartColor, setEditedTileLineStartColor, editedTileLineEndColor, setEditedTileLineEndColor }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [agents, setAgents] = useState([]); // Initialize as empty, will fetch from backend
@@ -71,8 +95,8 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
     setAgentToEdit(agent);
     setEditedName(agent.name);
     setEditedDescription(agent.description);
-    setEditedTileLineStartColor(agent.tileLineStartColor || ''); // Initialize with existing color or empty string
-    setEditedTileLineEndColor(agent.tileLineEndColor || '');     // Initialize with existing color or empty string
+    setEditedTileLineStartColor(colorNameToHex(agent.tileLineStartColor) || '');
+    setEditedTileLineEndColor(colorNameToHex(agent.tileLineEndColor) || '');
     // Capture current scroll position of the knowledge-sources-view
     if (knowledgeSourcesViewRef.current) {
       setOverlayScrollTop(knowledgeSourcesViewRef.current.scrollTop);

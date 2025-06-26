@@ -155,6 +155,7 @@
   color: #3498db;
   background: linear-gradient(45deg, #3498db, #8e44ad);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -579,14 +580,17 @@
 
 .icon-select-dropdown {
   width: 100%;
-  padding: 10px 12px;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  margin-top: 10px;
   margin-bottom: 10px;
   border: 1px solid #ddd;
   border-radius: 8px;
-  font-size: 1rem;
+  font-size: 1.15rem;
   transition: all 0.3s ease;
   box-sizing: border-box;
-  height: 42px;
   background: #fff;
 }
 
