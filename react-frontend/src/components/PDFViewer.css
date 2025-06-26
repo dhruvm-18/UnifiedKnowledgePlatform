@@ -4,12 +4,12 @@
 .pdf-viewer-container {
     height: 100vh;
     width: 100%;
-    position: relative;
+    background: #f6f8fa;
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
+    justify-content: center;
+    box-sizing: border-box;
 }
 
 /* Error message style */
@@ -40,59 +40,71 @@
 
 /* Controls container (Prev, Next, Zoom buttons) */
 .pdf-controls {
-    margin-bottom: 10px;
-    padding: 10px;
-    z-index: 100;
+    margin-bottom: 18px;
+    padding: 10px 18px;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
     display: flex;
     align-items: center;
-    gap: 10px;
-    background-color: var(--bg-secondary);
-    border-radius: 8px;
+    gap: 14px;
 }
 
 /* Style for buttons in controls (basic example) */
 .pdf-controls button {
-    padding: 5px 10px;
+    background: #2563eb;
+    color: #fff;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
+    padding: 7px 16px;
+    font-size: 1rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.2s ease;
-    color: var(--text-primary);
-    background-color: var(--accent-color);
+    transition: background 0.2s;
 }
 
 .pdf-controls button:disabled {
-    background-color: #555;
-    color: #aaa;
+    background: #b0b8c1;
+    color: #fff;
+    cursor: not-allowed;
 }
 
 /* Specific styles for zoom buttons */
-.pdf-controls button.zoom-btn {
-    background-color: #6c757d; /* Greyish */
+.pdf-controls .zoom-btn {
+    background: #6c757d;
 }
 
 /* Page number display */
 .pdf-page-info {
-    margin-left: 20px;
-    color: var(--text-primary);
+    margin-left: 24px;
+    color: #222;
+    font-weight: 500;
 }
 
 /* Canvas container */
 .pdf-canvas-container {
-    flex-grow: 1;
-    width: 100%;
     display: flex;
     justify-content: center;
+    align-items: center;
+    max-width: 100%;
+    max-height: 80vh;
+    background: transparent;
+    position: relative;
     overflow: auto;
+    box-sizing: border-box;
+    margin: 0 auto;
 }
 
 /* Canvas element style */
 .pdf-canvas {
-    border: 1px solid var(--border-color);
-    box-shadow: 0 2px 4px var(--shadow-color);
-    max-width: 100%;
-    height: auto;
-    background-color: var(--bg-secondary);
+    border: 1.5px solid #e0e7ef;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    background: #fff;
+    max-width: 90vw;
+    max-height: 90vh;
+    margin: 0 auto;
+    display: block;
 }
 
 /* Hide canvas when loading or no document */
@@ -101,18 +113,75 @@
 }
 
 /* Optional: Style for highlight overlay if implemented differently */
-/*
 .pdf-highlight-layer {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none; 
+    top: 0; left: 0;
+    pointer-events: none;
+    z-index: 10;
 }
 
 .pdf-highlight-rect {
     position: absolute;
-    background-color: rgba(255, 255, 0, 0.4);
+    background: rgba(255, 255, 0, 0.35);
+    border-radius: 5px;
+    box-shadow: 0 0 12px 2px rgba(255,255,0,0.18), 0 2px 8px rgba(0,0,0,0.08);
+    border: 1.5px solid #ffe066;
+    animation: highlightFadeIn 0.7s cubic-bezier(0.4,0,0.2,1);
+    transition: box-shadow 0.2s, border 0.2s;
+    z-index: 11;
 }
-*/ 
+
+.pdf-highlight-rect.section {
+    background: rgba(56, 189, 248, 0.13);
+    border: 2px solid #38bdf8;
+    box-shadow: 0 0 16px 2px rgba(56,189,248,0.15);
+}
+
+.pdf-highlight-rect.debug {
+    background: rgba(255,0,0,0.08) !important;
+    border: 1.5px dashed #e11d48 !important;
+    box-shadow: none !important;
+    z-index: 12;
+}
+
+.pdf-highlight-rect .highlight-tooltip {
+    display: none;
+    position: absolute;
+    left: 100%;
+    top: 0;
+    background: #222;
+    color: #fff;
+    font-size: 0.85em;
+    padding: 4px 10px;
+    border-radius: 6px;
+    white-space: pre;
+    z-index: 100;
+    margin-left: 8px;
+    pointer-events: none;
+}
+
+.pdf-highlight-rect:hover .highlight-tooltip {
+    display: block;
+}
+
+@keyframes highlightFadeIn {
+    from { background: rgba(255,255,0,0); box-shadow: none; }
+    to   { background: rgba(255,255,0,0.35); box-shadow: 0 0 12px 2px rgba(255,255,0,0.18); }
+}
+
+.pdf-highlight,
+mark.pdf-highlight {
+  background: #6c2eb7 !important; /* Dark violet */
+  color: #fff !important;
+  border-radius: 3px;
+  padding: 0 2px;
+  box-shadow: 0 0 6px 1px rgba(108, 46, 183, 0.18);
+  transition: background 0.2s;
+}
+
+mark {
+  background: #6c2eb7 !important; /* fallback for plain <mark> */
+  color: #fff !important;
+  border-radius: 3px;
+  padding: 0 2px;
+} 

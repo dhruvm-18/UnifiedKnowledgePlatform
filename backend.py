@@ -934,6 +934,20 @@ REMEMBER: Start your answer with "Thank you for asking. As per the information a
     
     # Format the response with source information
     formatted_response = format_response_with_sources(response, docs)
+    # Safety net: replace any accidental '@pdf://' with 'pdf://' in the final response
+    if formatted_response:
+        formatted_response = formatted_response.replace('@pdf://', 'pdf://')
+
+    # Remove all but the last 'Sources:' section (optionally bolded, with or without colon)
+    def remove_duplicate_sources_sections(text):
+        pattern = re.compile(r'(?im)^\s*(\*\*\s*)?Sources\*\*?\s*:?.*$', re.MULTILINE)
+        matches = list(pattern.finditer(text))
+        if len(matches) <= 1:
+            return text
+        last_idx = matches[-1].start()
+        return text[:last_idx] + text[last_idx:]
+    formatted_response = remove_duplicate_sources_sections(formatted_response)
+    
     logger.info(f"Formatted sources after processing: {formatted_response.split('**Sources:**')[1] if '**Sources:**' in formatted_response else 'No sources block'}")
     
     # Log the formatted response (first 500 chars)

@@ -2020,3 +2020,12 @@ html, body, #root {
 .dark-mode .step svg {
   color: var(--accent-color) !important;
 }
+
+.send-btn.stop-btn {
+  cursor: pointer !important;
+}
+.send-btn.stop-btn:hover:not(:disabled) {
+  background: #fee2e2;
+  color: #b91c1c;
+  cursor: pointer;
+}

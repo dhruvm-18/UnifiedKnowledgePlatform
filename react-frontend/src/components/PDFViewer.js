@@ -1,262 +1,319 @@
 // PDFViewer.js - Highlight parsing and application
 import React, { useState, useEffect, useRef } from 'react';
-// Remove pdf-lib import as we will use pdfjs-dist for rendering
-// import { PDFDocument } from 'pdf-lib';
-
-// Import pdfjs-dist
-import * as pdfjsLib from 'pdfjs-dist';
-
-// Import the new CSS file
+import { pdfjs } from 'react-pdf';
 import './PDFViewer.css';
+import PDFTextHighlighter from './PDFTextHighlighter';
+import { FaTimes, FaSearchPlus, FaSearchMinus, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
 
-// Set the worker source for pdfjs-dist
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+const MAX_PIXEL_RATIO = 3;
+const PDF_DPI = 150;
+const PDF_DEFAULT_DPI = 70;
+const DPI_SCALE = PDF_DPI / PDF_DEFAULT_DPI;
 
-const PDFViewer = ({ pdfUrl, pageNumber = 1, highlightText = null }) => {
-  const [pdfDoc, setPdfDoc] = useState(null);
+const PDFViewer = ({ pdfUrl, pageNumber = 1, highlightTexts = null, highlightText = null, section = null, onClose }) => {
   const [error, setError] = useState(null);
-  const [numPages, setNumPages] = useState(0);
+  const [numPages, setNumPages] = useState(null);
   const canvasRef = useRef(null);
-  const [scale, setScale] = useState(2.0);
+  const [scale, setScale] = useState(1.0);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(pageNumber);
-
-  // Ref to store the current render task
   const renderTaskRef = useRef(null);
+  const [pdfDoc, setPdfDoc] = useState(null);
+  const [highlights, setHighlights] = useState([]); // Array of highlight rectangles
+  const overlayRef = useRef(null);
+  const [debug, setDebug] = useState(false);
+  const [useTextLayer, setUseTextLayer] = useState(true); // Toggle for new vs old viewer
+
+  // Detect dark mode
+  const isDarkMode = document.body.classList.contains('dark-mode') || document.documentElement.classList.contains('dark-mode');
+
+  // Helper: Normalize text for matching
+  const normalize = str => (str || '').toLowerCase().replace(/[_\s]+/g, ' ').replace(/[^\w\s]/g, '').trim();
 
   // Function to load and process PDF using pdfjs-dist
   const loadPdf = async () => {
     try {
       setLoading(true);
       setError(null);
-      setPdfDoc(null); // Clear previous document
-      setNumPages(0); // Reset page count
-      
-      console.log('Loading PDF with pdfjs-dist from:', pdfUrl);
-
-      // Cancel any existing render task before loading a new PDF
+      setPdfDoc(null);
+      setNumPages(0);
       if (renderTaskRef.current) {
-          renderTaskRef.current.cancel();
-          renderTaskRef.current = null;
+        renderTaskRef.current.cancel();
+        renderTaskRef.current = null;
       }
-
-      const loadingTask = pdfjsLib.getDocument({
-        url: pdfUrl,
-        // Include credentials if needed based on your backend CORS setup
-        withCredentials: true,
-      });
-      
+      const loadingTask = pdfjs.getDocument({ url: pdfUrl, withCredentials: true });
       const pdf = await loadingTask.promise;
-      console.log('PDF document loaded successfully with pdfjs-dist');
-      
       setPdfDoc(pdf);
       setNumPages(pdf.numPages);
-
-      // Render the initial page
-      // Check if the requested page number is valid
       const initialPage = Math.min(Math.max(1, pageNumber), pdf.numPages);
-      setCurrentPage(initialPage); // Update state to the actual page being rendered
-      // No need to call renderPage here, the useEffect will handle it
-
+      setCurrentPage(initialPage);
     } catch (error) {
-      console.error('Error loading PDF with pdfjs-dist:', error);
       setError(`Error loading PDF document: ${error.message}. Please try again.`);
     } finally {
       setLoading(false);
     }
   };
 
+  // Helper to highlight by section or text
+  const getHighlightRects = (textContent, viewport, currentScale, highlightText, section) => {
+    const rects = [];
+    const debugRects = [];
+    const items = textContent.items;
+    if (highlightText) {
+      // Robust multi-word/phrase highlight (normalize, fuzzy match)
+      const phraseNorm = normalize(highlightText);
+      let window = [];
+      for (let i = 0; i < items.length; i++) {
+        window.push(i);
+        let windowText = window.map(idx => normalize(items[idx].str)).join(' ');
+        while (window.length > 0 && windowText.length > phraseNorm.length + 10) {
+          window.shift();
+          windowText = window.map(idx => normalize(items[idx].str)).join(' ');
+        }
+        if (windowText.includes(phraseNorm)) {
+          // Find start/end in window
+          const startIdx = windowText.indexOf(phraseNorm);
+          let charCount = 0, startItem = window[0], endItem = window[0];
+          for (let j = 0; j < window.length; j++) {
+            charCount += normalize(items[window[j]].str).length + (j > 0 ? 1 : 0);
+            if (charCount > startIdx && startItem === window[0]) startItem = window[j];
+            if (charCount >= startIdx + phraseNorm.length) { endItem = window[j]; break; }
+          }
+          for (let k = startItem; k <= endItem; k++) {
+            const item = items[k];
+            const tx = pdfjs.Util.transform(viewport.transform, item.transform);
+            const x = tx[4];
+            const y = tx[5];
+            const width = item.width * currentScale;
+            const height = item.height * currentScale;
+            rects.push({ left: x, top: y - height, width, height, text: item.str });
+          }
+          i = endItem;
+          window = [];
+        }
+      }
+    } else if (section) {
+      // Section highlight: from header to next section header
+      const sectionNorm = normalize(section);
+      let inSection = false;
+      for (let idx = 0; idx < items.length; idx++) {
+        const item = items[idx];
+        const itemNorm = normalize(item.str);
+        if (!inSection && itemNorm.includes(sectionNorm)) {
+          inSection = true;
+        }
+        if (inSection && item.str && item.str.trim() !== '') {
+          const tx = pdfjs.Util.transform(viewport.transform, item.transform);
+          const x = tx[4];
+          const y = tx[5];
+          const width = item.width * currentScale;
+          const height = item.height * currentScale;
+          rects.push({ left: x, top: y - height, width, height, text: item.str, section: true });
+        }
+        // End section at next section header (line starting with number and dot, e.g., '6.')
+        if (inSection && idx !== 0 && /^\d+\./.test(item.str.trim())) {
+          break;
+        }
+      }
+    }
+    if (debug) {
+      // Show all text bounding boxes
+      items.forEach((item) => {
+        if (item.str && item.str.trim() !== '') {
+          const tx = pdfjs.Util.transform(viewport.transform, item.transform);
+          const x = tx[4];
+          const y = tx[5];
+          const width = item.width * currentScale;
+          const height = item.height * currentScale;
+          debugRects.push({ left: x, top: y - height, width, height, text: item.str, debug: true });
+        }
+      });
+    }
+    return debug ? debugRects : rects;
+  };
+
   // Function to render PDF page using pdfjs-dist
   const renderPage = async (pdf, pageNum, currentScale, textToHighlight) => {
     if (!pdf || !canvasRef.current) return;
-
-    // Cancel any existing render task before starting a new one
     if (renderTaskRef.current) {
-        renderTaskRef.current.cancel();
-        renderTaskRef.current = null;
+      renderTaskRef.current.cancel();
+      renderTaskRef.current = null;
     }
-
     try {
-      console.log('Rendering page:', pageNum, 'at scale:', currentScale, 'with highlight:', textToHighlight);
       const page = await pdf.getPage(pageNum);
-      
+      // Always render at 300 DPI
       const viewport = page.getViewport({ scale: currentScale });
       const canvas = canvasRef.current;
       const context = canvas.getContext('2d');
-
-      canvas.height = viewport.height;
+      // No need to multiply by devicePixelRatio, since we're using DPI
       canvas.width = viewport.width;
-
-      // Render PDF page into canvas context
-      const renderContext = {
-        canvasContext: context,
-        viewport: viewport,
-      };
-
-      // Store the render task
+      canvas.height = viewport.height;
+      canvas.style.width = `${viewport.width / DPI_SCALE}px`;
+      canvas.style.height = `${viewport.height / DPI_SCALE}px`;
+      context.setTransform(1, 0, 0, 1, 0, 0);
+      const renderContext = { canvasContext: context, viewport: viewport };
       renderTaskRef.current = page.render(renderContext);
-
       await renderTaskRef.current.promise;
-
-      console.log('Page rendered successfully with pdfjs-dist');
-
-      // Apply highlight if text is provided
-      if (textToHighlight) {
+      // --- Highlight logic ---
+      let highlightRects = [];
       const textContent = await page.getTextContent();
-          // Find text items that include the highlight text
-          const textItems = textContent.items.filter(item => 
-              item.str && item.str.toLowerCase().includes(textToHighlight.toLowerCase())
-          );
-
-        if (textItems.length > 0) {
-          console.log('Found matching text items:', textItems.length);
-          const canvasContext = canvas.getContext('2d');
-          textItems.forEach(item => {
-            const [fontScale, , , , x, y] = item.transform;
-            const rectX = viewport.convertToViewportRectangle([x, y + item.height, x + item.width, y])[0];
-            const rectY = viewport.convertToViewportRectangle([x, y + item.height, x + item.width, y])[1];
-            const rectWidth = viewport.convertToViewportRectangle([x, y + item.height, x + item.width, y])[2] - rectX;
-            const rectHeight = viewport.convertToViewportRectangle([x, y + item.height, x + item.width, y])[3] - rectY;
-
-            canvasContext.fillStyle = 'rgba(255, 255, 0, 0.4)';
-            canvasContext.fillRect(
-              rectX,
-              rectY,
-              rectWidth,
-              rectHeight
-            );
-          });
-          console.log('Highlight applied successfully');
-        } else {
-          console.log('No matching text items found for highlight:', textToHighlight);
-        }
+      if (debug || textToHighlight || section) {
+        highlightRects = getHighlightRects(textContent, viewport, currentScale, textToHighlight, section);
+        setHighlights(highlightRects);
+      } else {
+        setHighlights([]);
       }
-
-       page.cleanup(); // Clean up resources used by the page
-
+      page.cleanup();
     } catch (error) {
-      // Ignore cancelled errors
-      if (error.name === 'RenderingCancelledException') {
-          console.log('Page rendering cancelled');
-        return;
-      }
-      console.error('Error rendering page with pdfjs-dist:', error);
+      if (error.name === 'RenderingCancelledException') return;
       setError(`Error rendering PDF page: ${error.message}. Please try again.`);
     } finally {
-        // Clear the render task ref after completion or cancellation
-        renderTaskRef.current = null;
+      renderTaskRef.current = null;
     }
   };
 
-  // Effect to load PDF when URL changes
   useEffect(() => {
-    if (pdfUrl) {
-      console.log('PDF URL changed, loading new PDF:', pdfUrl);
-    loadPdf();
-    }
+    if (pdfUrl) loadPdf();
+    // eslint-disable-next-line
   }, [pdfUrl]);
 
-  // Effect to render page when page number, scale, pdfDoc, or highlightText changes
   useEffect(() => {
     if (pdfDoc && currentPage) {
-      console.log('Rendering effect triggered for page:', currentPage, 'scale:', scale, 'highlight:', highlightText);
-       // Rerender only if the relevant props/state change
       renderPage(pdfDoc, currentPage, scale, highlightText);
     }
-
-    // Cleanup function to cancel the render task on effect cleanup or unmount
     return () => {
-        if (renderTaskRef.current) {
-            console.log('Cancelling render task on effect cleanup');
-            renderTaskRef.current.cancel();
-            renderTaskRef.current = null;
-        }
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+        renderTaskRef.current = null;
+      }
     };
+    // eslint-disable-next-line
+  }, [currentPage, scale, pdfDoc, highlightText, section]);
 
-  }, [currentPage, scale, pdfDoc, highlightText]); // Added highlightText dependency
-
-  // Keep currentPage in sync with initial pageNumber prop
+  // Recalculate highlights when debug mode changes
   useEffect(() => {
-      setCurrentPage(pageNumber);
+    if (pdfDoc && currentPage) {
+      renderPage(pdfDoc, currentPage, scale, highlightText);
+    }
+    // eslint-disable-next-line
+  }, [debug]);
+
+  useEffect(() => {
+    setCurrentPage(pageNumber);
   }, [pageNumber]);
 
+  // After rendering, set overlay size to match canvas
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const overlay = overlayRef.current;
+    if (canvas && overlay) {
+      overlay.style.width = `${canvas.width / (window.devicePixelRatio || 1)}px`;
+      overlay.style.height = `${canvas.height / (window.devicePixelRatio || 1)}px`;
+    }
+  }, [highlights, scale, numPages, currentPage, loading]);
 
-  // Handle page navigation
+  useEffect(() => {
+    if (highlights.length > 0 && overlayRef.current) {
+      // Auto-scroll to first highlight
+      const overlay = overlayRef.current;
+      const first = highlights[0];
+      if (first) {
+        overlay.scrollTo({
+          top: Math.max(first.top - 40, 0),
+          left: Math.max(first.left - 40, 0),
+          behavior: 'smooth',
+        });
+      }
+    }
+  }, [highlights]);
+
+  // Only use text layer viewer
+  const highlightArray = Array.isArray(highlightTexts)
+    ? highlightTexts
+    : highlightText
+      ? [highlightText]
+      : [];
+
+  // Handler for page navigation
   const handlePrevPage = () => {
-    if (currentPage > 1 && pdfDoc) {
-      setCurrentPage(prev => prev - 1);
-    }
+    if (currentPage > 1) setCurrentPage(prev => prev - 1);
   };
-
   const handleNextPage = () => {
-    if (currentPage < numPages && pdfDoc) {
-      setCurrentPage(prev => prev + 1);
-    }
+    if (numPages && currentPage < numPages) setCurrentPage(prev => prev + 1);
   };
+  const handleZoomIn = () => setScale(prev => Math.min(5.0, prev + 0.2));
+  const handleZoomOut = () => setScale(prev => Math.max(0.5, prev - 0.2));
 
-   // Add zoom handlers
-   const handleZoomIn = () => {
-      setScale(prev => Math.min(5.0, prev + 0.5));
-   };
-
-   const handleZoomOut = () => {
-      setScale(prev => Math.max(0.5, prev - 0.5));
-   };
-
+  // PDFTextHighlighter will call this when loaded
+  const handleNumPages = (n) => setNumPages(n);
 
   return (
-    <div className="pdf-viewer-container">
-      {error && (
-        <div className="pdf-error-message">
-          {error}
-        </div>
-      )}
-      
-      {loading && (
-        <div className="pdf-loading-indicator">
-          Loading PDF...
-        </div>
-      )}
-      
-      <div className="pdf-controls">
-        <button 
-          onClick={handlePrevPage}
-          disabled={loading || currentPage <= 1}
-        >
-          Previous
-        </button>
-        <button 
-          onClick={handleNextPage}
-          disabled={loading || currentPage >= numPages || !pdfDoc}
-        >
-          Next
-        </button>
-          <button 
-          onClick={handleZoomOut}
-          disabled={loading}
-          className="zoom-btn"
-          >
-            Zoom Out
-          </button>
-          <button 
-          onClick={handleZoomIn}
-          disabled={loading}
-          className="zoom-btn"
-          >
-            Zoom In
-          </button>
-        <span className="pdf-page-info">
-          Page {currentPage} of {numPages}
-        </span>
-        </div>
-        
-      <div className="pdf-canvas-container">
-        <canvas 
-          ref={canvasRef}
-            className="pdf-canvas"
-            style={{ // Keep inline style for conditional display
-                display: pdfDoc && !loading ? 'block' : 'none'
-          }}
+    <div className="pdf-viewer-container" style={{
+      position: 'relative',
+      background: isDarkMode ? '#181a20' : '#f8fafc',
+      borderRadius: 12,
+      boxShadow: isDarkMode ? '0 2px 16px #0008' : '0 2px 16px #0001',
+      padding: 0,
+      minHeight: 480,
+      color: isDarkMode ? '#f3f4f6' : '#222',
+      transition: 'background 0.2s, color 0.2s',
+    }}>
+      {/* Floating close button */}
+      <button
+        className="pdf-close-btn"
+        onClick={onClose}
+        style={{
+          position: 'absolute',
+          top: 16,
+          right: 16,
+          zIndex: 100,
+          background: isDarkMode ? '#23262f' : '#fff',
+          border: 'none',
+          borderRadius: '50%',
+          width: 40,
+          height: 40,
+          boxShadow: isDarkMode ? '0 2px 8px #0008' : '0 2px 8px #0002',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          transition: 'background 0.2s',
+        }}
+        title="Close PDF"
+      >
+        <FaTimes size={20} color={isDarkMode ? '#f3f4f6' : '#374151'} />
+      </button>
+      {/* Controls */}
+      <div className="pdf-controls" style={{
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 16,
+        padding: '18px 24px 8px 24px',
+        borderRadius: 18,
+        background: isDarkMode ? '#23262f' : '#fff',
+        boxShadow: isDarkMode ? '0 2px 16px #0008' : '0 2px 16px #0001',
+        margin: '0 auto',
+        maxWidth: 480,
+        color: isDarkMode ? '#f3f4f6' : '#222',
+      }}>
+        <button onClick={handlePrevPage} disabled={currentPage <= 1} className="pdf-nav-btn" title="Previous Page"><FaChevronLeft /></button>
+        <span className="pdf-page-info" style={{ fontWeight: 500, fontSize: '1.05em', color: isDarkMode ? '#f3f4f6' : '#374151' }}>Page {currentPage}{numPages ? ` of ${numPages}` : ''}</span>
+        <button onClick={handleNextPage} disabled={numPages ? currentPage >= numPages : false} className="pdf-nav-btn" title="Next Page"><FaChevronRight /></button>
+        <span style={{ width: 24 }} />
+        <button onClick={handleZoomOut} className="pdf-zoom-btn" title="Zoom Out"><FaSearchMinus /></button>
+        <button onClick={handleZoomIn} className="pdf-zoom-btn" title="Zoom In"><FaSearchPlus /></button>
+      </div>
+      {/* PDFTextHighlighter viewer */}
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400, padding: 8 }}>
+        <PDFTextHighlighter
+          pdfUrl={pdfUrl}
+          pageNumber={currentPage}
+          highlightTexts={highlightArray}
+          section={section}
+          scale={scale}
+          onNumPages={handleNumPages}
         />
       </div>
     </div>

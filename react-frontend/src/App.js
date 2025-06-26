@@ -108,7 +108,7 @@ function formatSectionOrRule(raw) {
   return cleaned;
 }
 
-function renderAssistantContent(content) {
+function renderAssistantContent(content, handleOpenPdfLink) {
   // Ensure content is a string before processing
   let stringContent = String(content);
 
@@ -160,64 +160,32 @@ function renderAssistantContent(content) {
   const renderers = {
     a: (props) => {
       const { href, children } = props;
-      // Check if the href is one of our PDF links
-      const isPdfLink = href && href.startsWith(BACKEND_BASE + '/pdfs/');
-      // Check if it's any other external URL
-      const isExternal = href && (href.startsWith('http') || href.startsWith('https') || href.startsWith('www.'));
-
+      let cleanHref = href;
+      // Strip any leading @ from @pdf:// links
+      if (cleanHref && cleanHref.startsWith(BACKEND_BASE + '/pdfs/@')) {
+        cleanHref = cleanHref.replace('/pdfs/@', '/pdfs/');
+      }
+      if (cleanHref && cleanHref.includes('@pdf://')) {
+        cleanHref = cleanHref.replace('@pdf://', 'pdf://');
+      }
+      const isPdfLink = cleanHref && cleanHref.startsWith(BACKEND_BASE + '/pdfs/');
       if (isPdfLink) {
-        let displayLinkText = children; // Default to original children
-        try {
-          const url = new URL(href);
-          const hashParams = new URLSearchParams(url.hash.substring(1));
-          const pdfPage = hashParams.get('page');
-          const pdfSection = hashParams.get('section'); // Raw value from URL hash
-
-          // Check if children already looks like "Section X, Page Y" or "Rule X, Page Y" or "Page Y"
-          const childrenString = String(children);
-          const childrenMatchesFormat = /^(Section|Rule)\s.+,\sPage\s\\d+$/i.test(childrenString) || /^(Section|Rule)\s.+$/i.test(childrenString) || /^Page\s\\d+$/i.test(childrenString);
-
-          if (childrenMatchesFormat) {
-            // If children already matches the desired format, use it directly
-            displayLinkText = childrenString;
-          } else {
-            // Otherwise, construct the display text with priority for 'Section/Rule, Page'
-            let formattedSection = pdfSection ? formatSectionOrRule(pdfSection) : null;
-            let prefix = ''; // Initialize prefix as empty
-
-            // Determine prefix based on original pdfSection from URL hash
-            if (pdfSection && pdfSection.toLowerCase().startsWith('rule')) {
-              prefix = 'Rule ';
-            } else if (pdfSection && pdfSection.toLowerCase().startsWith('section')) {
-              prefix = 'Section ';
-            } else if (pdfSection) {
-              // If pdfSection exists but doesn't start with "Rule" or "Section", default to "Section "
-              prefix = 'Section ';
-            }
-
-            if (formattedSection && pdfPage) {
-              displayLinkText = `${prefix}${formattedSection}, Page ${pdfPage}`;
-            } else if (formattedSection) {
-              displayLinkText = `${prefix}${formattedSection}`;
-            } else if (pdfPage) {
-              displayLinkText = `Page ${pdfPage}`;
-            } else {
-              // Fallback if no section or page info is found in hash
-              displayLinkText = 'View Document'; // A more generic fallback
-            }
-          }
-        } catch (error) {
-          console.error('Error parsing PDF link href in renderer:', error);
-          // Fallback to original children if parsing fails
-          displayLinkText = children;
-        }
-
-        // Apply button-like styling for PDF links
+        // Parse hash params
+        const url = new URL(cleanHref);
+        const filename = url.pathname.split('/').pop();
+        const hashParams = new URLSearchParams(url.hash.replace(/^#/, ''));
+        const page = hashParams.get('page');
+        const section = hashParams.get('section');
+        // Friendly label
+        let label = '';
+        if (page) label += `Page ${page}`;
+        if (section) label += (label ? ', ' : '') + `Section ${section.replace(/_/g, ' ')}`;
+        if (filename) label += (label ? ' (' : '') + filename + (label ? ')' : '');
+        if (!label) label = filename;
         return (
           <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={cleanHref}
+            onClick={e => handleOpenPdfLink(e, cleanHref)}
             style={{
               display: 'inline-block',
               padding: '3px 7px',
@@ -230,10 +198,14 @@ function renderAssistantContent(content) {
               cursor: 'pointer'
             }}
           >
-            {displayLinkText}
+            {label}
           </a>
         );
-      } else if (isExternal) {
+      }
+      // Check if the href is one of our PDF links
+      const isExternal = href && (href.startsWith('http') || href.startsWith('https') || href.startsWith('www.'));
+
+      if (isExternal) {
         // Standard link rendering for other external URLs, opens in new tab
         return <a href={href} target="_blank" rel="noopener noreferrer">{children}</a>;
       } else {
@@ -1098,14 +1070,31 @@ function App() {
       const hashParams = new URLSearchParams(url.hash.substring(1));
       const pdfPage = hashParams.get('page');
       const pdfSection = hashParams.get('section');
-      const pdfHighlight = hashParams.get('highlight');
-      console.log('Opening PDF:', { pdfFilename, pdfPage, pdfSection, pdfHighlight });
+      let pdfHighlight = hashParams.get('highlight');
+      let highlightTexts = null;
+      if (pdfHighlight) {
+        try {
+          pdfHighlight = decodeURIComponent(pdfHighlight);
+          // Double decode in case of double encoding
+          pdfHighlight = decodeURIComponent(pdfHighlight);
+        } catch (err) {}
+        // Support comma or semicolon separated phrases for multi-highlighting
+        if (pdfHighlight.includes(',') || pdfHighlight.includes(';')) {
+          highlightTexts = pdfHighlight.split(/[,;]/).map(s => s.trim()).filter(Boolean);
+        } else {
+          highlightTexts = [pdfHighlight];
+        }
+      }
       // Construct the URL for the PDF viewer, using the correct filename
       const pdfViewerUrl = `${BACKEND_BASE}/pdfs/${pdfFilename}`;
       setViewedPdfUrl(pdfViewerUrl);
       setViewedPdfPage(pdfPage);
-      setViewedHighlightText(pdfHighlight);
+      setViewedHighlightText(null); // Clear old single highlight
       setCurrentView('pdf-viewer');
+      // Pass highlightTexts as state for PDFViewer
+      setTimeout(() => {
+        setViewedHighlightText(highlightTexts);
+      }, 0);
     } catch (error) {
       console.error('Error handling PDF link:', error);
     }
@@ -1181,10 +1170,24 @@ function App() {
       backendName: 'gemini',
     },
     {
-      name: 'Meta Llama 3',
+      name: 'Meta LlaMa 3',
       icon: <img src="/meta.png" alt="Meta Llama 3" className="model-icon-img" />,
       description: "Meta's most advanced open-source LLM, great for reasoning and coding.",
       backendName: 'llama3',
+    },
+    {
+      name: 'Mistral AI (Coming Soon)',
+      icon: <img src="/mistral.png" alt="Mistral AI" className="model-icon-img" />,
+      description: "Mistral AI's next-generation open LLM. Fast, efficient, and multilingual. Coming soon to Unified Knowledge Platform!",
+      backendName: 'mistral',
+      comingSoon: true,
+    },
+    {
+      name: 'Qwen 3:4 (Coming Soon)',
+      icon: <img src="/qwen.png" alt="Qwen 3:4" className="model-icon-img" />,
+      description: "Qwen 3:4 is Alibaba's advanced open LLM, excelling at reasoning, multilingual tasks, and code. Coming soon to Unified Knowledge Platform!",
+      backendName: 'qwen3_4',
+      comingSoon: true,
     },
   ];
   const [selectedModel, setSelectedModel] = useState('Gemini 2.5 Flash');
@@ -1544,7 +1547,7 @@ function App() {
                                 if (voiceLang === 'hi-IN' && content.startsWith(ASSISTANT_PREFIX_EN)) {
                                   content = content.replace(ASSISTANT_PREFIX_EN, ASSISTANT_PREFIX_HI);
                                 }
-                                return renderAssistantContent(content);
+                                return renderAssistantContent(content, handleOpenPdfLink);
                               })()}
                               <div className="message-actions">
                                 <button
@@ -1861,16 +1864,23 @@ function App() {
             </div>
             {showModelSelector && (
               <div className="modal-overlay" onClick={() => setShowModelSelector(false)}>
-                <div className="modal-content" onClick={e => e.stopPropagation()}>
-                  <button
-                    className="close-modal-btn"
-                    onClick={() => setShowModelSelector(false)}
-                    aria-label="Close"
-                  >
-                    &times;
-                  </button>
-                  <div className="model-search-toggle-row">
-                    <div className="model-search-input-wrapper">
+                <div className="modal-content" onClick={e => e.stopPropagation()} style={{
+                  width: '700px',
+                  maxWidth: '90vw',
+                  maxHeight: '80vh',
+                  overflowY: 'auto',
+                  minHeight: 'unset',
+                  borderRadius: 18,
+                  boxShadow: '0 4px 32px #0002',
+                  background: '#fff',
+                  margin: '0 auto',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'stretch',
+                  padding: '2.5rem 2.5rem 2rem 2.5rem',
+                }}>
+                  <div className="model-search-toggle-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, marginTop: 0 }}>
+                    <div className="model-search-input-wrapper" style={{ flex: 1, marginRight: 16 }}>
                       <svg className="model-search-icon" width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M21 21l-4.35-4.35M11 19a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" stroke="#A0A4AB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                       <input
                         type="text"
@@ -1881,7 +1891,7 @@ function App() {
                         autoFocus
                       />
                     </div>
-                    <div className="model-view-toggle-row">
+                    <div className="model-view-toggle-row" style={{ display: 'flex', gap: 8 }}>
                       <button className={`model-view-toggle-btn${viewMode === 'tiles' ? ' active' : ''}`} onClick={() => setViewMode('tiles')} aria-label="Grid view">
                         <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2" fill="currentColor"/><rect x="14" y="3" width="7" height="7" rx="2" fill="currentColor"/><rect x="14" y="14" width="7" height="7" rx="2" fill="currentColor"/><rect x="3" y="14" width="7" height="7" rx="2" fill="currentColor"/></svg>
                       </button>
@@ -1895,17 +1905,34 @@ function App() {
                       {filteredModels.map((model, idx) => (
                         <div
                           key={model.name + modelSearch}
-                          className="model-tile model-tile-animate"
-                          style={{ animationDelay: `${idx * 60}ms` }}
-                          onClick={() => { setSelectedModel(model.name); setShowModelSelector(false); }}
-                          role="button"
-                          aria-label={`Select ${model.name}`}
+                          className={`model-tile model-tile-animate${model.comingSoon ? ' model-tile-coming-soon' : ''}`}
+                          style={{ animationDelay: `${idx * 60}ms`, opacity: model.comingSoon ? 0.6 : 1, cursor: model.comingSoon ? 'not-allowed' : 'pointer', position: 'relative' }}
+                          onClick={model.comingSoon ? undefined : () => { setSelectedModel(model.name); setShowModelSelector(false); }}
+                          role={model.comingSoon ? undefined : 'button'}
+                          aria-label={model.comingSoon ? undefined : `Select ${model.name}`}
+                          tabIndex={model.comingSoon ? -1 : 0}
                         >
                           <div className="model-tile-icon-row">
                             <div className="model-tile-icon">{model.icon}</div>
                           </div>
                           <div className="model-tile-name">{model.name}</div>
                           <div className="model-tile-desc">{model.description}</div>
+                          {model.comingSoon && (
+                            <div style={{
+                              position: 'absolute',
+                              top: 10,
+                              right: 10,
+                              background: '#6c2eb7',
+                              color: '#fff',
+                              borderRadius: 8,
+                              padding: '2px 10px',
+                              fontSize: '0.85em',
+                              fontWeight: 600,
+                              letterSpacing: 1,
+                              boxShadow: '0 2px 8px #0002',
+                              zIndex: 2
+                            }}>Coming Soon</div>
+                          )}
                         </div>
                       ))}
                       {filteredModels.length === 0 && (
@@ -1986,11 +2013,11 @@ function App() {
         {/* Render PdfViewer when currentView is 'pdf-viewer' */}
         {currentView === 'pdf-viewer' && viewedPdfUrl && (
           <div className="pdf-viewer-container">
-             <button onClick={handleClosePdfViewer} style={{ marginBottom: '10px' }}>Close PDF</button>
             <PDFViewer
               pdfUrl={viewedPdfUrl}
               pageNumber={viewedPdfPage}
-              highlightText={viewedHighlightText}
+              highlightTexts={viewedHighlightText}
+              onClose={handleClosePdfViewer}
             />
           </div>
         )}

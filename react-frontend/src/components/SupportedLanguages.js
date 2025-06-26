@@ -108,6 +108,40 @@ export default function SupportedLanguages() {
         <div style={{ marginTop: 24, color: 'var(--text-secondary)', fontSize: '0.98rem', textAlign: 'center' }}>
           More languages coming soon!
         </div>
+        <div style={{ marginTop: 32, marginBottom: 24 }}>
+          <h3 style={{ fontWeight: 700, fontSize: '1.25rem', color: 'var(--text-tertiary)', marginBottom: 10 }}>Speech Features (TTS & STT)</h3>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '1.02rem', marginBottom: 10 }}>
+            <span>Text-to-Speech (TTS) and Speech-to-Text (STT) are currently supported for <b>English</b> and <b>Hindi</b>. Other languages are coming soon!</span>
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1.5fr 1fr 1fr',
+            gap: '0px',
+            background: 'var(--bg-secondary)',
+            borderRadius: 12,
+            border: '1px solid var(--border-color)',
+            overflow: 'hidden',
+            marginBottom: 8
+          }}>
+            <div style={{ fontWeight: 600, padding: '0.7rem 1rem', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-primary)' }}>Language</div>
+            <div style={{ fontWeight: 600, padding: '0.7rem 1rem', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-primary)' }}>TTS</div>
+            <div style={{ fontWeight: 600, padding: '0.7rem 1rem', borderBottom: '1px solid var(--border-color)', background: 'var(--bg-primary)' }}>STT</div>
+            {SUPPORTED_LANGUAGES.map(lang => {
+              const isSupported = lang.code === 'en-IN' || lang.code === 'hi-IN';
+              return (
+                <React.Fragment key={lang.code}>
+                  <div style={{ padding: '0.7rem 1rem', color: 'var(--text-primary)', background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-color)' }}>{lang.name}</div>
+                  <div style={{ padding: '0.7rem 1rem', color: isSupported ? '#10B981' : '#b91c1c', background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-color)', fontWeight: 500 }}>
+                    {isSupported ? 'Supported' : 'Coming Soon'}
+                  </div>
+                  <div style={{ padding: '0.7rem 1rem', color: isSupported ? '#10B981' : '#b91c1c', background: 'var(--bg-primary)', borderBottom: '1px solid var(--border-color)', fontWeight: 500 }}>
+                    {isSupported ? 'Supported' : 'Coming Soon'}
+                  </div>
+                </React.Fragment>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
