@@ -819,23 +819,23 @@
 }
 
 .create-agent-btn {
-  background: linear-gradient(45deg, #2ecc71, #27ae60);
+  background: linear-gradient(45deg, #3498db, #2980b9);
   color: white;
 }
 
 .create-agent-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(46, 204, 113, 0.3);
+  background: linear-gradient(45deg, #2980b9, #3498db);
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
 }
 
 .cancel-btn {
-  background: linear-gradient(45deg, #e74c3c, #c0392b);
+  background: linear-gradient(45deg, #3498db, #2980b9);
   color: white;
 }
 
 .cancel-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(231, 76, 60, 0.3);
+  background: linear-gradient(45deg, #2980b9, #3498db);
+  box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
 }
 
 /* Disabled state for buttons */

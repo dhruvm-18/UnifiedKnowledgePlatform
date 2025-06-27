@@ -1072,18 +1072,10 @@ function App() {
       const pdfSection = hashParams.get('section');
       let pdfHighlight = hashParams.get('highlight');
       let highlightTexts = null;
-      if (pdfHighlight) {
-        try {
-          pdfHighlight = decodeURIComponent(pdfHighlight);
-          // Double decode in case of double encoding
-          pdfHighlight = decodeURIComponent(pdfHighlight);
-        } catch (err) {}
-        // Support comma or semicolon separated phrases for multi-highlighting
-        if (pdfHighlight.includes(',') || pdfHighlight.includes(';')) {
-          highlightTexts = pdfHighlight.split(/[,;]/).map(s => s.trim()).filter(Boolean);
-        } else {
-          highlightTexts = [pdfHighlight];
-        }
+      if (pdfHighlight && pdfHighlight.trim()) {
+        highlightTexts = [pdfHighlight];
+      } else {
+        highlightTexts = ["No answer provided"];
       }
       // Construct the URL for the PDF viewer, using the correct filename
       const pdfViewerUrl = `${BACKEND_BASE}/pdfs/${pdfFilename}`;

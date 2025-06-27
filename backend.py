@@ -353,17 +353,12 @@ def format_response_with_sources(response, sources):
     # Regex to match [Source: ...; pdf://...]
     llama_source_regex = r'pdf://([^/]+)(?:/page/(\d+))?(?:#section=([^\s\]]+))?'
 
+    # Use the full answer text as the highlight, or fallback if empty
     def get_highlight_text(filename, page):
-        # Try to find the matching doc and return the first 10-20 words as highlight
-        for doc in sources:
-            doc_filename = doc.metadata.get('source', filename)
-            doc_page = str(doc.metadata.get('page', ''))
-            if page and doc_page == str(page):
-                # Use the first 20 words of the page content
-                words = doc.page_content.split()
-                highlight = ' '.join(words[:20])
-                return highlight
-        return None
+        if content and content.strip():
+            return content
+        else:
+            return "No answer provided"
 
     for line in sources_block.split('\n'):
         line = line.strip()
@@ -387,7 +382,7 @@ def format_response_with_sources(response, sources):
                 link += f"/page/{page}"
             if section:
                 link += f"#section={section}"
-            # Add highlight param if possible
+            # Add highlight param using the answer text
             highlight = get_highlight_text(corrected_filename, page)
             if highlight:
                 from urllib.parse import quote
@@ -410,7 +405,7 @@ def format_response_with_sources(response, sources):
             if not corrected_filename and sources:
                 corrected_filename = sources[0].metadata.get('source', 'Unknown')
             link = f"- (pdf://{corrected_filename}/page/{page}#section={section.replace(' ', '_')}"
-            # Add highlight param if possible
+            # Add highlight param using the answer text
             highlight = get_highlight_text(corrected_filename, page)
             if highlight:
                 from urllib.parse import quote
@@ -436,7 +431,7 @@ def format_response_with_sources(response, sources):
                 link += f"/page/{page}"
             if section:
                 link += f"#section={section}"
-            # Add highlight param if possible
+            # Add highlight param using the answer text
             highlight = get_highlight_text(corrected_filename, page)
             if highlight:
                 from urllib.parse import quote
