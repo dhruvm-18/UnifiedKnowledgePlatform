@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import './App.css';
 import './styles/backgrounds.css';
 import './styles/modal.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop } from 'react-icons/fa';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen } from 'react-icons/fa';
 import HomeView from './components/HomeView';
 import KnowledgeSourcesView from './components/KnowledgeSourcesView';
 import PDFViewer from './components/PDFViewer';
@@ -16,6 +16,8 @@ import { useSpeechSynthesis } from './hooks/useSpeechSynthesis';
 import { sarvamTranslate } from './utils/sarvamTranslate';
 import SupportedLanguages from './components/SupportedLanguages';
 import AgentOverlay from './components/AgentOverlay';
+import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell } from "docx";
+import { marked } from "marked";
 
 // Helper to save current cursor selection
 function saveSelection(element) {
@@ -113,7 +115,7 @@ function renderAssistantContent(content, handleOpenPdfLink) {
   let stringContent = String(content);
 
   // Add: Replace all raw pdf://... links with markdown links
-  const pdfRawLinkPattern = /pdf:\/\/[\w\-.]+\.pdf(?:\/page\/\d+)?(?:#section=[^&\s)]+)?(?:&highlight=[^\s)]+)?/g;
+  const pdfRawLinkPattern = /@?pdf:\/\/[\w\-.]+\.pdf(?:\/page\/\d+)?(?:#section=[^&\s)]+)?(?:&highlight=[^\s)]+)?/g;
   stringContent = stringContent.replace(pdfRawLinkPattern, (match) => {
     return `${match}`;
   });
@@ -125,7 +127,7 @@ function renderAssistantContent(content, handleOpenPdfLink) {
 
     // Regex to find parenthesized pdf:// links, capturing the content inside
     // Now also capture highlight param
-    const pdfLinkPattern = /\(pdf:\/\/([^)]+)\)/g; // Matches (pdf://...) and captures content inside parentheses
+    const pdfLinkPattern = /\(@?pdf:\/\/([^)]+)\)/g; // Matches (pdf://...) and captures content inside parentheses
 
     if (cleanedLine.match(pdfLinkPattern)) {
       // Replace all (pdf://...) links in the line with a markdown link format that ReactMarkdown will process
@@ -1058,6 +1060,16 @@ function App() {
     setViewedHighlightText(null);
   };
 
+  // Function to handle navigation to My Projects view
+  const handleNavigateToMyProjects = () => {
+    setCurrentView('my-projects');
+    setRightCollapsed(true); // Collapse right sidebar when viewing my projects
+    // Also clear any viewed PDF
+    setViewedPdfUrl(null);
+    setViewedPdfPage(null);
+    setViewedHighlightText(null);
+  };
+
   // Function to handle opening a PDF link
   const handleOpenPdfLink = (e, href) => {
     e.preventDefault();
@@ -1142,15 +1154,94 @@ function App() {
   };
 
   const handleExportMessage = (content) => {
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `chat-response-${new Date().toISOString()}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const html = marked.parse(content);
+    const parser = new DOMParser();
+    const docHtml = parser.parseFromString(html, "text/html");
+    const body = docHtml.body;
+
+    function parseNode(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (!node.textContent.trim()) return null;
+        return new TextRun(node.textContent);
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return null;
+
+      switch (node.tagName) {
+        case "STRONG":
+          return new TextRun({ text: node.textContent, bold: true });
+        case "U":
+        case "INS":
+          return new TextRun({ text: node.textContent, underline: {} });
+        case "EM":
+        case "I":
+          return new TextRun({ text: node.textContent, italics: true });
+        case "LI":
+          return new Paragraph({
+            children: Array.from(node.childNodes).map(parseNode).filter(Boolean),
+            bullet: { level: 0 }
+          });
+        case "OL":
+        case "UL":
+          return Array.from(node.children).map(parseNode).filter(Boolean);
+        case "P":
+          return new Paragraph({
+            children: Array.from(node.childNodes).map(parseNode).filter(Boolean)
+          });
+        case "TABLE":
+          return new Table({
+            rows: Array.from(node.rows).map(row =>
+              new TableRow({
+                children: Array.from(row.cells).map(cell =>
+                  new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: Array.from(cell.childNodes).map(parseNode).filter(Boolean)
+                      })
+                    ]
+                  })
+                )
+              })
+            )
+          });
+        case "TR":
+        case "TD":
+        case "TH":
+          return null;
+        case "BR":
+          return new TextRun({ text: "\n" });
+        default:
+          return new Paragraph({
+            children: Array.from(node.childNodes).map(parseNode).filter(Boolean)
+          });
+      }
+    }
+
+    function flatten(arr) {
+      return arr.reduce((acc, val) => acc.concat(Array.isArray(val) ? flatten(val) : val), []);
+    }
+
+    const docElements = flatten(Array.from(body.childNodes).map(parseNode).filter(Boolean));
+    const cleanDocElements = docElements.filter(Boolean);
+
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: cleanDocElements,
+        },
+      ],
+    });
+
+    Packer.toBlob(doc).then((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `chat-response-${new Date().toISOString()}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
   };
 
   const [showModelSelector, setShowModelSelector] = useState(false);
@@ -1330,6 +1421,111 @@ function App() {
     }
   };
 
+  // Export all chat messages as a Word file
+  const handleExportAllMessages = () => {
+    // Combine all messages (user and assistant) in order
+    const allContent = messages.map(msg => {
+      let senderLabel = msg.sender === 'user' ? 'You:' : 'Assistant:';
+      return `**${senderLabel}**\n${msg.content}`;
+    }).join('\n\n');
+
+    // Convert Markdown to HTML
+    const html = marked.parse(allContent);
+    const parser = new DOMParser();
+    const docHtml = parser.parseFromString(html, "text/html");
+    const body = docHtml.body;
+
+    function parseNode(node) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        if (!node.textContent.trim()) return null;
+        return new TextRun(node.textContent);
+      }
+      if (node.nodeType !== Node.ELEMENT_NODE) return null;
+
+      switch (node.tagName) {
+        case "STRONG":
+          return new TextRun({ text: node.textContent, bold: true });
+        case "U":
+        case "INS":
+          return new TextRun({ text: node.textContent, underline: {} });
+        case "EM":
+        case "I":
+          return new TextRun({ text: node.textContent, italics: true });
+        case "BR":
+          return new TextRun({ text: "\n" });
+        case "LI":
+          return new Paragraph({ text: node.textContent, bullet: { level: 0 } });
+        case "OL":
+        case "UL":
+          return Array.from(node.childNodes).map(parseNode).filter(Boolean);
+        case "TABLE":
+          return new Table({
+            rows: Array.from(node.rows).map(row =>
+              new TableRow({
+                children: Array.from(row.cells).map(cell =>
+                  new TableCell({
+                    children: [new Paragraph({ children: [new TextRun(cell.textContent)] })],
+                  })
+                ),
+              })
+            ),
+          });
+        default:
+          return new Paragraph({
+            children: Array.from(node.childNodes).map(parseNode).filter(Boolean)
+          });
+      }
+    }
+
+    function flatten(arr) {
+      return arr.reduce((acc, val) => acc.concat(Array.isArray(val) ? flatten(val) : val), []);
+    }
+
+    const docElements = flatten(Array.from(body.childNodes).map(parseNode).filter(Boolean));
+    const cleanDocElements = docElements.filter(Boolean);
+
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: cleanDocElements,
+        },
+      ],
+    });
+
+    Packer.toBlob(doc).then((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `chat-history-${new Date().toISOString()}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  };
+
+  // Clear all chat sessions and history
+  const handleClearAllChats = () => {
+    setShowClearChatsOverlay(true);
+  };
+
+  const handleConfirmClearAllChats = () => {
+    setSessions([]);
+    setCurrentSessionId(null);
+    setMessages([]);
+    setChatStarted(false);
+    setShowClearChatsOverlay(false);
+    // Optionally, clear from backend if needed
+    fetch(`${BACKEND_BASE}/sessions/clear_all`, { method: 'POST' });
+  };
+
+  const handleCancelClearAllChats = () => {
+    setShowClearChatsOverlay(false);
+  };
+
+  const [showClearChatsOverlay, setShowClearChatsOverlay] = useState(false);
+
   return (
     <div className={`app-layout ${theme}-mode${leftCollapsed ? ' left-collapsed' : ''}${rightCollapsed ? ' right-collapsed' : ''}`}>
       <aside className={`left-sidebar${leftCollapsed ? ' collapsed' : ''}`}>
@@ -1362,6 +1558,13 @@ function App() {
               title="Select different knowledge sources or agents"
             >
               <FaCube style={{ marginRight: '10px' }} /> Knowledge Sources
+            </button>
+            <button
+              className="sidebar-nav-item"
+              onClick={() => setCurrentView('my-projects')}
+              title="View your projects"
+            >
+              <FaFolderOpen style={{ marginRight: '10px' }} /> My Projects
             </button>
             <button
               className="sidebar-nav-item"
@@ -1657,200 +1860,152 @@ function App() {
               )}
               <div className="chat-wave-bg" />
             <div className="floating-input-row anchored-bottom">
-              <div className="floating-input-inner">
-                <label htmlFor="file-upload" className="media-upload-btn" style={{ cursor: 'pointer', marginRight: 12 }}>
-                  <FaPaperclip size={22} color="#60A5FA" />
-                  <input id="file-upload" type="file" style={{ display: 'none' }} onChange={handleFileUpload} />
-                </label>
-                <div
-                  ref={inputRef}
-                  className="chat-input"
-                  contentEditable={true}
-                  data-placeholder="Your entire knowledge base, one question away..."
-                  onInput={e => {
-                    const div = e.target;
-                    const savedCaretOffset = saveSelection(div);
-                    let plainText = div.innerText; // Get plain text content
+              <div className="floating-input-inner" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 0, padding: '0.4rem 1rem' }}>
+                <div style={{ width: '100%' }}>
+                  <div
+                    ref={inputRef}
+                    className="chat-input"
+                    contentEditable={true}
+                    data-placeholder="Your entire knowledge base, one question away..."
+                    onInput={e => {
+                      const div = e.target;
+                      const savedCaretOffset = saveSelection(div);
+                      let plainText = div.innerText; // Get plain text content
 
-                    // Update the input state for send button and other logic that might depend on it
-                    setInput(plainText);
+                      // Update the input state for send button and other logic that might depend on it
+                      setInput(plainText);
 
-                    // Only allow agent mention highlighting and dropdown in General Chat (when isDedicatedChat is false)
-                    const isDedicatedChat = localStorage.getItem('isDedicatedChat') === 'true';
-                    if (!isDedicatedChat) {
-                      // General Chat: allow highlighting and dropdown
-                      // Dynamically build regex for highlighting based on currentAgents for input field
-                      const agentNamesForInputRegex = currentAgents
-                        .filter(agent => agent && typeof agent.fullName === 'string' && agent.fullName.trim() !== '')
-                        .map(agent => agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-                        .sort((a, b) => b.length - a.length) // Sort by length DESC to match longest names first
-                        .join('|');
-                      // Regex: @ followed by any agent name (including spaces), with word boundary or end
-                      const dynamicHighlightRegexInput = new RegExp(`@(${agentNamesForInputRegex})(?=\\b|\\s|$)`, 'g');
+                      // Only allow agent mention highlighting and dropdown in General Chat (when isDedicatedChat is false)
+                      const isDedicatedChat = localStorage.getItem('isDedicatedChat') === 'true';
+                      if (!isDedicatedChat) {
+                        // General Chat: allow highlighting and dropdown
+                        // Dynamically build regex for highlighting based on currentAgents for input field
+                        const agentNamesForInputRegex = currentAgents
+                          .filter(agent => agent && typeof agent.fullName === 'string' && agent.fullName.trim() !== '')
+                          .map(agent => agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+                          .sort((a, b) => b.length - a.length) // Sort by length DESC to match longest names first
+                          .join('|');
+                        // Regex: @ followed by any agent name (including spaces), with word boundary or end
+                        const dynamicHighlightRegexInput = new RegExp(`@(${agentNamesForInputRegex})(?=\\b|\\s|$)`, 'g');
 
-                      // Highlight ALL agent mentions in the input, not just the one being typed
-                      let highlightedHtml = plainText.replace(dynamicHighlightRegexInput, '<span class="agent-mention">@$1</span>');
+                        // Highlight ALL agent mentions in the input, not just the one being typed
+                        let highlightedHtml = plainText.replace(dynamicHighlightRegexInput, '<span class="agent-mention">@$1</span>');
 
-                      // Sanitize the HTML before setting it back
-                      const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
-                          ADD_TAGS: ['span'],
-                          ADD_ATTR: ['class']
-                      });
-                      div.innerHTML = cleanHtml;
+                        // Sanitize the HTML before setting it back
+                        const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
+                            ADD_TAGS: ['span'],
+                            ADD_ATTR: ['class']
+                        });
+                        div.innerHTML = cleanHtml;
 
-                      // Dropdown logic for General Chat
-                      if (plainText.includes('@')) {
-                        const lastAtIndex = plainText.lastIndexOf('@');
-                        const mentionPart = plainText.substring(lastAtIndex + 1).trim(); // Get text after last @ and trim whitespace
-                        // Filter against currentAgents for dynamic updates (for dropdown)
-                        const currentFilteredAgents = currentAgents.filter(agent =>
-                          agent && agent.fullName && 
-                          agent.fullName.toLowerCase().startsWith(mentionPart.toLowerCase())
-                        );
-                        setFilteredAgents(currentFilteredAgents);
-                        setShowAgentDropdown(currentFilteredAgents.length > 0);
+                        // Dropdown logic for General Chat
+                        if (plainText.includes('@')) {
+                          const lastAtIndex = plainText.lastIndexOf('@');
+                          const mentionPart = plainText.substring(lastAtIndex + 1).trim(); // Get text after last @ and trim whitespace
+                          // Filter against currentAgents for dynamic updates (for dropdown)
+                          const currentFilteredAgents = currentAgents.filter(agent =>
+                            agent && agent.fullName && 
+                            agent.fullName.toLowerCase().startsWith(mentionPart.toLowerCase())
+                          );
+                          setFilteredAgents(currentFilteredAgents);
+                          setShowAgentDropdown(currentFilteredAgents.length > 0);
+                        } else {
+                          setShowAgentDropdown(false);
+                          setFilteredAgents([]);
+                        }
                       } else {
+                        // Dedicated Chat: no highlighting, no dropdown
+                        div.innerHTML = DOMPurify.sanitize(plainText);
                         setShowAgentDropdown(false);
                         setFilteredAgents([]);
                       }
-                    } else {
-                      // Dedicated Chat: no highlighting, no dropdown
-                      div.innerHTML = DOMPurify.sanitize(plainText);
-                      setShowAgentDropdown(false);
-                      setFilteredAgents([]);
-                    }
-                    // Restore cursor position
-                    restoreSelection(div, savedCaretOffset);
-                  }}
-                  onKeyDown={handleInputKeyDown}
-                  disabled={loading}
-                ></div>
-                {showAgentDropdown && filteredAgents.length > 0 && (
-                  <div className="agent-dropdown" style={{
-                    position: 'absolute',
-                    bottom: '100%',
-                    left: '0',
-                    backgroundColor: 'var(--bg-primary)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: '8px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                    maxHeight: '200px',
-                    overflowY: 'auto',
-                    zIndex: 1000,
-                    marginBottom: '8px',
-                    width: '100%'
-                  }}>
-                    {filteredAgents.map(agent => (
-                      <div
-                        key={agent.id}
-                        className="agent-dropdown-item"
-                        onClick={() => {
-                          const div = inputRef.current;
-                          const currentText = div.innerText;
-                          const lastAtIndex = currentText.lastIndexOf('@');
-                          
-                          // Construct the new plain text for the input using agent.fullName
-                          const newPlainText = currentText.substring(0, lastAtIndex) + `@${agent.fullName} `;
-                          // Calculate the new caret offset
-                          const newCaretOffset = newPlainText.length;
-
-                          // Dynamically build regex for highlighting based on the selected agent's full name
-                          const escapedAgentFullName = agent.fullName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                          const agentMentionRegex = new RegExp(`@${escapedAgentFullName}`, 'gi');
-                          const highlightedHtml = newPlainText.replace(agentMentionRegex, '<span class="agent-mention">$&</span>');
-
-                          // Sanitize and set the new HTML content
-                          const cleanHtml = DOMPurify.sanitize(highlightedHtml, {
-                              ADD_TAGS: ['span'],
-                              ADD_ATTR: ['class']
-                          });
-                          div.innerHTML = cleanHtml;
-
-                          // Update the input state to keep it in sync for send button etc.
-                          setInput(newPlainText);
-                          // Restore cursor position
-                          restoreSelection(div, newCaretOffset);
-
-                          setShowAgentDropdown(false);
-                          setFilteredAgents([]);
-                          div.focus(); // Ensure the div remains focused
-
-                          // NEW: Set active agent details for general chat and persist in localStorage
-                          setActiveAgentDetails(agent);
-                          localStorage.setItem('activeAgentId', agent.id);
-                          if (currentSessionId) {
-                            localStorage.setItem(`sessionAgent_${currentSessionId}`, agent.id);
-                          }
-                        }}
-                        style={{
-                          padding: '8px 12px',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '8px',
-                          color: 'var(--text-primary)',
-                          ':hover': {
-                            backgroundColor: 'var(--bg-secondary)'
-                          }
-                        }}
-                      >
-                        {agent.iconType && <span>{getIconComponent(agent.iconType)}</span>}
-                        <span>@{agent.fullName}</span>
-                      </div>
-                    ))}
+                      // Restore cursor position
+                      restoreSelection(div, savedCaretOffset);
+                    }}
+                    onKeyDown={handleInputKeyDown}
+                    disabled={loading}
+                    style={{ minHeight: 32, fontSize: '0.98rem', width: '100%', border: 'none', outline: 'none', background: 'transparent', marginBottom: 0, padding: '4px 0' }}
+                  ></div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4, marginTop: 4 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <label htmlFor="file-upload" className="media-upload-btn" style={{ cursor: 'pointer', marginRight: 0 }}>
+                      <FaPaperclip size={20} color="#60A5FA" />
+                      <input id="file-upload" type="file" style={{ display: 'none' }} onChange={handleFileUpload} />
+                    </label>
                   </div>
-                )}
-                  <button
-                    className="model-selector-btn-flex bg-transparent border-none shadow-none focus:outline-none cursor-pointer p-0 m-0"
-                    title="Select Model"
-                    type="button"
-                    onClick={() => setShowModelSelector(true)}
-                    style={{ background: 'none', border: 'none', boxShadow: 'none' }}
-                  >
-                    {modelOptions.find(m => m.name === selectedModel)?.icon}
-                    <span key={selectedModel} className={`model-text-underline model-underline-animate${underlineActive ? ' underline-active' : ''}`}>{selectedModel}</span>
-                  </button>
-                <button
-                  className="voice-input-btn"
-                  type="button"
-                  title={listening ? 'Stop listening' : 'Speak'}
-                  onClick={listening ? stopListening : startListening}
-                  style={{
-                    border: 'none',
-                    width: 44,
-                    height: 44,
-                    marginLeft: 8,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
-                  }}
-                  disabled={loading}
-                >
-                  <FaMicrophone size={20} style={{ color: listening ? '#007BFF' : 'var(--text-secondary)' }} />
-                </button>
-                {isTyping ? (
-                  <button
-                    className="send-btn stop-btn"
-                    onClick={handleStopGeneration}
-                    title="Stop generating"
-                    type="button"
-                    style={{ background: 'none', border: 'none', color: '#EF4444' }}
-                  >
-                    <FaStop size={24} />
-                  </button>
-                ) : (
-                  <button
-                    className="send-btn send-arrow"
-                    onClick={handleSend}
-                    disabled={loading || !input.trim()}
-                    title="Send"
-                    type="button"
-                  >
-                    <FaPaperPlane color={input.trim() ? '#3B82F6' : '#6B7280'} size={24} />
-                  </button>
-                )}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <button
+                      className="model-selector-btn-flex bg-transparent border-none shadow-none focus:outline-none p-0 m-0"
+                      title="Select Model"
+                      type="button"
+                      onClick={() => setShowModelSelector(true)}
+                      style={{ background: 'none', border: 'none', boxShadow: 'none', display: 'flex', alignItems: 'center', gap: 6, padding: 0, margin: 0 }}
+                    >
+                      {modelOptions.find(m => m.name === selectedModel)?.icon}
+                      <span key={selectedModel} className={`model-text-underline model-underline-animate${underlineActive ? ' underline-active' : ''}`}>{selectedModel}</span>
+                    </button>
+                    <button
+                      className="voice-input-btn"
+                      type="button"
+                      title={listening ? 'Stop listening' : 'Speak'}
+                      onClick={listening ? stopListening : startListening}
+                      style={{
+                        border: 'none',
+                        width: 36,
+                        height: 36,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        transition: 'background 0.2s, color 0.2s, boxShadow 0.2s',
+                        verticalAlign: 'middle',
+                      }}
+                      disabled={loading}
+                    >
+                      <FaMicrophone size={18} style={{ color: listening ? '#007BFF' : 'var(--text-secondary)' }} />
+                    </button>
+                    <button
+                      className="send-btn send-arrow"
+                      onClick={handleSend}
+                      disabled={loading || !input.trim()}
+                      title="Send"
+                      type="button"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        verticalAlign: 'middle',
+                        marginLeft: 4,
+                        boxShadow: 'none',
+                      }}
+                    >
+                      <FaPaperPlane color={input.trim() ? '#3B82F6' : '#6B7280'} size={20} />
+                    </button>
+                    <button
+                      className="send-btn export-all-btn"
+                      onClick={handleExportAllMessages}
+                      title="Export entire chat as Word file"
+                      type="button"
+                      style={{
+                        marginLeft: 4,
+                        background: 'none',
+                        border: 'none',
+                        boxShadow: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        verticalAlign: 'middle',
+                      }}
+                    >
+                      <FaRegFileAlt color={input.trim() ? '#3B82F6' : '#6B7280'} size={18} />
+                    </button>
+                  </div>
+                </div>
                 </div>
               </div>
             </div>
@@ -2005,6 +2160,12 @@ function App() {
         {currentView === 'supported-languages' && (
           <SupportedLanguages />
         )}
+        {currentView === 'my-projects' && (
+          <div className="main-content">
+            <h1 style={{ margin: '2rem 0 1rem 2rem', fontWeight: 700, fontSize: '2rem' }}>My Projects</h1>
+            <p style={{ marginLeft: '2rem', color: 'var(--text-secondary)' }}>This is your personal projects area. (You can customize this section.)</p>
+          </div>
+        )}
 
         {/* Render PdfViewer when currentView is 'pdf-viewer' */}
         {currentView === 'pdf-viewer' && viewedPdfUrl && (
@@ -2034,6 +2195,13 @@ function App() {
                 style={{ width: '100%', marginBottom: '1.5rem' }}
               >
                 <FaPlus style={{ marginRight: '10px' }} /> New Chat
+              </button>
+              <button
+                className="sidebar-nav-item"
+                onClick={handleClearAllChats}
+                style={{ width: '100%', marginBottom: '1.5rem', background: 'var(--accent-color)', color: 'white', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
+              >
+                <FaTrash style={{ marginRight: '10px' }} /> Clear All Chats
               </button>
               <div className="chat-history-list">
                 {Object.entries(groupedSessions).map(([group, groupSessions]) => (
@@ -2316,6 +2484,35 @@ function App() {
               </button>
             </div>
           </form>
+        </AgentOverlay>
+      )}
+      {showClearChatsOverlay && (
+        <AgentOverlay onClose={handleCancelClearAllChats}>
+          <div className="overlay-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+            <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>Clear All Chats</h2>
+            <button className="close-overlay-btn" onClick={handleCancelClearAllChats} title="Close" style={{ fontSize: '1.5em' }}>
+              <FaTimes />
+            </button>
+          </div>
+          <div style={{ marginBottom: 24, fontSize: '1.1rem', textAlign: 'center' }}>
+            Are you sure you want to delete your entire chat history? This action cannot be undone.
+          </div>
+          <div className="overlay-actions" style={{ gap: 10, marginTop: 18 }}>
+            <button
+              className="create-agent-btn"
+              onClick={handleConfirmClearAllChats}
+              style={{ fontSize: '1rem', padding: '10px 24px', minWidth: 120, height: 38 }}
+            >
+              <FaTrash /> Delete All
+            </button>
+            <button
+              className="cancel-btn"
+              onClick={handleCancelClearAllChats}
+              style={{ fontSize: '1rem', padding: '10px 24px', minWidth: 120, height: 38 }}
+            >
+              <FaTimes /> Cancel
+            </button>
+          </div>
         </AgentOverlay>
       )}
     </div>

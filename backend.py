@@ -1413,6 +1413,14 @@ def sarvam_translate_consistent(text, target_language_code, source_language_code
     else:
         return text  # fallback
 
+@app.route('/sessions/clear_all', methods=['POST'])
+def clear_all_sessions():
+    """Delete all sessions and save to sessions.json"""
+    global sessions
+    sessions = {}
+    save_sessions()
+    return '', 204
+
 if __name__ == '__main__':
     print("Starting Flask app...")
     load_sessions()

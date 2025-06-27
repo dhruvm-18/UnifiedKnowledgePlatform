@@ -562,7 +562,7 @@ html, body, #root {
   align-items: center;
   gap: 0.8rem;
   background: var(--bg-primary);
-  border-radius: 2rem;
+  border-radius: 0.7rem;
   padding: 0.7rem 1.5rem;
   border: 1px solid var(--border-color);
   box-shadow: 0 0 10px var(--accent-color), 0 4px 12px var(--shadow-color);
