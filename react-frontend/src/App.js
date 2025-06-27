@@ -1930,7 +1930,7 @@ function App() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4, marginTop: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <label htmlFor="file-upload" className="media-upload-btn" style={{ cursor: 'pointer', marginRight: 0 }}>
-                      <FaPaperclip size={20} color="#60A5FA" />
+                      <FaPaperclip size={20} color="var(--text-secondary)" />
                       <input id="file-upload" type="file" style={{ display: 'none' }} onChange={handleFileUpload} />
                     </label>
                   </div>
@@ -1966,6 +1966,25 @@ function App() {
                       <FaMicrophone size={18} style={{ color: listening ? '#007BFF' : 'var(--text-secondary)' }} />
                     </button>
                     <button
+                      className="send-btn export-all-btn"
+                      onClick={handleExportAllMessages}
+                      title="Export entire chat as Word file"
+                      type="button"
+                      style={{
+                        marginLeft: 4,
+                        background: 'none',
+                        border: 'none',
+                        boxShadow: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        verticalAlign: 'middle',
+                      }}
+                    >
+                      <FaRegFileAlt color="var(--text-secondary)" size={18} />
+                    </button>
+                    <button
                       className="send-btn send-arrow"
                       onClick={handleSend}
                       disabled={loading || !input.trim()}
@@ -1984,25 +2003,6 @@ function App() {
                       }}
                     >
                       <FaPaperPlane color={input.trim() ? '#3B82F6' : '#6B7280'} size={20} />
-                    </button>
-                    <button
-                      className="send-btn export-all-btn"
-                      onClick={handleExportAllMessages}
-                      title="Export entire chat as Word file"
-                      type="button"
-                      style={{
-                        marginLeft: 4,
-                        background: 'none',
-                        border: 'none',
-                        boxShadow: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        verticalAlign: 'middle',
-                      }}
-                    >
-                      <FaRegFileAlt color={input.trim() ? '#3B82F6' : '#6B7280'} size={18} />
                     </button>
                   </div>
                 </div>
@@ -2192,17 +2192,20 @@ function App() {
               <button
                 className="sidebar-nav-item"
                 onClick={startNewSession}
-                style={{ width: '100%', marginBottom: '1.5rem' }}
+                style={{ width: '100%', marginBottom: '0.7rem' }}
               >
                 <FaPlus style={{ marginRight: '10px' }} /> New Chat
               </button>
-              <button
-                className="sidebar-nav-item"
-                onClick={handleClearAllChats}
-                style={{ width: '100%', marginBottom: '1.5rem', background: 'var(--accent-color)', color: 'white', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
-              >
-                <FaTrash style={{ marginRight: '10px' }} /> Clear All Chats
-              </button>
+              {/* Clear All Chats button at the bottom center of the right sidebar */}
+              <div style={{ position: 'absolute', bottom: 24, left: 0, width: '100%', display: 'flex', justifyContent: 'center', zIndex: 2 }}>
+                <button
+                  className="sidebar-nav-item"
+                  onClick={handleClearAllChats}
+                  style={{ width: '80%', padding: '0.8rem 0', borderRadius: '1.5rem', justifyContent: 'center', alignItems: 'center', display: 'flex' }}
+                >
+                  <FaTrash style={{ marginRight: '10px' }} /> Clear All Chats
+                </button>
+              </div>
               <div className="chat-history-list">
                 {Object.entries(groupedSessions).map(([group, groupSessions]) => (
                   groupSessions.length > 0 && (
