@@ -54,6 +54,7 @@ from elevenlabs import play # Keep play for local playback if needed
 from elevenlabs.client import ElevenLabs # Import the client class
 import requests
 from ollama import Client as OllamaClient
+import threading
 
 # Suppress Faiss GPU warnings
 warnings.filterwarnings("ignore", message=".*GpuIndexIVFFlat.*")
@@ -1420,6 +1421,143 @@ def clear_all_sessions():
     sessions = {}
     save_sessions()
     return '', 204
+
+PROJECTS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend', 'projects.json')
+projects_lock = threading.Lock()
+
+def load_projects():
+    if not os.path.exists(PROJECTS_FILE):
+        return []
+    with open(PROJECTS_FILE, 'r', encoding='utf-8') as f:
+        try:
+            return json.load(f)
+        except Exception:
+            return []
+
+def save_projects(projects):
+    with projects_lock:
+        with open(PROJECTS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(projects, f, indent=2)
+
+@app.route('/projects', methods=['GET'])
+def get_projects():
+    projects = load_projects()
+    return jsonify(projects)
+
+@app.route('/projects', methods=['POST'])
+def create_project():
+    data = request.json
+    projects = load_projects()
+    new_project = {
+        'id': str(uuid.uuid4()),
+        'name': data.get('name', ''),
+        'description': data.get('description', ''),
+        'date': datetime.now().strftime('%Y-%m-%d'),
+        'notes': [],
+    }
+    projects.append(new_project)
+    save_projects(projects)
+    return jsonify(new_project), 201
+
+@app.route('/projects/<project_id>', methods=['PUT'])
+def edit_project(project_id):
+    data = request.json
+    projects = load_projects()
+    for p in projects:
+        if p['id'] == project_id:
+            p['name'] = data.get('name', p['name'])
+            p['description'] = data.get('description', p['description'])
+            save_projects(projects)
+            return jsonify(p)
+    return jsonify({'error': 'Project not found'}), 404
+
+@app.route('/projects/<project_id>', methods=['DELETE'])
+def delete_project(project_id):
+    projects = load_projects()
+    new_projects = [p for p in projects if p['id'] != project_id]
+    if len(new_projects) == len(projects):
+        return jsonify({'error': 'Project not found'}), 404
+    save_projects(new_projects)
+    return '', 204
+
+@app.route('/projects/<project_id>/notes', methods=['GET'])
+def get_project_notes(project_id):
+    projects = load_projects()
+    for p in projects:
+        if p['id'] == project_id:
+            return jsonify(p.get('notes', []))
+    return jsonify({'error': 'Project not found'}), 404
+
+@app.route('/projects/<project_id>/notes', methods=['POST'])
+def add_project_note(project_id):
+    data = request.json
+    projects = load_projects()
+    for p in projects:
+        if p['id'] == project_id:
+            note = {
+                'id': str(uuid.uuid4()),
+                'text': data.get('text', ''),
+                'createdAt': datetime.now().isoformat(),
+            }
+            p.setdefault('notes', []).insert(0, note)
+            save_projects(projects)
+            return jsonify(note), 201
+    return jsonify({'error': 'Project not found'}), 404
+
+@app.route('/projects/<project_id>/notes/<note_id>', methods=['PUT'])
+def edit_project_note(project_id, note_id):
+    data = request.json
+    projects = load_projects()
+    for p in projects:
+        if p['id'] == project_id:
+            for n in p.get('notes', []):
+                if n['id'] == note_id:
+                    n['text'] = data.get('text', n['text'])
+                    save_projects(projects)
+                    return jsonify(n)
+            return jsonify({'error': 'Note not found'}), 404
+    return jsonify({'error': 'Project not found'}), 404
+
+@app.route('/projects/<project_id>/notes/<note_id>', methods=['DELETE'])
+def delete_project_note(project_id, note_id):
+    projects = load_projects()
+    for p in projects:
+        if p['id'] == project_id:
+            notes = p.get('notes', [])
+            new_notes = [n for n in notes if n['id'] != note_id]
+            if len(new_notes) == len(notes):
+                return jsonify({'error': 'Note not found'}), 404
+            p['notes'] = new_notes
+            save_projects(projects)
+            return '', 204
+    return jsonify({'error': 'Project not found'}), 404
+
+@app.route('/projects/<project_id>/chats', methods=['GET'])
+def get_project_chats(project_id):
+    projects = load_projects()
+    for p in projects:
+        if p['id'] == project_id:
+            return jsonify(p.get('chats', []))
+    return jsonify({'error': 'Project not found'}), 404
+
+@app.route('/projects/<project_id>/chats', methods=['POST'])
+def add_project_chat(project_id):
+    data = request.json
+    projects = load_projects()
+    for p in projects:
+        if p['id'] == project_id:
+            chat = {
+                'id': str(uuid.uuid4()),
+                'title': data.get('title', f'Chat {len(p.get("chats", [])) + 1}'),
+                'messages': data.get('messages', []),
+                'createdAt': datetime.now().isoformat(),
+            }
+            if 'chats' not in p:
+                p['chats'] = []
+            p['chats'].insert(0, chat)
+            save_projects(projects)
+            return jsonify(chat), 201
+    return jsonify({'error': 'Project not found'}), 404
 
 if __name__ == '__main__':
     print("Starting Flask app...")

@@ -7,8 +7,8 @@
       "buttonText": "Start Chat",
       "agentId": "DPDP",
       "pdfSource": "DPDP_act.pdf",
-      "tileLineStartColor": "Red",
-      "tileLineEndColor": "Black",
+      "tileLineStartColor": "#ff0000",
+      "tileLineEndColor": "#000000",
       "pdfSources": [
         "DPDP_act.pdf"
       ]

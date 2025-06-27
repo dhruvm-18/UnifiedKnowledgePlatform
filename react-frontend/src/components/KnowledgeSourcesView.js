@@ -137,8 +137,20 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
     <div className="knowledge-sources-view" ref={knowledgeSourcesViewRef}>
       <div className="knowledge-sources-header">
         <h1>Knowledge Sources</h1>
-        <button 
-          className="new-agent-header-btn"
+        <button
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            background: 'var(--accent-color)',
+            color: 'white',
+            border: 'none',
+            borderRadius: 18,
+            padding: '10px 22px',
+            fontWeight: 600,
+            fontSize: '1rem',
+            cursor: 'pointer'
+          }}
           onClick={() => setShowNewAgentOverlay(true)}
         >
           <FaPlus /> New Agent

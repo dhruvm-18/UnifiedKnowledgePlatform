@@ -1,0 +1,126 @@
+[
+  {
+    "id": "74e09aa0-0f92-45fa-b3ff-1b2d2fa300c7",
+    "name": "GST Related",
+    "description": "Insights of my GST Project",
+    "date": "2025-06-27",
+    "notes": [],
+    "chats": [
+      {
+        "id": "d911810e-baa3-40e6-a422-42d533ca612e",
+        "title": "UGST",
+        "messages": [
+          {
+            "agentId": "agent_1750842676918",
+            "content": "What is Input Tax Credit under GST?",
+            "lang": "en",
+            "sender": "user"
+          },
+          {
+            "agentId": "agent_1750842676918",
+            "content": "Thanks for asking!\n\n**Input Tax Credit (ITC)** means the **credit of input tax**. It is a mechanism under GST that allows a registered person to utilize the tax paid on their inward supplies (purchases of goods or services) as a set-off against their output tax liability, thus making the tax **__vatable__** and avoiding a cascading tax effect. The amount available in the electronic credit ledger can be used for making payments towards output tax.\n\n**Sources**\n*   **[(63) \u201cinput tax credit\u201d means the credit of input tax;]** (pdf://CGST.pdf/page/15#section=(63) \u201cinput tax credit\u201d means the credit of input tax;)\n*   **[(4) The amount available in the electronic credit ledger may be used for making any payment towards output tax under this Act or under the Integrated Goods and Services Tax Act in such manner and subject to such conditions and restrictions and within such time as may be prescribed.]** (pdf://CGST.pdf/page/51#section=(4) The amount available in the electronic credit ledger may be used for making any payment towards output tax under this Act or under the Integrated Goods and Services Tax Act in such manner and subject to such conditions 3[and restrictions] and within such time as may be prescribed.)\n*   **[3. In view of the above, it has become necessary to have a Central legislation, namely, the Integrated Goods and Services Tax Bill, 2017. The proposed Legislation will confer power upon the Central Government for levying goods and services tax on the supply of goods or services or both which takes place in the course of inter -State trade or commerce. The proposed Legislation will remove both the lacunas of the present central sales tax. Besides being vatable, the rate of tax for the integrated goods and services tax is proposed to be more or less equal to the sum total of the central goods and services tax and state goods and services tax or Union territory goods and services tax to be levied on intra -State supplies. It is expected to reduce cost of production and inflation in the economy, thereby making the Indian trade and industry more competitive, domestically as well as internationally. It is also expected that introduction of the integrated goods and services tax will foster a common or seamless Indian market and contribute significantly to the growth of the economy.]** (pdf://IGST.pdf/page/22#section=3. In view of the above, it has become necessary to have a Central legislation, namely, the Integrated Goods and Services Tax Bill, 2017. The proposed Legislation will confer power upon the Central Government for levying goods and services tax on the supply of goods or services or both which takes place in the course of inter -State trade or commerce. The proposed Legislation will remove both the lacunas of the present central sales tax. Besides being vatable, the rate of tax for the integrated goods and services tax is proposed to be more or less equal to the sum total of the central goods and services tax and state goods and services tax or Union territory goods and services tax to be levied on intra -State supplies. It is expected to reduce cost of production and inflation in the economy, thereby making the Indian trade and industry more competitive, domestically as well as internationally. It is also expected that introduction of the integrated goods and services tax will foster a common or seamless Indian market and contribute significantly to the growth of the economy.)\n\nFeel free to ask if you have more questions.",
+            "lang": "en",
+            "sender": "assistant"
+          },
+          {
+            "agentId": "agent_1750842676918",
+            "content": "What are the various GST tax slabs?",
+            "lang": "en",
+            "sender": "user"
+          },
+          {
+            "agentId": "agent_1750842676918",
+            "content": "I appreciate your question.\n\nBased on the provided context, the specific GST tax slabs are not detailed. However, it is stated that the Integrated Goods and Services Tax (IGST) is levied at rates **not exceeding forty per cent.**, as may be notified by the Government on the recommendations of the Council.\n\n**Sources**\n*   **[5. Levy and collection]** (pdf://IGST.pdf/page/8#section=5._Levy_and_collection)\n*   **[STATEMENT OF OBJECTS AND REASONS]** (pdf://IGST.pdf/page/22#section=STATEMENT_OF_OBJECTS_AND_REASONS)\n\nFeel free to ask if you have any further questions.",
+            "lang": "en",
+            "sender": "assistant"
+          },
+          {
+            "agentId": "agent_1750842676918",
+            "content": "What is the meaning of CGST, SGST, IGST, and UTGST?",
+            "lang": "en",
+            "sender": "user"
+          },
+          {
+            "agentId": "agent_1750842676918",
+            "content": "Thanks for asking! Here are the meanings of the requested terms:\n\n*   **Central Goods and Services Tax (CGST)** refers to the __central goods and services tax__ levied under section 9 of the Central Goods and Services Tax Act.\n*   **Integrated Goods and Services Tax (IGST)** means the __integrated goods and services tax__ levied under the Integrated Goods and Services Tax Act. This tax is typically collected on inter-State supplies of goods or services or both, and its apportionment involves both the Central and State Governments.\n*   **Union Territory Goods and Services Tax (UTGST)** means the __tax levied under the Union Territory Goods and Services Tax Act__ on intra-State supplies of goods or services or both within Union territories.\n*   **State Goods and Services Tax (SGST)**, though not explicitly defined by name in the provided context, is referred to as \"State tax.\" It is the tax levied by State Governments on __intra-State supplies of goods or services or both__, complementing the Central Goods and Services Tax (CGST) for such supplies.\n\n**Sources**:\n*   **[CGST.pdf/page/12#section=(21)]** (pdf://CGST.pdf/page/12#section=(21))\n*   **[IGST.pdf/page/6#section=(12)]** (pdf://IGST.pdf/page/6#section=(12))\n*   **[UGST.pdf/page/4#section=(9)]** (pdf://UGST.pdf/page/4#section=(9))\n*   **[UGST.pdf/page/6#section=9]** (pdf://UGST.pdf/page/6#section=9)\n*   **[IGST.pdf/page/18#section=17]** (pdf://IGST.pdf/page/18#section=17)\n\nFeel free to ask if you have more questions.",
+            "lang": "en",
+            "sender": "assistant"
+          }
+        ],
+        "createdAt": "2025-06-27T17:31:47.358286"
+      }
+    ]
+  },
+  {
+    "id": "5fee75d6-9e02-4392-89ba-0fa7af7cad2f",
+    "name": "DPDP Project",
+    "description": "Insights of DPDP",
+    "date": "2025-06-27",
+    "notes": [],
+    "chats": [
+      {
+        "id": "277ea5f5-3ea2-4d97-a99b-736696b4d040",
+        "title": "DPDP",
+        "messages": [
+          {
+            "agentId": "DPDP",
+            "content": "What is the scope of the DPDP Act \u2014 whom does it apply to?",
+            "lang": "en",
+            "sender": "user",
+            "agentName": "DPDP Knowledge Agent",
+            "agentIcon": {
+              "key": null,
+              "ref": null,
+              "props": {},
+              "_owner": null,
+              "_store": {}
+            }
+          },
+          {
+            "agentId": "DPDP",
+            "content": "Thanks for asking.\n\nThe Digital Personal Data Protection Act, 2023, applies to the processing of **digital personal data** within India, whether collected digitally or digitized subsequently. It also extends to the processing of digital personal data outside India if it's related to offering goods or services to Data Principals within India.\n\nHowever, the Act does __not__ apply to:\n*   Personal data processed by an individual for **personal or domestic purposes**.\n*   Personal data that is **publicly made available** by the Data Principal or by any person under a legal obligation to do so.\n\n**Sources**\n*   **[Application of Act]** (pdf://DPDP_act.pdf/page/3#section=3)",
+            "lang": "en",
+            "sender": "assistant",
+            "agentName": "DPDP Knowledge Agent",
+            "agentIcon": {
+              "key": null,
+              "ref": null,
+              "props": {},
+              "_owner": null,
+              "_store": {}
+            }
+          },
+          {
+            "agentId": "DPDP",
+            "content": "What is meant by \u201cprocessing\u201d of personal data?",
+            "lang": "en",
+            "sender": "user",
+            "agentName": "DPDP Knowledge Agent",
+            "agentIcon": {
+              "key": null,
+              "ref": null,
+              "props": {},
+              "_owner": null,
+              "_store": {}
+            }
+          },
+          {
+            "agentId": "DPDP",
+            "content": "Thanks for asking.\n\nIn the context of the Digital Personal Data Protection Act, **\"processing\"** in relation to personal data refers to a wholly or partly __automated operation__ or set of operations performed on digital personal data. This includes various activities such as collection, recording, organisation, structuring, storage, adaptation, retrieval, use, alignment or combination, indexing, sharing, disclosure by transmission, dissemination or otherwise making available, restriction, erasure, or destruction of personal data.\n\n**Sources:**\n- (pdf://DPDP_act.pdf/page/3#section=2&highlight=Thanks%20for%20asking.%0A%0AIn%20the%20context%20of%20the%20Digital%20Personal%20Data%20Protection%20Act%2C%20%2A%2A%22processing%22%2A%2A%20in%20relation%20to%20personal%20data%20refers%20to%20a%20wholly%20or%20partly%20__automated%20operation__%20or%20set%20of%20operations%20performed%20on%20digital%20personal%20data.%20This%20includes%20various%20activities%20such%20as%20collection%2C%20recording%2C%20organisation%2C%20structuring%2C%20storage%2C%20adaptation%2C%20retrieval%2C%20use%2C%20alignment%20or%20combination%2C%20indexing%2C%20sharing%2C%20disclosure%20by%20transmission%2C%20dissemination%20or%20otherwise%20making%20available%2C%20restriction%2C%20erasure%2C%20or%20destruction%20of%20personal%20data.)",
+            "lang": "en",
+            "sender": "assistant",
+            "agentName": "DPDP Knowledge Agent",
+            "agentIcon": {
+              "key": null,
+              "ref": null,
+              "props": {},
+              "_owner": null,
+              "_store": {}
+            }
+          }
+        ],
+        "createdAt": "2025-06-27T17:55:13.330955"
+      }
+    ]
+  }
+]

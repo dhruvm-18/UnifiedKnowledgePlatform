@@ -653,6 +653,7 @@
 }
 
 /* New Agent Overlay */
+/*
 .new-agent-overlay {
   position: fixed;
   inset: 0;
@@ -685,17 +686,7 @@
   overflow-y: auto;
   margin: 0;
 }
-
-@keyframes agent-modal-pop-in {
-  0% { opacity: 0; transform: scale(0.95) translateY(30px); }
-  100% { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-.dark-mode .new-agent-overlay-content {
-  background: #23233a !important;
-  color: #f0f0f0 !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-}
+*/
 
 .overlay-header {
   display: flex;
@@ -753,6 +744,8 @@
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1rem;
+  font-family: inherit;
+  font-weight: 500;
   transition: all 0.3s ease;
   box-sizing: border-box;
 }
@@ -951,12 +944,6 @@
   color: #fff; /* White text on red */
 }
 
-.dark-mode .new-agent-overlay-content {
-  background: #23233a !important;
-  color: #f0f0f0 !important;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-}
-
 .dark-mode .overlay-header h2 {
   color: #ffffff; /* White heading in overlay */
 }
@@ -981,6 +968,8 @@
   background-color: #23233a;
   color: #f0f0f0;
   border-color: #444;
+  font-family: inherit;
+  font-weight: 500;
 }
 
 .dark-mode .new-agent-overlay-content input[type="text"]:focus,
@@ -1109,11 +1098,6 @@
 }
 .dark-mode .new-agent-header-btn:hover {
   box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4) !important;
-}
-
-/* Remove overlay background darkening in dark mode */
-.dark-mode .new-agent-overlay {
-  background: rgba(0,0,0,0.92) !important;
 }
 
 .app-layout.left-collapsed .knowledge-sources-view {

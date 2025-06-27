@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import './App.css';
 import './styles/backgrounds.css';
 import './styles/modal.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen } from 'react-icons/fa';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus } from 'react-icons/fa';
 import HomeView from './components/HomeView';
 import KnowledgeSourcesView from './components/KnowledgeSourcesView';
 import PDFViewer from './components/PDFViewer';
@@ -18,6 +18,7 @@ import SupportedLanguages from './components/SupportedLanguages';
 import AgentOverlay from './components/AgentOverlay';
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell } from "docx";
 import { marked } from "marked";
+import MyProjectsView from './views/MyProjectsView';
 
 // Helper to save current cursor selection
 function saveSelection(element) {
@@ -70,7 +71,7 @@ function restoreSelection(element, savedCaretOffset) {
   }
 }
 
-const BACKEND_BASE = 'http://localhost:5000';
+const BACKEND_BASE = process.env.REACT_APP_BACKEND_BASE || 'http://localhost:5000';
 const APP_NAME = 'Unified Knowledge Platform';
 const FAVICON_URL = '/unified-knowledge-platform.png';
 
@@ -1012,7 +1013,7 @@ function App() {
 
   // Removed the useEffect for webkitSpeechRecognition as it's no longer used.
 
-  const handleAgentDataChange = useCallback((updatedAgentsData) => {
+  const handleAgentDataChange = useCallback((updatedAgentsData, shouldRefresh = false) => {
     // This function is called by KnowledgeSourcesView when agents are updated (added, edited, deleted)
     const newAgentList = updatedAgentsData.map(agent => ({
       id: agent.agentId, // Use agentId as id
@@ -1023,6 +1024,7 @@ function App() {
       pdfSource: agent.pdfSource
     }));
     setCurrentAgents(newAgentList);
+    if (shouldRefresh) setAgentRefreshKey(k => k + 1);
   }, []);
 
   const groupedSessions = groupSessionsByDate(sessions);
@@ -1526,6 +1528,95 @@ function App() {
 
   const [showClearChatsOverlay, setShowClearChatsOverlay] = useState(false);
 
+  const [showSaveToProjectModal, setShowSaveToProjectModal] = useState(false);
+  const [saveToProjectInput, setSaveToProjectInput] = useState('');
+  const [selectedProjectId, setSelectedProjectId] = useState('');
+  const [projectsList, setProjectsList] = useState([]); // For modal dropdown
+  const saveToProjectTextareaRef = useRef(null);
+  const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+
+  // Handler to open Save to Project modal
+  const handleOpenSaveToProject = async () => {
+    setSaveToProjectInput(inputRef.current.innerText || '');
+    setShowSaveToProjectModal(true);
+    setSaveChatTitle('');
+    setSaveError(null);
+    setSaveLoading(true);
+    try {
+      const res = await fetch(`${BACKEND_BASE}/projects`);
+      if (!res.ok) throw new Error('Failed to fetch projects');
+      const data = await res.json();
+      setProjectsList(data);
+      setSelectedProjectId(data.length ? data[0].id : '');
+    } catch (err) {
+      setProjectsList([]);
+      setSelectedProjectId('');
+      setSaveError('Could not load projects.');
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  // Handler to save input as note to selected project
+  const handleSaveInputToProject = async () => {
+    if (!selectedProjectId || !saveChatTitle.trim() || !messages.length) return;
+    setSaveLoading(true);
+    setSaveError(null);
+    try {
+      const res = await fetch(`${BACKEND_BASE}/projects/${selectedProjectId}/chats`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: saveChatTitle.trim(), messages }),
+      });
+      if (!res.ok) throw new Error('Failed to save chat');
+      setShowSaveToProjectModal(false);
+      setSaveToProjectInput('');
+      setSaveChatTitle('');
+      setShowSaveSuccess(true);
+      setTimeout(() => setShowSaveSuccess(false), 1800);
+    } catch (err) {
+      setSaveError('Could not save chat.');
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showSaveToProjectModal && saveToProjectTextareaRef.current) {
+      saveToProjectTextareaRef.current.focus();
+    }
+  }, [showSaveToProjectModal]);
+
+  const [newProjectName, setNewProjectName] = useState('');
+  const [newProjectDesc, setNewProjectDesc] = useState('');
+  const [showNewProjectFields, setShowNewProjectFields] = useState(false);
+
+  const [projects, setProjects] = useState([]);
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch(`${BACKEND_BASE}/projects`);
+      if (!res.ok) throw new Error('Failed to fetch projects');
+      const data = await res.json();
+      setProjects(data);
+    } catch (err) {
+      // Optionally handle error
+    }
+  };
+  useEffect(() => { fetchProjects(); }, []);
+
+  useEffect(() => {
+    if (currentView === 'my-projects') {
+      fetchProjects();
+    }
+  }, [currentView]);
+
+  const [saveChatTitle, setSaveChatTitle] = useState('');
+
+  // Add at the top of App function:
+  const [agentRefreshKey, setAgentRefreshKey] = useState(0);
+
   return (
     <div className={`app-layout ${theme}-mode${leftCollapsed ? ' left-collapsed' : ''}${rightCollapsed ? ' right-collapsed' : ''}`}>
       <aside className={`left-sidebar${leftCollapsed ? ' collapsed' : ''}`}>
@@ -1561,7 +1652,7 @@ function App() {
             </button>
             <button
               className="sidebar-nav-item"
-              onClick={() => setCurrentView('my-projects')}
+              onClick={handleNavigateToMyProjects}
               title="View your projects"
             >
               <FaFolderOpen style={{ marginRight: '10px' }} /> My Projects
@@ -1631,10 +1722,12 @@ function App() {
           </>
         )}
       </aside>
-      <main className="main-content chatbot-full">
-        {currentView === 'home' && (
-          <HomeView userName={userName} APP_NAME={APP_NAME} onNavigateToKnowledgeSources={handleNavigateToKnowledgeSources} />
-        )}
+      <main className="main-content">
+        {currentView === 'home' && <HomeView
+          userName={userName}
+          APP_NAME={APP_NAME}
+          onNavigateToKnowledgeSources={handleNavigateToKnowledgeSources}
+        />}
         {currentView === 'chat' && (
           <>
             <div className="chat-window chatbot-full-window">
@@ -1698,11 +1791,7 @@ function App() {
 
               {(messages.length > 0 || chatStarted || loading) && (
                 <div id="middle-chatbox-container">
-                  {activeAgentDetails && (
-                    <div className="dedicated-agent-header">
-                      Chatting with: {activeAgentDetails.fullName}
-                    </div>
-                  )}
+                  
                   {messages.map((msg, idx) => (
                     <div key={msg.id || idx} className={`chat-message ${msg.sender}`}>
                       {msg.sender === 'assistant' && (
@@ -1861,7 +1950,38 @@ function App() {
               <div className="chat-wave-bg" />
             <div className="floating-input-row anchored-bottom">
               <div className="floating-input-inner" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 0, padding: '0.4rem 1rem' }}>
-                <div style={{ width: '100%' }}>
+                {activeAgentDetails && (
+                  <div
+                    className="dedicated-agent-inline"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      background: 'rgba(240,244,255,0.95)',
+                      border: '1.5px solid var(--accent-color)',
+                      borderRadius: 999,
+                      padding: '3px 14px',
+                      fontSize: '0.98rem',
+                      fontWeight: 500,
+                      color: 'var(--accent-color)',
+                      marginBottom: 6,
+                      maxWidth: '100%',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    {activeAgentDetails?.icon && (
+                      <span style={{ fontSize: 18, color: 'var(--accent-color)' }}>
+                        {getIconComponent(activeAgentDetails.iconType)}
+                      </span>
+                    )}
+                    <span>
+                      Chatting with: <span style={{ fontWeight: 700 }}>{activeAgentDetails?.fullName}</span>
+                    </span>
+                  </div>
+                )}
+                <div style={{ width: '100%', position: 'relative' }}>
                   <div
                     ref={inputRef}
                     className="chat-input"
@@ -1926,6 +2046,62 @@ function App() {
                     disabled={loading}
                     style={{ minHeight: 32, fontSize: '0.98rem', width: '100%', border: 'none', outline: 'none', background: 'transparent', marginBottom: 0, padding: '4px 0' }}
                   ></div>
+                  {/* Agent mention drop-up menu */}
+                  {showAgentDropdown && filteredAgents.length > 0 && (
+                    <div
+                      className="agent-mention-dropdown"
+                      style={{
+                        position: 'absolute',
+                        bottom: '110%', // Drop-up
+                        left: 0,
+                        width: '100%',
+                        background: 'var(--bg-secondary)',
+                        border: '1.5px solid var(--border-color)',
+                        borderRadius: 10,
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.10)',
+                        zIndex: 100,
+                        maxHeight: 180,
+                        overflowY: 'auto',
+                        padding: 0,
+                        marginBottom: 6
+                      }}
+                    >
+                      {filteredAgents.map(agent => (
+                        <div
+                          key={agent.id}
+                          className="agent-mention-dropdown-item"
+                          style={{
+                            padding: '10px 16px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            fontSize: '1rem',
+                            color: 'var(--text-primary)',
+                            background: 'none',
+                            borderBottom: '1px solid var(--border-color)'
+                          }}
+                          onMouseDown={() => {
+                            const div = inputRef.current;
+                            if (div) {
+                              const text = div.innerText;
+                              const lastAt = text.lastIndexOf('@');
+                              if (lastAt !== -1) {
+                                const before = text.slice(0, lastAt + 1);
+                                div.innerText = before + agent.fullName + ' ';
+                                setInput(div.innerText);
+                                setShowAgentDropdown(false);
+                                setFilteredAgents([]);
+                                restoreSelection(div, div.innerText.length);
+                              }
+                            }
+                          }}
+                        >
+                          {agent.icon} <span style={{ fontWeight: 600 }}>{agent.fullName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4, marginTop: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1983,6 +2159,25 @@ function App() {
                       }}
                     >
                       <FaRegFileAlt color="var(--text-secondary)" size={18} />
+                    </button>
+                    <button
+                      className="send-btn save-to-project-btn"
+                      onClick={handleOpenSaveToProject}
+                      title="Save to My Project"
+                      type="button"
+                      style={{
+                        marginLeft: 4,
+                        background: 'none',
+                        border: 'none',
+                        boxShadow: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        verticalAlign: 'middle',
+                      }}
+                    >
+                      <FaFolderPlus color="#6B7280" size={20} />
                     </button>
                     <button
                       className="send-btn send-arrow"
@@ -2122,52 +2317,41 @@ function App() {
             )}
           </>
         )}
-        {currentView === 'knowledge-sources' && (
-          <KnowledgeSourcesView
-            onStartChatWithAgent={handleStartChatWithAgent}
-            onAgentDataChange={handleAgentDataChange}
-            showNewAgentOverlay={showNewAgentOverlay}
-            setShowNewAgentOverlay={setShowNewAgentOverlay}
-            agentToEdit={agentToEdit}
-            setAgentToEdit={setAgentToEdit}
-            overlaySuccessMessage={overlaySuccessMessage}
-            setOverlaySuccessMessage={setOverlaySuccessMessage}
-            isSubmitting={isSubmitting}
-            setIsSubmitting={setIsSubmitting}
-            newAgentName={newAgentName}
-            setNewAgentName={setNewAgentName}
-            newAgentDescription={newAgentDescription}
-            setNewAgentDescription={setNewAgentDescription}
-            newAgentTileLineStartColor={newAgentTileLineStartColor}
-            setNewAgentTileLineStartColor={setNewAgentTileLineStartColor}
-            newAgentTileLineEndColor={newAgentTileLineEndColor}
-            setNewAgentTileLineEndColor={setNewAgentTileLineEndColor}
-            newAgentIconType={newAgentIconType}
-            setNewAgentIconType={setNewAgentIconType}
-            selectedPdfs={selectedPdfs}
-            setSelectedPdfs={setSelectedPdfs}
-            editedName={editedName}
-            setEditedName={setEditedName}
-            editedDescription={editedDescription}
-            setEditedDescription={setEditedDescription}
-            editedTileLineStartColor={editedTileLineStartColor}
-            setEditedTileLineStartColor={setEditedTileLineStartColor}
-            editedTileLineEndColor={editedTileLineEndColor}
-            setEditedTileLineEndColor={setEditedTileLineEndColor}
-            refreshKey={currentView}
-          />
-        )}
-        {currentView === 'supported-languages' && (
-          <SupportedLanguages />
-        )}
-        {currentView === 'my-projects' && (
-          <div className="main-content">
-            <h1 style={{ margin: '2rem 0 1rem 2rem', fontWeight: 700, fontSize: '2rem' }}>My Projects</h1>
-            <p style={{ marginLeft: '2rem', color: 'var(--text-secondary)' }}>This is your personal projects area. (You can customize this section.)</p>
-          </div>
-        )}
-
-        {/* Render PdfViewer when currentView is 'pdf-viewer' */}
+        {currentView === 'knowledge-sources' && <KnowledgeSourcesView
+          onStartChatWithAgent={handleStartChatWithAgent}
+          onAgentDataChange={handleAgentDataChange}
+          showNewAgentOverlay={showNewAgentOverlay}
+          setShowNewAgentOverlay={setShowNewAgentOverlay}
+          agentToEdit={agentToEdit}
+          setAgentToEdit={setAgentToEdit}
+          overlaySuccessMessage={overlaySuccessMessage}
+          setOverlaySuccessMessage={setOverlaySuccessMessage}
+          isSubmitting={isSubmitting}
+          setIsSubmitting={setIsSubmitting}
+          newAgentName={newAgentName}
+          setNewAgentName={setNewAgentName}
+          newAgentDescription={newAgentDescription}
+          setNewAgentDescription={setNewAgentDescription}
+          newAgentTileLineStartColor={newAgentTileLineStartColor}
+          setNewAgentTileLineStartColor={setNewAgentTileLineStartColor}
+          newAgentTileLineEndColor={newAgentTileLineEndColor}
+          setNewAgentTileLineEndColor={setNewAgentTileLineEndColor}
+          newAgentIconType={newAgentIconType}
+          setNewAgentIconType={setNewAgentIconType}
+          selectedPdfs={selectedPdfs}
+          setSelectedPdfs={setSelectedPdfs}
+          editedName={editedName}
+          setEditedName={setEditedName}
+          editedDescription={editedDescription}
+          setEditedDescription={setEditedDescription}
+          editedTileLineStartColor={editedTileLineStartColor}
+          setEditedTileLineStartColor={setEditedTileLineStartColor}
+          editedTileLineEndColor={editedTileLineEndColor}
+          setEditedTileLineEndColor={setEditedTileLineEndColor}
+          refreshKey={agentRefreshKey}
+        />}
+        {currentView === 'supported-languages' && <SupportedLanguages />}
+        {currentView === 'my-projects' && <MyProjectsView refreshKey={currentView} />}
         {currentView === 'pdf-viewer' && viewedPdfUrl && (
           <div className="pdf-viewer-container">
             <PDFViewer
@@ -2178,7 +2362,6 @@ function App() {
             />
           </div>
         )}
-
       </main>
       {currentView === 'chat' && (
         <aside className={`right-sidebar${rightCollapsed ? ' collapsed' : ''}`}>
@@ -2232,26 +2415,23 @@ function App() {
       {/* Overlay Portal for New/Edit Agent */}
       {showNewAgentOverlay && (
         <AgentOverlay onClose={() => setShowNewAgentOverlay(false)}>
-          <div className="overlay-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>New Agent</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <input
-                type="color"
-                value={newAgentTileLineStartColor || '#3498db'}
-                onChange={e => setNewAgentTileLineStartColor(e.target.value)}
-                disabled={isSubmitting}
-                style={{ width: 24, height: 24, border: 'none', marginRight: 4, cursor: 'pointer', background: 'none', padding: 0 }}
-                title="Tile Line Start Color"
-              />
-              <input
-                type="color"
-                value={newAgentTileLineEndColor || '#8e44ad'}
-                onChange={e => setNewAgentTileLineEndColor(e.target.value)}
-                disabled={isSubmitting}
-                style={{ width: 24, height: 24, border: 'none', marginLeft: 4, cursor: 'pointer', background: 'none', padding: 0 }}
-                title="Tile Line End Color"
-              />
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <input
+              type="color"
+              value={newAgentTileLineStartColor || '#3498db'}
+              onChange={e => setNewAgentTileLineStartColor(e.target.value)}
+              disabled={isSubmitting}
+              style={{ width: 28, height: 28, border: 'none', marginRight: 4, cursor: 'pointer', background: 'none', padding: 0 }}
+              title="Tile Line Start Color"
+            />
+            <input
+              type="color"
+              value={newAgentTileLineEndColor || '#8e44ad'}
+              onChange={e => setNewAgentTileLineEndColor(e.target.value)}
+              disabled={isSubmitting}
+              style={{ width: 28, height: 28, border: 'none', marginLeft: 4, cursor: 'pointer', background: 'none', padding: 0 }}
+              title="Tile Line End Color"
+            />
           </div>
           <div style={{ width: '100%', padding: 0, margin: 0 }}>
             <div
@@ -2266,12 +2446,8 @@ function App() {
               }}
             />
           </div>
-          {overlaySuccessMessage && (
-            <div className="overlay-success-message">
-              {overlaySuccessMessage}
-            </div>
-          )}
-          <form onSubmit={handleNewAgentSubmit} style={{ fontSize: '0.98rem' }}>
+          <h2 style={{ fontWeight: 700, fontSize: '1.3rem', marginBottom: 24 }}>New Agent</h2>
+          <div style={{ marginBottom: 18 }}>
             <input
               type="text"
               placeholder="Agent Name"
@@ -2279,7 +2455,19 @@ function App() {
               onChange={(e) => setNewAgentName(e.target.value)}
               required
               disabled={isSubmitting}
-              style={{ height: 36, fontSize: '1rem', marginBottom: 10 }}
+              style={{
+                width: '100%',
+                padding: '10px 5px',
+                borderRadius: 10,
+                border: '1.5px solid var(--border-color)',
+                fontSize: '1.15rem',
+                fontWeight: 700,
+                marginBottom: 10,
+                fontFamily: 'Inter, Segoe UI, Arial, sans-serif',
+                background: theme === 'dark' ? '#23233a' : '#fff',
+                color: theme === 'dark' ? '#f0f0f0' : '#18181b',
+                borderColor: theme === 'dark' ? '#444' : 'var(--border-color)'
+              }}
             />
             <textarea
               placeholder="Agent Description"
@@ -2287,8 +2475,22 @@ function App() {
               onChange={(e) => setNewAgentDescription(e.target.value)}
               required
               disabled={isSubmitting}
-              style={{ minHeight: 70, fontSize: '1rem', marginBottom: 10 }}
+              style={{
+                width: '100%',
+                padding: '10px 5px',
+                borderRadius: 10,
+                border: '1.5px solid var(--border-color)',
+                fontSize: '1.15rem',
+                minHeight: 70,
+                resize: 'vertical',
+                marginBottom: 10,
+                fontFamily: 'Inter, Segoe UI, Arial, sans-serif',
+                background: theme === 'dark' ? '#23233a' : '#fff',
+                color: theme === 'dark' ? '#f0f0f0' : '#18181b',
+                borderColor: theme === 'dark' ? '#444' : 'var(--border-color)'
+              }}
             />
+            {/* Icon selection and PDF upload remain unchanged */}
             <div className="icon-selection-container">
               <label htmlFor="icon-select" className="icon-select-label">Choose an Icon:</label>
               <select
@@ -2347,91 +2549,97 @@ function App() {
                   : 'No files chosen'}
               </span>
             </div>
-            <div className="overlay-actions" style={{ gap: 10, marginTop: 18 }}>
-              <button
-                type="submit"
-                className="create-agent-btn"
-                disabled={isSubmitting}
-                style={{ fontSize: '1rem', padding: '10px 24px', minWidth: 120, height: 38 }}
-              >
-                {isSubmitting ? 'Creating...' : <><FaSave /> Create Agent</>}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowNewAgentOverlay(false)}
-                className="cancel-btn"
-                disabled={isSubmitting}
-                style={{ fontSize: '1rem', padding: '10px 24px', minWidth: 120, height: 38 }}
-              >
-                <FaTimes /> Cancel
-              </button>
-            </div>
-          </form>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+            <button
+              onClick={() => setShowNewAgentOverlay(false)}
+              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+              disabled={isSubmitting}
+            >Cancel</button>
+            <button
+              onClick={handleNewAgentSubmit}
+              style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+              disabled={isSubmitting || !newAgentName || !newAgentDescription || selectedPdfs.length === 0}
+            >Create</button>
+          </div>
         </AgentOverlay>
       )}
       {agentToEdit && (
         <AgentOverlay onClose={handleCancelEdit}>
-          <div className="overlay-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-            <h2 style={{ margin: 0 }}>Edit Agent</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <input
-                type="color"
-                value={editedTileLineStartColor || '#3498db'}
-                onChange={e => setEditedTileLineStartColor(e.target.value)}
-                disabled={isSubmitting}
-                style={{ width: 28, height: 28, border: 'none', marginRight: 4, cursor: 'pointer', background: 'none', padding: 0 }}
-                title="Tile Line Start Color"
-              />
-              <input
-                type="color"
-                value={editedTileLineEndColor || '#8e44ad'}
-                onChange={e => setEditedTileLineEndColor(e.target.value)}
-                disabled={isSubmitting}
-                style={{ width: 28, height: 28, border: 'none', marginLeft: 4, cursor: 'pointer', background: 'none', padding: 0 }}
-                title="Tile Line End Color"
-              />
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <input
+              type="color"
+              value={editedTileLineStartColor || '#3498db'}
+              onChange={e => setEditedTileLineStartColor(e.target.value)}
+              disabled={isSubmitting}
+              style={{ width: 28, height: 28, border: 'none', marginRight: 4, cursor: 'pointer', background: 'none', padding: 0 }}
+              title="Tile Line Start Color"
+            />
+            <input
+              type="color"
+              value={editedTileLineEndColor || '#8e44ad'}
+              onChange={e => setEditedTileLineEndColor(e.target.value)}
+              disabled={isSubmitting}
+              style={{ width: 28, height: 28, border: 'none', marginLeft: 4, cursor: 'pointer', background: 'none', padding: 0 }}
+              title="Tile Line End Color"
+            />
           </div>
-          {/* Visual gradient line preview for Edit Agent */}
-          {(() => {
-            const isDarkMode = document.body.classList.contains('dark-mode') || document.documentElement.classList.contains('dark-mode');
-            const start = editedTileLineStartColor || (isDarkMode ? '#5e35b1' : '#3498db');
-            const end = editedTileLineEndColor || (isDarkMode ? '#7b1fa2' : '#8e44ad');
-            return (
-              <div
-                style={{
-                  height: 16,
-                  borderRadius: 12,
-                  marginBottom: 28,
-                  background: `linear-gradient(90deg, ${start}, ${end})`,
-                  width: '100%',
-                  boxShadow: isDarkMode
-                    ? '0 2px 8px rgba(124, 58, 237, 0.18)'
-                    : '0 2px 8px rgba(52, 152, 219, 0.12)',
-                  transition: 'background 0.2s',
-                }}
-              />
-            );
-          })()}
-          {overlaySuccessMessage && (
-            <div className="overlay-success-message">
-              {overlaySuccessMessage}
-            </div>
-          )}
-          <form onSubmit={e => { e.preventDefault(); handleSaveEdit(); }}>
+          <div style={{ width: '100%', padding: 0, margin: 0 }}>
+            <div
+              style={{
+                display: 'block',
+                width: '100%',
+                height: 16,
+                borderRadius: 12,
+                marginBottom: 18,
+                background: `linear-gradient(90deg, ${editedTileLineStartColor || '#3498db'}, ${editedTileLineEndColor || '#8e44ad'})`,
+                transition: 'background 0.2s',
+              }}
+            />
+          </div>
+          <h2 style={{ fontWeight: 700, fontSize: '1.3rem', marginBottom: 24 }}>Edit Agent</h2>
+          <div style={{ marginBottom: 18 }}>
             <input
               type="text"
               value={editedName}
               onChange={e => setEditedName(e.target.value)}
               required
               disabled={isSubmitting}
+              style={{
+                width: '100%',
+                padding: '10px 5px',
+                borderRadius: 10,
+                border: '1.5px solid var(--border-color)',
+                fontSize: '1.15rem',
+                fontWeight: 700,
+                marginBottom: 10,
+                fontFamily: 'Inter, Segoe UI, Arial, sans-serif',
+                background: theme === 'dark' ? '#23233a' : '#fff',
+                color: theme === 'dark' ? '#f0f0f0' : '#18181b',
+                borderColor: theme === 'dark' ? '#444' : 'var(--border-color)'
+              }}
             />
             <textarea
               value={editedDescription}
               onChange={e => setEditedDescription(e.target.value)}
               required
               disabled={isSubmitting}
+              style={{
+                width: '100%',
+                padding: '10px 5px',
+                borderRadius: 10,
+                border: '1.5px solid var(--border-color)',
+                fontSize: '1.15rem',
+                minHeight: 70,
+                resize: 'vertical',
+                marginBottom: 10,
+                fontFamily: 'Inter, Segoe UI, Arial, sans-serif',
+                background: theme === 'dark' ? '#23233a' : '#fff',
+                color: theme === 'dark' ? '#f0f0f0' : '#18181b',
+                borderColor: theme === 'dark' ? '#444' : 'var(--border-color)'
+              }}
             />
+            {/* Icon selection remains unchanged */}
             <div className="icon-selection-container">
               <label htmlFor="icon-select" className="icon-select-label">Choose an Icon:</label>
               <select
@@ -2440,6 +2648,7 @@ function App() {
                 value={agentToEdit.iconType}
                 onChange={e => setNewAgentIconType(e.target.value)}
                 disabled={isSubmitting}
+                style={{ height: 36, fontSize: '1rem' }}
               >
                 <option value="FaFileAlt">Document (Default)</option>
                 <option value="FaShieldAlt">Shield</option>
@@ -2469,54 +2678,154 @@ function App() {
                 {getIconComponent(agentToEdit.iconType, { size: '24px' })}
               </div>
             </div>
-            <div className="overlay-actions">
-              <button
-                type="submit"
-                className="create-agent-btn"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Saving...' : <><FaSave /> Save</>}
-              </button>
-              <button
-                type="button"
-                onClick={handleCancelEdit}
-                className="cancel-btn"
-                disabled={isSubmitting}
-              >
-                <FaTimes /> Cancel
-              </button>
-            </div>
-          </form>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+            <button
+              onClick={handleCancelEdit}
+              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+              disabled={isSubmitting}
+            >Cancel</button>
+            <button
+              onClick={handleSaveEdit}
+              style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+              disabled={isSubmitting || !editedName || !editedDescription}
+            >Save</button>
+          </div>
         </AgentOverlay>
       )}
       {showClearChatsOverlay && (
         <AgentOverlay onClose={handleCancelClearAllChats}>
-          <div className="overlay-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <h2 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700 }}>Clear All Chats</h2>
-            <button className="close-overlay-btn" onClick={handleCancelClearAllChats} title="Close" style={{ fontSize: '1.5em' }}>
-              <FaTimes />
-            </button>
+          <div className="overlay-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+            <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>Clear All Chats</h2>
           </div>
           <div style={{ marginBottom: 24, fontSize: '1.1rem', textAlign: 'center' }}>
             Are you sure you want to delete your entire chat history? This action cannot be undone.
           </div>
-          <div className="overlay-actions" style={{ gap: 10, marginTop: 18 }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 18 }}>
             <button
-              className="create-agent-btn"
               onClick={handleConfirmClearAllChats}
-              style={{ fontSize: '1rem', padding: '10px 24px', minWidth: 120, height: 38 }}
+              style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
             >
-              <FaTrash /> Delete All
+              Delete All
             </button>
             <button
-              className="cancel-btn"
               onClick={handleCancelClearAllChats}
-              style={{ fontSize: '1rem', padding: '10px 24px', minWidth: 120, height: 38 }}
+              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
             >
-              <FaTimes /> Cancel
+              Cancel
             </button>
           </div>
         </AgentOverlay>
+      )}
+      {/* Save to My Project Modal */}
+      {showSaveToProjectModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.35)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeInModal 0.25s' }}>
+          <div style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', borderRadius: 18, boxShadow: '0 4px 32px var(--shadow-color)', padding: '2.2rem 2.5rem 2rem 2.5rem', minWidth: 340, maxWidth: 420, width: '100%' }}>
+            <h2 style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 18 }}>Save Chat to My Project</h2>
+            {saveError && <div style={{ color: 'var(--error-color)', marginBottom: 10 }}>{saveError}</div>}
+            {saveLoading ? (
+              <div style={{ color: '#888', marginBottom: 18 }}>Loading projects...</div>
+            ) : (
+              <>
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: 6 }}>Select Project</label>
+                  <select
+                    value={selectedProjectId}
+                    onChange={e => setSelectedProjectId(e.target.value)}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid var(--border-color)', fontSize: '1rem', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                    disabled={saveLoading || !projectsList.length}
+                  >
+                    {projectsList.map(p => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  onClick={() => setShowNewProjectFields(f => !f)}
+                  style={{ background: 'var(--bg-tertiary)', color: 'var(--accent-color)', border: 'none', borderRadius: 8, padding: '8px 18px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', marginBottom: 18, width: '100%' }}
+                >
+                  {showNewProjectFields ? 'Cancel New Project' : '+ New Project'}
+                </button>
+                {showNewProjectFields && (
+                  <div style={{ marginBottom: 18 }}>
+                    <input
+                      type="text"
+                      value={newProjectName}
+                      onChange={e => setNewProjectName(e.target.value)}
+                      placeholder="Project name"
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid var(--border-color)', fontSize: '1rem', background: 'var(--bg-tertiary)', color: 'var(--text-primary)', marginBottom: 12 }}
+                      autoFocus
+                    />
+                    <textarea
+                      value={newProjectDesc}
+                      onChange={e => setNewProjectDesc(e.target.value)}
+                      placeholder="Description (optional)"
+                      style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid var(--border-color)', fontSize: '1rem', background: 'var(--bg-tertiary)', color: 'var(--text-primary)', minHeight: 50, resize: 'vertical', marginBottom: 12 }}
+                    />
+                    <button
+                      onClick={async () => {
+                        setSaveLoading(true);
+                        setSaveError(null);
+                        try {
+                          const res = await fetch(`${BACKEND_BASE}/projects`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: newProjectName, description: newProjectDesc }),
+                          });
+                          if (!res.ok) throw new Error('Failed to create project');
+                          const newProject = await res.json();
+                          // Fetch the full updated project list
+                          const projectsRes = await fetch(`${BACKEND_BASE}/projects`);
+                          const allProjects = projectsRes.ok ? await projectsRes.json() : [newProject];
+                          setProjectsList(allProjects);
+                          setSelectedProjectId(newProject.id);
+                          setNewProjectName('');
+                          setNewProjectDesc('');
+                          setShowNewProjectFields(false);
+                        } catch (err) {
+                          setSaveError('Could not create project.');
+                        } finally {
+                          setSaveLoading(false);
+                        }
+                      }}
+                      style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', width: '100%' }}
+                      disabled={!newProjectName || saveLoading}
+                    >Create Project</button>
+                  </div>
+                )}
+                <div style={{ marginBottom: 24 }}>
+                  <label style={{ display: 'block', fontWeight: 600, marginBottom: 6 }}>Chat Title</label>
+                  <input
+                    type="text"
+                    value={saveChatTitle}
+                    onChange={e => setSaveChatTitle(e.target.value)}
+                    style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid var(--border-color)', fontSize: '1rem', background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
+                    placeholder="Enter a title for this chat"
+                    disabled={saveLoading}
+                  />
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                  <button
+                    onClick={() => setShowSaveToProjectModal(false)}
+                    style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+                    disabled={saveLoading}
+                  >Cancel</button>
+                  <button
+                    onClick={handleSaveInputToProject}
+                    style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+                    disabled={!saveChatTitle.trim() || !selectedProjectId || !messages.length || saveLoading}
+                  >{saveLoading ? 'Saving...' : 'Save Chat'}</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+      {/* Save success snackbar */}
+      {showSaveSuccess && (
+        <div style={{ position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)', background: 'var(--accent-color)', color: 'white', borderRadius: 8, padding: '12px 32px', fontWeight: 600, fontSize: '1.1rem', zIndex: 3000, boxShadow: '0 2px 12px var(--shadow-color)', animation: 'fadeInModal 0.25s' }}>
+          Note saved to project!
+        </div>
       )}
     </div>
   );
