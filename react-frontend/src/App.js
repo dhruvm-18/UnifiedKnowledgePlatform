@@ -2186,26 +2186,52 @@ function App() {
                     >
                       <FaFolderPlus color="#6B7280" size={20} />
                     </button>
-                    <button
-                      className="send-btn send-arrow"
-                      onClick={handleSend}
-                      disabled={loading || !input.trim()}
-                      title="Send"
-                      type="button"
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        verticalAlign: 'middle',
-                        marginLeft: 4,
-                        boxShadow: 'none',
-                      }}
-                    >
-                      <FaPaperPlane color={input.trim() ? '#3B82F6' : '#6B7280'} size={20} />
-                    </button>
+                    {/* Send and Stop buttons in chat input area */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                      <button
+                        className="send-btn"
+                        title="Send"
+                        onClick={handleSend}
+                        disabled={loading || !input.trim()}
+                        style={{
+                          background: 'none',
+                          color: input.trim() ? '#2563eb' : '#b0b8d9',
+                          border: 'none',
+                          borderRadius: 8,
+                          width: 40,
+                          height: 40,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: 20,
+                          cursor: loading || !input.trim() ? 'not-allowed' : 'pointer'
+                        }}
+                      >
+                        <FaPaperPlane />
+                      </button>
+                      {isTyping && (
+                        <button
+                          className="send-btn stop-btn"
+                          title="Stop generating"
+                          onClick={handleStopGeneration}
+                          style={{
+                            background: '#ef4444',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: 8,
+                            width: 40,
+                            height: 40,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: 20,
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <FaStop />
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
                 </div>
