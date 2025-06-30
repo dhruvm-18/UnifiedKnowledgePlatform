@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { pdfjs } from 'react-pdf';
 import './PDFViewer.css';
 import PDFTextHighlighter from './PDFTextHighlighter';
-import { FaTimes, FaSearchPlus, FaSearchMinus, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { FaTimes, FaSearchPlus, FaSearchMinus, FaChevronLeft, FaChevronRight, FaHighlighter } from 'react-icons/fa';
 pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
 
 const MAX_PIXEL_RATIO = 3;
@@ -24,6 +24,11 @@ const PDFViewer = ({ pdfUrl, pageNumber = 1, highlightTexts = null, highlightTex
   const overlayRef = useRef(null);
   const [debug, setDebug] = useState(false);
   const [useTextLayer, setUseTextLayer] = useState(true); // Toggle for new vs old viewer
+  const [userHighlights, setUserHighlights] = useState([]);
+  const [showHighlightBtn, setShowHighlightBtn] = useState(false);
+  const [highlightBtnPos, setHighlightBtnPos] = useState({ x: 0, y: 0 });
+  const [selectedText, setSelectedText] = useState('');
+  const [showHighlights, setShowHighlights] = useState(false); // Toggle for showing highlights
 
   // Detect dark mode
   const isDarkMode = document.body.classList.contains('dark-mode') || document.documentElement.classList.contains('dark-mode');
@@ -228,12 +233,47 @@ const PDFViewer = ({ pdfUrl, pageNumber = 1, highlightTexts = null, highlightTex
     }
   }, [highlights]);
 
-  // Only use text layer viewer
-  const highlightArray = Array.isArray(highlightTexts)
-    ? highlightTexts
-    : highlightText
-      ? [highlightText]
-      : [];
+  // Handler for user text selection
+  useEffect(() => {
+    const handleMouseUp = (e) => {
+      const selection = window.getSelection();
+      const text = selection ? selection.toString().trim() : '';
+      if (text && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        setHighlightBtnPos({ x: rect.left + window.scrollX, y: rect.bottom + window.scrollY });
+        setSelectedText(text);
+        setShowHighlightBtn(true);
+      } else {
+        setShowHighlightBtn(false);
+        setSelectedText('');
+      }
+    };
+    const container = document.querySelector('.pdf-viewer-container');
+    if (container) {
+      container.addEventListener('mouseup', handleMouseUp);
+    }
+    return () => {
+      if (container) {
+        container.removeEventListener('mouseup', handleMouseUp);
+      }
+    };
+  }, []);
+
+  const handleAddHighlight = () => {
+    if (selectedText) {
+      setUserHighlights(prev => [...prev, selectedText]);
+      setShowHighlightBtn(false);
+      setSelectedText('');
+      window.getSelection().removeAllRanges();
+    }
+  };
+
+  // Combine backend and user highlights
+  const allHighlights = [
+    ...(Array.isArray(highlightTexts) ? highlightTexts : highlightText ? [highlightText] : []),
+    ...userHighlights
+  ];
 
   // Handler for page navigation
   const handlePrevPage = () => {
@@ -304,17 +344,67 @@ const PDFViewer = ({ pdfUrl, pageNumber = 1, highlightTexts = null, highlightTex
         <span style={{ width: 24 }} />
         <button onClick={handleZoomOut} className="pdf-zoom-btn" title="Zoom Out"><FaSearchMinus /></button>
         <button onClick={handleZoomIn} className="pdf-zoom-btn" title="Zoom In"><FaSearchPlus /></button>
+        {/* Toggle for highlights */}
+        <button
+          onClick={() => setShowHighlights(v => !v)}
+          className="pdf-highlight-toggle-btn"
+          style={{
+            marginLeft: 16,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+            background: showHighlights ? '#6c2eb7' : (isDarkMode ? '#23262f' : '#f3f4f6'),
+            color: showHighlights ? '#fff' : (isDarkMode ? '#f3f4f6' : '#374151'),
+            border: 'none',
+            borderRadius: 8,
+            padding: '7px 16px',
+            fontWeight: 500,
+            fontSize: '1em',
+            boxShadow: showHighlights ? '0 2px 8px #6c2eb733' : '0 2px 8px #0001',
+            cursor: 'pointer',
+            transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
+            outline: showHighlights ? '2px solid #6c2eb7' : 'none',
+            height: 40,
+            minWidth: 160,
+          }}
+          onMouseOver={e => e.currentTarget.style.background = showHighlights ? '#5a249a' : (isDarkMode ? '#23262f' : '#e5e7eb')}
+          onMouseOut={e => e.currentTarget.style.background = showHighlights ? '#6c2eb7' : (isDarkMode ? '#23262f' : '#f3f4f6')}
+        >
+          <FaHighlighter size={15} style={{ marginRight: 4, opacity: showHighlights ? 1 : 0.7 }} />
+          {showHighlights ? 'Remove Highlight' : 'Highlight Answer in PDF'}
+        </button>
       </div>
       {/* PDFTextHighlighter viewer */}
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400, padding: 8 }}>
         <PDFTextHighlighter
           pdfUrl={pdfUrl}
           pageNumber={currentPage}
-          highlightTexts={highlightArray}
+          highlightTexts={showHighlights ? allHighlights : []}
           section={section}
           scale={scale}
           onNumPages={handleNumPages}
         />
+        {showHighlightBtn && selectedText && (
+          <button
+            style={{
+              position: 'absolute',
+              left: highlightBtnPos.x,
+              top: highlightBtnPos.y,
+              zIndex: 9999,
+              background: '#6c2eb7',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 6,
+              padding: '6px 14px',
+              fontWeight: 600,
+              boxShadow: '0 2px 8px #0002',
+              cursor: 'pointer',
+            }}
+            onClick={handleAddHighlight}
+          >
+            Highlight
+          </button>
+        )}
       </div>
     </div>
   );

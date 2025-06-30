@@ -12,8 +12,8 @@ const PDFTextHighlighter = ({ pdfUrl, pageNumber = 1, highlightTexts = null, hig
   const [error, setError] = useState(null);
   const pageRef = useRef();
 
-  // Helper: Normalize text for matching
-  const normalize = str => (str || '').toLowerCase().replace(/[_\s]+/g, ' ').replace(/[^\w\s]/g, '').trim();
+  // Helper: Normalize text for matching (minimal, robust)
+  const normalize = str => (str || '').replace(/\u00A0/g, ' ').trim();
 
   // Normalize highlightTexts prop
   const highlightArray = Array.isArray(highlightTexts)
@@ -69,27 +69,74 @@ const PDFTextHighlighter = ({ pdfUrl, pageNumber = 1, highlightTexts = null, hig
       const spans = Array.from(textLayer.childNodes).filter(span => span.nodeType === 1);
       const spanTexts = spans.map(span => span.textContent);
       const fullText = spanTexts.join(' ');
+      const normFullText = normalize(fullText);
+      // Always log normalized full text and highlight phrases
+      console.log('Normalized full text:', normFullText);
       // Track which chars are already highlighted to prevent double-wrapping
       let highlightMask = Array(fullText.length).fill(false);
-      // For each phrase, find all matches and mark them
+      // Helper: Fuzzy match (returns index or -1)
+      function fuzzyIndexOf(haystack, needle, maxDist = 3) {
+        // Simple Levenshtein distance sliding window
+        for (let i = 0; i <= haystack.length - needle.length; i++) {
+          let window = haystack.slice(i, i + needle.length);
+          let dist = 0;
+          for (let j = 0; j < needle.length; j++) {
+            if (window[j] !== needle[j]) dist++;
+            if (dist > maxDist) break;
+          }
+          if (dist <= maxDist) return i;
+        }
+        return -1;
+      }
+      // For each phrase in highlightArray, highlight all matches in the PDF text layer
       for (const phrase of highlightArray) {
         const phraseNorm = normalize(phrase);
-        const normFullText = normalize(fullText);
+        // Always log normalized highlight phrase
+        console.log(`Highlighting phrase: '${phrase}' (normalized: '${phraseNorm}')`);
         let searchStart = 0;
         let matchIndices = [];
+        // 1. Try exact match
         while (true) {
           const matchIdx = normFullText.indexOf(phraseNorm, searchStart);
           if (matchIdx === -1) break;
           matchIndices.push(matchIdx);
-          // Mark these chars as highlighted
           for (let i = matchIdx; i < matchIdx + phraseNorm.length; i++) {
             highlightMask[i] = true;
           }
           searchStart = matchIdx + phraseNorm.length;
         }
+        // 2. If no exact match, try fuzzy match
+        if (matchIndices.length === 0 && phraseNorm.length > 6) {
+          searchStart = 0;
+          while (searchStart < normFullText.length - phraseNorm.length) {
+            const matchIdx = fuzzyIndexOf(normFullText.slice(searchStart), phraseNorm, 3);
+            if (matchIdx === -1) break;
+            const absIdx = searchStart + matchIdx;
+            matchIndices.push(absIdx);
+            for (let i = absIdx; i < absIdx + phraseNorm.length; i++) {
+              highlightMask[i] = true;
+            }
+            searchStart = absIdx + phraseNorm.length;
+          }
+        }
+        // 3. If still no match, try n-gram (5-10 word) matching
+        if (matchIndices.length === 0 && phraseNorm.split(' ').length > 5) {
+          const words = phraseNorm.split(' ');
+          for (let n = 10; n >= 5; n--) {
+            for (let i = 0; i <= words.length - n; i++) {
+              const ngram = words.slice(i, i + n).join(' ');
+              let idx = normFullText.indexOf(ngram);
+              if (idx !== -1) {
+                matchIndices.push(idx);
+                for (let j = idx; j < idx + ngram.length; j++) {
+                  highlightMask[j] = true;
+                }
+              }
+            }
+            if (matchIndices.length > 0) break;
+          }
+        }
         // Debug: log matches for this phrase
-        console.log(`Highlighting phrase: '${phrase}' (normalized: '${phraseNorm}')`);
-        console.log('Normalized full text:', normFullText);
         console.log('Match indices:', matchIndices);
       }
       // Now, walk through the spans and wrap highlighted regions in <mark>
@@ -108,11 +155,18 @@ const PDFTextHighlighter = ({ pdfUrl, pageNumber = 1, highlightTexts = null, hig
             while (j < text.length && highlightMask[charIdx + (j - i)]) {
               j++;
             }
-            const mark = document.createElement('mark');
-            mark.className = 'pdf-highlight';
-            mark.textContent = text.slice(i, j);
-            frag.appendChild(mark);
-            markCount++;
+            const markText = text.slice(i, j);
+            if (markText.trim()) { // Only wrap non-empty, non-space text
+              const mark = document.createElement('mark');
+              mark.className = 'pdf-highlight';
+              mark.textContent = markText;
+              frag.appendChild(mark);
+              markCount++;
+              // Debug: log actual text being wrapped
+              console.log('Wrapping in <mark>:', markText);
+            } else {
+              frag.appendChild(document.createTextNode(markText));
+            }
             charIdx += (j - i);
             i = j;
           } else {
@@ -184,7 +238,7 @@ const PDFTextHighlighter = ({ pdfUrl, pageNumber = 1, highlightTexts = null, hig
     return () => {
       if (observer) observer.disconnect();
     };
-  }, [highlightTextLayer, pageNumber, loading]);
+  }, [highlightTextLayer, pageNumber, highlightArray, loading]);
 
   // Memoize options to avoid unnecessary reloads
   const options = useMemo(() => ({ cMapUrl: 'cmaps/', cMapPacked: true }), []);

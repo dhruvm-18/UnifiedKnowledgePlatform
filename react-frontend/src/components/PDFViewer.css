@@ -184,4 +184,21 @@ mark {
   color: #fff !important;
   border-radius: 3px;
   padding: 0 2px;
-} 
+}
+
+.react-pdf__Page__textContent,
+.textLayer {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  z-index: 2 !important;
+  color: transparent; /* Keep text invisible but selectable for highlights */
+  user-select: text !important;
+}
+
+/* Optional: For debugging, make text visible */
+/*
+.react-pdf__Page__textContent,
+.textLayer {
+  color: #222 !important;
+}
+*/ 

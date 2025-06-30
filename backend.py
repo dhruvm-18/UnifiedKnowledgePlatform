@@ -354,12 +354,37 @@ def format_response_with_sources(response, sources):
     # Regex to match [Source: ...; pdf://...]
     llama_source_regex = r'pdf://([^/]+)(?:/page/(\d+))?(?:#section=([^\s\]]+))?'
 
-    # Use the full answer text as the highlight, or fallback if empty
-    def get_highlight_text(filename, page):
-        if content and content.strip():
-            return content
-        else:
-            return "No answer provided"
+    # Use the exact PDF text as the highlight, or fallback if empty
+    def get_highlight_texts(filename, page):
+        filename = str(filename).strip().lower()
+        page = str(page).strip() if page is not None else None
+        highlights = []
+        for doc in sources or []:
+            doc_filename = str(doc.metadata.get('source', '')).strip().lower()
+            doc_page = str(doc.metadata.get('page', '')).strip()
+            if (not page or doc_page == page) and doc_filename == filename:
+                text = doc.page_content.strip()
+                # Split into sentences and lines
+                # First split by newlines, then by sentence boundaries
+                lines = [l.strip() for l in text.split('\n') if l.strip()]
+                for line in lines:
+                    # Split by sentence boundaries (., !, ?)
+                    sentences = re.split(r'(?<=[.!?]) +', line)
+                    for s in sentences:
+                        s = s.strip()
+                        if s:
+                            highlights.append(s)
+        if not highlights and sources and len(sources) > 0:
+            text = sources[0].page_content.strip()
+            lines = [l.strip() for l in text.split('\n') if l.strip()]
+            for line in lines:
+                sentences = re.split(r'(?<=[.!?]) +', line)
+                for s in sentences:
+                    s = s.strip()
+                    if s:
+                        highlights.append(s)
+        print(f"[DEBUG] All highlights for {filename} page {page}: {highlights}")
+        return highlights
 
     for line in sources_block.split('\n'):
         line = line.strip()
@@ -383,11 +408,13 @@ def format_response_with_sources(response, sources):
                 link += f"/page/{page}"
             if section:
                 link += f"#section={section}"
-            # Add highlight param using the answer text
-            highlight = get_highlight_text(corrected_filename, page)
-            if highlight:
+            # Add highlight param using all source chunks
+            highlights = get_highlight_texts(corrected_filename, page)
+            if highlights:
                 from urllib.parse import quote
-                link += f"&highlight={quote(highlight)}"
+                # Join all highlights with a delimiter
+                joined = '|||'.join(highlights)
+                link += f"&highlight={quote(joined)}"
             link += ")"
             formatted_sources.append(link)
             continue
@@ -407,7 +434,7 @@ def format_response_with_sources(response, sources):
                 corrected_filename = sources[0].metadata.get('source', 'Unknown')
             link = f"- (pdf://{corrected_filename}/page/{page}#section={section.replace(' ', '_')}"
             # Add highlight param using the answer text
-            highlight = get_highlight_text(corrected_filename, page)
+            highlight = get_highlight_texts(corrected_filename, page)
             if highlight:
                 from urllib.parse import quote
                 link += f"&highlight={quote(highlight)}"
@@ -433,7 +460,7 @@ def format_response_with_sources(response, sources):
             if section:
                 link += f"#section={section}"
             # Add highlight param using the answer text
-            highlight = get_highlight_text(corrected_filename, page)
+            highlight = get_highlight_texts(corrected_filename, page)
             if highlight:
                 from urllib.parse import quote
                 link += f"&highlight={quote(highlight)}"
@@ -445,6 +472,7 @@ def format_response_with_sources(response, sources):
 
     # Reconstruct the response with formatted sources
     formatted_response = f"{content}\n\n**Sources:**\n" + "\n".join(formatted_sources)
+    print(f"[DEBUG] Final formatted response: {formatted_response[:500]}")
     return formatted_response
 
 def create_structured_prompt(user_message, context, doc_id=None, DOCUMENT_HEADING=None, USER_NAME=None, AGENT_ID=None):
@@ -925,6 +953,8 @@ REMEMBER: Start your answer with "Thank you for asking. As per the information a
             "user_message": user_message
         })
         model_used = 'gemini'
+        # Debug: log docs for Gemini
+        print(f"[DEBUG] Gemini docs: {[doc.page_content[:100] for doc in docs]}")
     
     logger.info(f"Raw model response (first 500 chars): {response[:500]}...")
     
@@ -991,13 +1021,18 @@ REMEMBER: Start your answer with "Thank you for asking. As per the information a
 
     save_sessions() # Save sessions after adding a message or updating title
     
+    # After docs are retrieved, get source highlights
+    source_highlights = [doc.page_content for doc in docs if doc.page_content]
+    
     return jsonify({
         'response': formatted_response,
         'query_type': prompt_data['query_type'],
         'metadata': prompt_data['metadata'],
         'session': sessions[session_id],
         'agentId': agent_id,
-        'model_used': model_used
+        'model_used': model_used,
+        'source_highlights': source_highlights,
+        'sources': [format_source(doc) for doc in docs]
     })
 
 # Add route to serve PDF files
