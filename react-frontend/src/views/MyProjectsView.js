@@ -230,7 +230,7 @@ export default function MyProjectsView({ refreshKey }) {
               >Cancel</button>
               <button
                 onClick={handleDeleteProject}
-                style={{ background: 'var(--error-color)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+                style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
               >Delete</button>
             </div>
           </div>

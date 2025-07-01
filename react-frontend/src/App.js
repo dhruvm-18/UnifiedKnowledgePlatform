@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import './App.css';
 import './styles/backgrounds.css';
 import './styles/modal.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus } from 'react-icons/fa';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit } from 'react-icons/fa';
 import HomeView from './components/HomeView';
 import KnowledgeSourcesView from './components/KnowledgeSourcesView';
 import PDFViewer from './components/PDFViewer';
@@ -114,6 +114,16 @@ function formatSectionOrRule(raw) {
 function renderAssistantContent(content, handleOpenPdfLink, sourceHighlights = null) {
   // Ensure content is a string before processing
   let stringContent = String(content);
+
+  // Replace all raw pdf://... or @pdf://... links with markdown links so they become buttons
+  stringContent = stringContent.replace(/@?pdf:\/\/[\w\-.]+\.pdf(?:\/page\/\d+)?(?:#section=[^&\s)]+)?(?:&highlight=[^\s)]+)?/g, match => {
+    // Remove leading @ if present
+    const cleanLink = match.replace(/^@/, '');
+    // Use the filename as the label, or just 'PDF Link'
+    const labelMatch = cleanLink.match(/pdf:\/\/([^\s#]+)/);
+    const label = labelMatch ? labelMatch[1] : 'PDF Link';
+    return `[${label}](${cleanLink})`;
+  });
 
   // Add: Replace all raw pdf://... links with markdown links
   const pdfRawLinkPattern = /@?pdf:\/\/[\w\-.]+\.pdf(?:\/page\/\d+)?(?:#section=[^&\s)]+)?(?:&highlight=[^\s)]+)?/g;
@@ -1621,6 +1631,8 @@ function App() {
   // Add at the top of App function:
   const [agentRefreshKey, setAgentRefreshKey] = useState(0);
 
+  const [newSessionTitle, setNewSessionTitle] = useState('');
+
   return (
     <div className={`app-layout ${theme}-mode${leftCollapsed ? ' left-collapsed' : ''}${rightCollapsed ? ' right-collapsed' : ''}`}>
       <aside className={`left-sidebar${leftCollapsed ? ' collapsed' : ''}`}>
@@ -1731,6 +1743,8 @@ function App() {
           userName={userName}
           APP_NAME={APP_NAME}
           onNavigateToKnowledgeSources={handleNavigateToKnowledgeSources}
+          onNavigateToMyProjects={handleNavigateToMyProjects}
+          onNavigateToChat={handleNavigateToChat}
         />}
         {currentView === 'chat' && (
           <>
@@ -2430,7 +2444,54 @@ function App() {
                           onClick={() => setCurrentSessionId(session.id)}
                         >
                           <FaRegFileAlt size={22} style={{ color: '#bbb' }} />
-                          <span className="chat-history-title">{String(session.title)}</span>
+                          {editingSessionId === session.id ? (
+                            <>
+                              <input
+                                type="text"
+                                value={newSessionTitle}
+                                onChange={e => setNewSessionTitle(e.target.value)}
+                                style={{ fontWeight: 600, fontSize: '1rem', borderRadius: 6, border: '1.5px solid var(--border-color)', padding: '2px 8px', marginRight: 6, width: 90 }}
+                                autoFocus
+                                onClick={e => e.stopPropagation()}
+                              />
+                              <button
+                                onClick={async e => {
+                                  e.stopPropagation();
+                                  if (!newSessionTitle.trim()) return;
+                                  try {
+                                    const res = await fetch(`${BACKEND_BASE}/sessions/${session.id}`, {
+                                      method: 'PUT',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ title: newSessionTitle.trim() }),
+                                    });
+                                    if (!res.ok) throw new Error('Failed to update chat name');
+                                    const updated = await res.json();
+                                    setSessions(sessions => sessions.map(s => s.id === session.id ? { ...s, title: updated.title } : s));
+                                    setEditingSessionId(null);
+                                  } catch (err) {
+                                    alert('Could not update chat name.');
+                                  }
+                                }}
+                                style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 6, padding: '2px 8px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', marginRight: 2 }}
+                                title="Save"
+                              ><FaSave /></button>
+                              <button
+                                onClick={e => { e.stopPropagation(); setEditingSessionId(null); }}
+                                style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: 'none', borderRadius: 6, padding: '2px 8px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+                                title="Cancel"
+                              ><FaTrash /></button>
+                            </>
+                          ) : (
+                            <>
+                              <span className="chat-history-title">{String(session.title)}</span>
+                              <button
+                                className="edit-chat-btn"
+                                onClick={e => { e.stopPropagation(); setEditingSessionId(session.id); setNewSessionTitle(session.title); }}
+                                style={{ background: 'var(--bg-secondary)', color: 'var(--accent-color)', border: 'none', borderRadius: 6, padding: '2px 8px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', marginLeft: 4 }}
+                                title="Edit Chat Name"
+                              ><FaEdit /></button>
+                            </>
+                          )}
                           <button className="delete-chat-btn" onClick={e => { e.stopPropagation(); handleDeleteSession(session.id); }}><FaTrash /></button>
                         </div>
                       ))}
@@ -2724,28 +2785,22 @@ function App() {
         </AgentOverlay>
       )}
       {showClearChatsOverlay && (
-        <AgentOverlay onClose={handleCancelClearAllChats}>
-          <div className="overlay-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
-            <h2 style={{ margin: 0, fontSize: '1.3rem', fontWeight: 700 }}>Clear All Chats</h2>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.35)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', borderRadius: 18, boxShadow: '0 4px 32px var(--shadow-color)', padding: '2rem 2.5rem', minWidth: 320, maxWidth: 400, width: '100%' }}>
+            <h2 style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 18 }}>Delete All Chats</h2>
+            <div style={{ marginBottom: 24, textAlign: 'left' }}>Are you sure you want to delete your entire chat history? This action cannot be undone.</div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <button
+                onClick={handleCancelClearAllChats}
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+              >Cancel</button>
+              <button
+                onClick={handleConfirmClearAllChats}
+                style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+              >Delete</button>
+            </div>
           </div>
-          <div style={{ marginBottom: 24, fontSize: '1.1rem', textAlign: 'center' }}>
-            Are you sure you want to delete your entire chat history? This action cannot be undone.
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginTop: 18 }}>
-            <button
-              onClick={handleConfirmClearAllChats}
-              style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
-            >
-              Delete All
-            </button>
-            <button
-              onClick={handleCancelClearAllChats}
-              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
-            >
-              Cancel
-            </button>
-          </div>
-        </AgentOverlay>
+        </div>
       )}
       {/* Save to My Project Modal */}
       {showSaveToProjectModal && (

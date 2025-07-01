@@ -15,6 +15,8 @@ export default function ProjectDetailView({ project, onBack }) {
   const [loadingChats, setLoadingChats] = useState(true);
   const [chatsError, setChatsError] = useState(null);
   const [selectedChatId, setSelectedChatId] = useState(null);
+  const [editingChatTitle, setEditingChatTitle] = useState(false);
+  const [newChatTitle, setNewChatTitle] = useState('');
 
   useEffect(() => {
     fetchNotes();
@@ -135,7 +137,51 @@ export default function ProjectDetailView({ project, onBack }) {
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 10 }}>
               <FaFolderOpen size={32} style={{ color: 'var(--accent-color)' }} />
-              <div style={{ fontWeight: 700, fontSize: '1.5rem' }}>{selectedChat.title}</div>
+              {editingChatTitle ? (
+                <>
+                  <input
+                    type="text"
+                    value={newChatTitle}
+                    onChange={e => setNewChatTitle(e.target.value)}
+                    style={{ fontWeight: 700, fontSize: '1.2rem', borderRadius: 8, border: '1.5px solid var(--border-color)', padding: '6px 12px', marginRight: 8 }}
+                    autoFocus
+                  />
+                  <button
+                    onClick={async () => {
+                      if (!newChatTitle.trim()) return;
+                      try {
+                        const res = await fetch(`${BACKEND_BASE}/projects/${project.id}/chats/${selectedChat.id}`, {
+                          method: 'PUT',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ title: newChatTitle.trim() }),
+                        });
+                        if (!res.ok) throw new Error('Failed to update chat title');
+                        const updated = await res.json();
+                        setChats(chats.map(c => c.id === selectedChat.id ? { ...c, title: updated.title } : c));
+                        setEditingChatTitle(false);
+                      } catch (err) {
+                        alert('Could not update chat title.');
+                      }
+                    }}
+                    style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '6px 12px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+                    title="Save"
+                  ><FaSave /></button>
+                  <button
+                    onClick={() => setEditingChatTitle(false)}
+                    style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: 'none', borderRadius: 8, padding: '6px 12px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+                    title="Cancel"
+                  ><FaTrash /></button>
+                </>
+              ) : (
+                <>
+                  <div style={{ fontWeight: 700, fontSize: '1.5rem' }}>{selectedChat.title}</div>
+                  <button
+                    onClick={() => { setEditingChatTitle(true); setNewChatTitle(selectedChat.title); }}
+                    style={{ background: 'var(--bg-secondary)', color: 'var(--accent-color)', border: 'none', borderRadius: 8, padding: '6px 12px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+                    title="Edit Chat Name"
+                  ><FaEdit /></button>
+                </>
+              )}
             </div>
             <div style={{ color: '#888', fontSize: '1.05rem', marginBottom: 18 }}>{selectedChat.createdAt ? new Date(selectedChat.createdAt).toLocaleString() : ''}</div>
             <div style={{ background: 'var(--bg-tertiary)', borderRadius: 14, padding: '18px 18px 12px 18px', minHeight: 220, maxHeight: '55vh', overflowY: 'auto', boxShadow: '0 2px 8px var(--shadow-color)', marginBottom: 8 }}>

@@ -1590,6 +1590,22 @@ def add_project_chat(project_id):
             return jsonify(chat), 201
     return jsonify({'error': 'Project not found'}), 404
 
+@app.route('/projects/<project_id>/chats/<chat_id>', methods=['PUT'])
+def edit_project_chat(project_id, chat_id):
+    data = request.json
+    projects = load_projects()
+    for p in projects:
+        if p['id'] == project_id:
+            for c in p.get('chats', []):
+                if c['id'] == chat_id:
+                    c['title'] = data.get('title', c['title'])
+                    if 'messages' in data:
+                        c['messages'] = data['messages']
+                    save_projects(projects)
+                    return jsonify(c)
+            return jsonify({'error': 'Chat not found'}), 404
+    return jsonify({'error': 'Project not found'}), 404
+
 if __name__ == '__main__':
     print("Starting Flask app...")
     load_sessions()
