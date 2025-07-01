@@ -2684,7 +2684,7 @@ function App() {
       )}
       {/* Overlay Portal for New/Edit Agent */}
       {showNewAgentOverlay && (
-        <AgentOverlay onClose={() => setShowNewAgentOverlay(false)}>
+        <AgentOverlay onClose={() => setShowNewAgentOverlay(false)} theme={theme}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <input
               type="color"
@@ -2835,7 +2835,7 @@ function App() {
         </AgentOverlay>
       )}
       {agentToEdit && (
-        <AgentOverlay onClose={handleCancelEdit}>
+        <AgentOverlay onClose={handleCancelEdit} theme={theme}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <input
               type="color"
