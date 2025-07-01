@@ -21,6 +21,7 @@ import { marked } from "marked";
 import MyProjectsView from './views/MyProjectsView';
 import Modal from './components/Modal'; // (Assume we will create this if not present)
 import FeedbackModalContent from './components/FeedbackModalContent'; // (Assume we will create this if not present)
+import LoginView from './views/LoginView';
 
 // Add at the top, before the App component
 const getOrCreateUserId = () => {
@@ -269,8 +270,18 @@ function App() {
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [chatStarted, setChatStarted] = useState(false);
   const [showUserDetailsMenu, setShowUserDetailsMenu] = useState(false);
-  const [userName, setUserName] = useState('Dhruv Mendiratta');
-  const [userAvatar, setUserAvatar] = useState(null);
+  const [userName, setUserName] = useState(() => {
+    const userData = JSON.parse(localStorage.getItem('ukpUser'));
+    return userData?.name || 'Dhruv Mendiratta';
+  });
+  const [userAvatar, setUserAvatar] = useState(() => {
+    const userData = JSON.parse(localStorage.getItem('ukpUser'));
+    return userData?.avatar || null;
+  });
+  const [userEmail, setUserEmail] = useState(() => {
+    const userData = JSON.parse(localStorage.getItem('ukpUser'));
+    return userData?.email || 'dhruv.mendiratta4@gmail.com';
+  });
   const [editingUserName, setEditingUserName] = useState(false);
   const userNameInputRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -1715,6 +1726,38 @@ function App() {
   // Add state for chat search
   const [chatSearch, setChatSearch] = useState('');
 
+  const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
+
+  // Handle login
+  const handleLogin = (user) => {
+    setIsLoggedIn(true);
+    localStorage.setItem('isLoggedIn', 'true');
+    if (user && user.email) localStorage.setItem('userEmail', user.email);
+    // Update user info from localStorage
+    const userData = JSON.parse(localStorage.getItem('ukpUser'));
+    if (userData) {
+      setUserName(userData.name);
+      setUserAvatar(userData.avatar);
+      setUserEmail(userData.email);
+    } else {
+      setUserName('Dhruv Mendiratta');
+      setUserAvatar(null);
+      setUserEmail('dhruv.mendiratta4@gmail.com');
+    }
+  };
+
+  // Handle logout (optional, for future use)
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('userEmail');
+  };
+
+  // Show login page if not logged in
+  if (!isLoggedIn) {
+    return <LoginView onLogin={handleLogin} />;
+  }
+
   return (
     <div className={`app-layout ${theme}-mode${leftCollapsed ? ' left-collapsed' : ''}${rightCollapsed ? ' right-collapsed' : ''}`}>
       <aside className={`left-sidebar${leftCollapsed ? ' collapsed' : ''}`}>
@@ -1799,14 +1842,14 @@ function App() {
                 ) : (
                   <div className="user-name">{userName}</div>
                 )}
-                <div className="user-email">dhruv.mendiratta4@gmail.com</div>
+                <div className="user-email">{userEmail}</div>
               </div>
               {showUserDetailsMenu && (
                 <div className="user-details-menu">
                   <div className="menu-item" onClick={handleChangeAvatarClick}>Change avatar</div>
                   <div className="menu-item" onClick={handleChangeNameClick}>Change name</div>
                   <div className="menu-item" onClick={() => console.log('Change Password clicked')}>Change password</div>
-                  <div className="menu-item" onClick={() => console.log('Log Out clicked')}>Log out</div>
+                  <div className="menu-item" onClick={handleLogout}>Log out</div>
                 </div>
               )}
             </div>
