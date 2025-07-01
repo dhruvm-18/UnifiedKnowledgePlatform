@@ -1083,14 +1083,11 @@ function App() {
       const pdfSection = hashParams.get('section');
       let highlightTexts = null;
       if (msg && msg.content) {
-        // Remove punctuation, decode URI, split into words, filter short/common words
+        // Split the answer bubble text into sentences for highlighting
         const decoded = decodeURIComponent(msg.content);
-        const words = decoded
-          .replace(/[.,!?;:()\[\]{}]/g, ' ')
-          .split(/\s+/)
-          .map(w => w.trim())
-          .filter(w => w.length > 2);
-        highlightTexts = Array.from(new Set(words));
+        // Split into sentences using regex (handles ., !, ? as sentence enders)
+        const sentences = decoded.match(/[^.!?\n]+[.!?]?/g)?.map(s => s.trim()).filter(Boolean) || [decoded];
+        highlightTexts = sentences;
       } else {
         let pdfHighlight = hashParams.get('highlight');
         if (pdfHighlight && pdfHighlight.trim()) {
