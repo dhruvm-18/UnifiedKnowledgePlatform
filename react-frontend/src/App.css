@@ -307,6 +307,7 @@ html, body, #root, .home-view-container {
   overflow-y: auto;
   margin-bottom: 1.5rem;
   font-size: 1rem;
+  padding-bottom: 3.5rem; /* Ensures last chat is not hidden behind Clear All Chats button */
 }
 .chat-history-item {
   display: flex;
@@ -339,15 +340,43 @@ html, body, #root, .home-view-container {
   white-space: nowrap;
   font-size: 1rem;
 }
-.chat-history-item .edit-chat-btn {
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  cursor: pointer;
-  padding: 0.2rem;
-  margin-left: 0.2rem;
-  font-size: 1rem;
-  line-height: 1;
+.chat-history-item .chat-icon {
+  font-size: 1.2em;
+  vertical-align: middle;
+  margin-right: 0.5em;
+  display: inline-flex;
+  align-items: center;
+  height: 1.6em; /* Match edit/delete icon height */
+  width: 1.6em;  /* Match edit/delete icon width */
+  justify-content: center;
+}
+.chat-history-item .chat-icon svg {
+  font-size: 1.2em;
+  vertical-align: middle;
+  display: block;
+  margin: 0 auto;
+}
+.chat-history-item .edit-chat-btn,
+.chat-history-item .delete-chat-btn {
+  vertical-align: middle;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.6em;
+}
+.chat-history-item .edit-chat-btn svg,
+.chat-history-item .delete-chat-btn svg {
+  font-size: 1.2em;
+  vertical-align: middle;
+}
+.chat-history-item .edit-chat-btn:hover, .chat-history-item .edit-chat-btn:focus {
+  background: none !important;
+  box-shadow: none !important;
+}
+.chat-history-item .edit-chat-btn svg {
+  font-size: 1.2em;
+  vertical-align: middle;
+  color: var(--accent-color);
 }
 .chat-history-item .delete-chat-btn {
   background: none;
@@ -1920,7 +1949,7 @@ html, body, #root, .home-view-container {
   display: flex;
   align-items: center;
   justify-content: center; /* Center the header content */
-  margin-bottom: 1rem; /* Reduced space below header area */
+  margin-bottom: 0.3rem; /* Reduced space below header area for tighter spacing */
   width: 100%; /* Ensure header takes full width */
   animation: fadeIn 0.5s ease-out;
 }
@@ -2050,11 +2079,10 @@ html, body, #root, .home-view-container {
 }
 
 .crazy-feature-card {
-  min-width: 200px;
-  max-width: 260px;
-  background: rgba(255,255,255,0.92);
-  border-radius: 20px;
-  box-shadow: 0 2px 12px #b3b3ff22;
+  background: linear-gradient(135deg, #f8fafc 80%, #e0e7ff 100%);
+  border-radius: 22px;
+  box-shadow: 0 2px 16px #b3b3ff22;
+  border: 1.5px solid #ececff;
   padding: 2.2rem 1.2rem 1.5rem 1.2rem;
   margin: 0 0.7rem 1.5rem 0.7rem;
   display: flex;
@@ -2068,6 +2096,7 @@ html, body, #root, .home-view-container {
 .crazy-feature-card:hover {
   box-shadow: 0 8px 32px #6c2eb755, 0 2px 8px #b3b3ff33;
   transform: translateY(-8px) scale(1.045);
+  background: linear-gradient(135deg, #e0e7ff 80%, #f8fafc 100%);
 }
 .crazy-feature-card .feature-icon {
   background: linear-gradient(135deg, #6c2eb7 60%, #a084e8 100%);
@@ -2762,7 +2791,7 @@ html, body, #root, .home-view-container {
   border-radius: 0 !important;
   box-shadow: none !important;
   padding: 2.5rem 2rem 2.2rem 2rem;
-  margin: 2.5rem auto 2.5rem auto;
+  margin: 1.2rem auto 2.5rem auto; /* Reduce top margin for less gap above hero */
   max-width: 1100px;
   position: relative;
   overflow: visible;
@@ -2842,5 +2871,68 @@ html, body, #root, .home-view-container {
 }
 .dark-mode .super-quick-content h3,
 .dark-mode .super-quick-content p {
+  color: var(--text-primary);
+}
+
+.chat-history-item .edit-chat-btn {
+  background: none;
+  border: none;
+  color: var(--accent-color);
+  cursor: pointer;
+  padding: 0.2rem;
+  margin-left: 0.2rem;
+  font-size: 1rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.6em;
+}
+.chat-history-item .edit-chat-btn svg {
+  font-size: 1.2em;
+  vertical-align: middle;
+}
+.chat-history-item .edit-chat-btn:hover, .chat-history-item .edit-chat-btn:focus {
+  background: none !important;
+  box-shadow: none !important;
+  color: var(--accent-color);
+  opacity: 0.8;
+}
+
+.kebab-menu-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.2rem;
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+}
+.kebab-menu-btn:focus, .kebab-menu-btn:hover {
+  background: none;
+  color: var(--accent-color);
+  outline: none;
+}
+
+.chat-history-item .kebab-menu-btn {
+  display: none;
+}
+.chat-history-item:hover .kebab-menu-btn {
+  display: flex;
+}
+
+.chat-popup-menu button {
+  font-weight: 400;
+}
+.chat-popup-menu button svg {
+  font-weight: 400;
+}
+
+.dark-mode .crazy-home .beautiful-card {
+  background: var(--bg-secondary);
+  box-shadow: 0 4px 32px #0008, 0 1.5px 8px #6c2eb755;
   color: var(--text-primary);
 }

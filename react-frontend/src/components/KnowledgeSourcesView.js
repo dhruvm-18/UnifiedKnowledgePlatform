@@ -134,125 +134,137 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
   };
 
   return (
-    <div className="knowledge-sources-view" ref={knowledgeSourcesViewRef}>
-      <div className="knowledge-sources-header">
-        <h1>Knowledge Sources</h1>
-        <button
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            background: 'var(--accent-color)',
-            color: 'white',
-            border: 'none',
-            borderRadius: 18,
-            padding: '10px 22px',
-            fontWeight: 600,
-            fontSize: '1rem',
-            cursor: 'pointer'
-          }}
-          onClick={() => setShowNewAgentOverlay(true)}
-        >
-          <FaPlus /> New Agent
-        </button>
-      </div>
-      <p className="knowledge-sources-description">
-        Browse available knowledge sources, each representing an AI Agent trained on specific datasets.
-        Click 'Start Chat' to begin a conversation with an agent and explore its knowledge.
-      </p>
-
-      {/* Search Input with Icon */}
-      <div className="search-bar">
-        <div className="search-input-container">
-          <FaSearch className="search-icon" />
-          <input
-            type="text"
-            placeholder="Search agents..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+    <>
+      <div className="knowledge-header-bg">
+        <svg className="header-bg-svg" viewBox="0 0 1200 220" preserveAspectRatio="none">
+          <rect x="-60" y="10" width="340" height="48" rx="18" opacity="0.18" transform="rotate(-8 110 34)" />
+          <rect x="320" y="30" width="420" height="54" rx="18" opacity="0.13" transform="rotate(-4 530 57)" />
+          <rect x="800" y="0" width="320" height="44" rx="18" opacity="0.16" transform="rotate(7 960 22)" />
+          <rect x="180" y="110" width="320" height="38" rx="18" opacity="0.11" transform="rotate(-6 340 129)" />
+          <rect x="600" y="120" width="380" height="50" rx="18" opacity="0.14" transform="rotate(5 790 145)" />
+          <rect x="1020" y="80" width="220" height="36" rx="18" opacity="0.10" transform="rotate(-10 1130 98)" />
+        </svg>
+        <div className="knowledge-sources-header">
+          <h1>Knowledge Sources</h1>
+          <button
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              background: 'var(--accent-color)',
+              color: 'white',
+              border: 'none',
+              borderRadius: 18,
+              padding: '10px 22px',
+              fontWeight: 600,
+              fontSize: '1rem',
+              cursor: 'pointer'
+            }}
+            onClick={() => setShowNewAgentOverlay(true)}
+          >
+            <FaPlus /> New Agent
+          </button>
         </div>
+        <p className="knowledge-sources-description">
+          Browse available knowledge sources, each representing an AI Agent trained on specific datasets.
+          Click 'Start Chat' to begin a conversation with an agent and explore its knowledge.
+        </p>
+        {/* (Optional) Tabs, badges, etc. can go here */}
       </div>
-
-      {/* Loading indicator if agents are not loaded */}
-      {agents.length === 0 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200, width: '100%' }}>
-          <div className="loader" style={{ fontSize: 32, color: '#3498db', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div className="spinner" style={{
-              width: 48,
-              height: 48,
-              border: '6px solid #e0e0e0',
-              borderTop: '6px solid #3498db',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite',
-              marginBottom: 16
-            }} />
-            Loading agents...
+      <div className="knowledge-sources-view" ref={knowledgeSourcesViewRef}>
+        {/* Search bar and rest of content below */}
+        <div className="search-bar">
+          <div className="search-input-container">
+            <FaSearch className="search-icon" />
+            <input
+              type="text"
+              placeholder="Search agents..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
         </div>
-      )}
 
-      {/* Agent Cards Grid - Add class when searching */}
-      {agents.length > 0 && (
-        <Element name="knowledge-sources-scroll-container" className={`agent-grid ${isSearching ? 'agent-cards-grid--searching' : ''}`}>
-          {filteredAgents.map((agent) => (
-            <div
-              key={agent.agentId}
-              className="agent-card"
-              style={{
-                '--tile-line-gradient-start': agent.tileLineStartColor,
-                '--tile-line-gradient-end': agent.tileLineEndColor,
-              }}
-            >
-              <div className="agent-icon">{getIconComponent(agent.iconType)}</div>
-              <h3>{agent.name}</h3>
-              <p>{agent.description}</p>
-              {agent.pdfSources && agent.pdfSources.length > 0 && (
-                <div className="source-info">
-                  <p>Sources:</p>
-                  <ul>
-                    {agent.pdfSources.map((source, index) => (
-                      <li key={index}>{source}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-              <div className="agent-card-footer">
-                <div className="agent-tag">Agent</div>
-                <div className="agent-actions-right">
-                  <button
-                    className="start-chat-btn"
-                    onClick={() => onStartChatWithAgent(agent.agentId)}
-                  >
-                    <span>{agent.buttonText}</span>
-                    <FaArrowRight className="start-chat-arrow" />
-                  </button>
-                  <div className="tile-actions">
+        {/* Loading indicator if agents are not loaded */}
+        {agents.length === 0 && (
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200, width: '100%' }}>
+            <div className="loader" style={{ fontSize: 32, color: '#3498db', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <div className="spinner" style={{
+                width: 48,
+                height: 48,
+                border: '6px solid #e0e0e0',
+                borderTop: '6px solid #3498db',
+                borderRadius: '50%',
+                animation: 'spin 1s linear infinite',
+                marginBottom: 16
+              }} />
+              Loading agents...
+            </div>
+          </div>
+        )}
+
+        {/* Agent Cards Grid - Add class when searching */}
+        {agents.length > 0 && (
+          <Element name="knowledge-sources-scroll-container" className={`agent-grid ${isSearching ? 'agent-cards-grid--searching' : ''}`}>
+            {filteredAgents.map((agent) => (
+              <div
+                key={agent.agentId}
+                className="agent-card"
+                style={{
+                  '--tile-line-gradient-start': agent.tileLineStartColor,
+                  '--tile-line-gradient-end': agent.tileLineEndColor,
+                }}
+              >
+                <div className="agent-icon">{getIconComponent(agent.iconType)}</div>
+                <h3>{agent.name}</h3>
+                <p>{agent.description}</p>
+                {agent.pdfSources && agent.pdfSources.length > 0 && (
+                  <div className="source-info">
+                    <p>Sources:</p>
+                    <ul>
+                      {agent.pdfSources.map((source, index) => (
+                        <li key={index}>{source}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <div className="agent-card-footer">
+                  <div className="agent-tag">Agent</div>
+                  <div className="agent-actions-right">
                     <button
-                      className="edit-button"
-                      onClick={() => handleEditAgent(agent)}
-                      title="Edit Agent"
+                      className="start-chat-btn"
+                      onClick={() => onStartChatWithAgent(agent.agentId)}
                     >
-                      <FaEdit />
+                      <span>{agent.buttonText}</span>
+                      <FaArrowRight className="start-chat-arrow" />
                     </button>
-                    <button
-                      className="delete-btn"
-                      onClick={() => handleDeleteAgent(agent.agentId)}
-                      title="Delete Agent"
-                    >
-                      <FaTimes />
-                    </button>
+                    <div className="tile-actions">
+                      <button
+                        className="edit-button"
+                        onClick={() => handleEditAgent(agent)}
+                        title="Edit Agent"
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        className="delete-btn"
+                        onClick={() => handleDeleteAgent(agent.agentId)}
+                        title="Delete Agent"
+                      >
+                        <FaTimes />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
-          {filteredAgents.length === 0 && (
-            <p>No agents found matching your search.</p>
-          )}
-        </Element>
-      )}
-    </div>
+            ))}
+            {filteredAgents.length === 0 && (
+              <p>No agents found matching your search.</p>
+            )}
+          </Element>
+        )}
+      </div>
+    </>
   );
 }
 

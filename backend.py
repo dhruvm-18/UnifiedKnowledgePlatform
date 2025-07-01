@@ -1606,6 +1606,42 @@ def edit_project_chat(project_id, chat_id):
             return jsonify({'error': 'Chat not found'}), 404
     return jsonify({'error': 'Project not found'}), 404
 
+FEEDBACK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend', 'feedback.json')
+
+@app.route('/feedback', methods=['POST'])
+def submit_feedback():
+    data = request.get_json()
+    feedback_entry = {
+        'sessionId': data.get('sessionId'),
+        'agentId': data.get('agentId'),
+        'answerId': data.get('answerId'),
+        'documentChunkIds': data.get('documentChunkIds'),
+        'rating': data.get('rating'),
+        'feedbackText': data.get('feedbackText'),
+        'stars': data.get('stars'),
+        'suggestion': data.get('suggestion'),
+        'userId': data.get('userId'),
+        'timestamp': data.get('timestamp', datetime.utcnow().isoformat())
+    }
+    try:
+        if not os.path.exists(FEEDBACK_FILE):
+            with open(FEEDBACK_FILE, 'w') as f:
+                json.dump([feedback_entry], f, indent=2)
+        else:
+            with open(FEEDBACK_FILE, 'r+') as f:
+                try:
+                    feedbacks = json.load(f)
+                except Exception:
+                    feedbacks = []
+                feedbacks.append(feedback_entry)
+                f.seek(0)
+                json.dump(feedbacks, f, indent=2)
+                f.truncate()
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        logger.error(f"Error saving feedback: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 if __name__ == '__main__':
     print("Starting Flask app...")
     load_sessions()

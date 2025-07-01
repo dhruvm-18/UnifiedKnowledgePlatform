@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import './App.css';
 import './styles/backgrounds.css';
 import './styles/modal.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit } from 'react-icons/fa';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch } from 'react-icons/fa';
 import HomeView from './components/HomeView';
 import KnowledgeSourcesView from './components/KnowledgeSourcesView';
 import PDFViewer from './components/PDFViewer';
@@ -19,6 +19,19 @@ import AgentOverlay from './components/AgentOverlay';
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell } from "docx";
 import { marked } from "marked";
 import MyProjectsView from './views/MyProjectsView';
+import Modal from './components/Modal'; // (Assume we will create this if not present)
+import FeedbackModalContent from './components/FeedbackModalContent'; // (Assume we will create this if not present)
+
+// Add at the top, before the App component
+const getOrCreateUserId = () => {
+  let uid = localStorage.getItem('userId');
+  if (!uid) {
+    uid = 'user_' + Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('userId', uid);
+  }
+  return uid;
+};
+const userId = getOrCreateUserId();
 
 // Helper to save current cursor selection
 function saveSelection(element) {
@@ -1633,6 +1646,75 @@ function App() {
 
   const [newSessionTitle, setNewSessionTitle] = useState('');
 
+  const [feedbackState, setFeedbackState] = useState({});
+  const [feedbackModal, setFeedbackModal] = useState({ open: false, msg: null });
+
+  const handleFeedback = (msg, rating) => {
+    if (rating === 'down') {
+      setFeedbackModal({ open: true, msg });
+    } else {
+      setFeedbackState(prev => ({
+        ...prev,
+        [msg.id]: { rating, showForm: false, text: '', submitted: false }
+      }));
+      handleSubmitFeedback(msg, 'up');
+    }
+  };
+  const handleFeedbackTextChange = (msg, text) => {
+    setFeedbackState(prev => ({
+      ...prev,
+      [msg.id]: { ...prev[msg.id], text }
+    }));
+  };
+  const handleSubmitFeedback = async (msg, ratingOverride = null, modalData = null) => {
+    const feedback = feedbackState[msg.id] || {};
+    const rating = ratingOverride || feedback.rating;
+    const feedbackText = modalData?.reason || feedback.text;
+    const stars = modalData?.stars || feedback.stars;
+    await fetch('/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: msg.sessionId,
+        agentId: msg.agentId,
+        answerId: msg.id,
+        documentChunkIds: msg.chunkIds,
+        rating,
+        feedbackText,
+        stars,
+        userId: userId,
+        timestamp: Date.now()
+      })
+    });
+    setFeedbackState(prev => ({ ...prev, [msg.id]: { ...prev[msg.id], showForm: false, submitted: true, rating, text: feedbackText, stars } }));
+    setFeedbackModal({ open: false, msg: null });
+  };
+
+  // Add state for menu and delete overlay
+  const [menuOpen, setMenuOpen] = useState(null);
+  const [showDeleteOverlay, setShowDeleteOverlay] = useState(false);
+  const [pendingDeleteSessionId, setPendingDeleteSessionId] = useState(null);
+
+  // Add ref for kebab menu
+  const kebabMenuRef = useRef(null);
+
+  // Close kebab menu on outside click
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handleClickOutside(event) {
+      if (kebabMenuRef.current && !kebabMenuRef.current.contains(event.target)) {
+        setMenuOpen(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [menuOpen]);
+
+  // Add state for chat search
+  const [chatSearch, setChatSearch] = useState('');
+
   return (
     <div className={`app-layout ${theme}-mode${leftCollapsed ? ' left-collapsed' : ''}${rightCollapsed ? ' right-collapsed' : ''}`}>
       <aside className={`left-sidebar${leftCollapsed ? ' collapsed' : ''}`}>
@@ -1851,6 +1933,14 @@ function App() {
                                 }
                                 return renderAssistantContent(content, (e, href) => handleOpenPdfLink(e, href, msg), msg.source_highlights);
                               })()}
+                              {/* Feedback UI */}
+                              <div className="answer-feedback-row">
+                                <span style={{ marginRight: 8 }}>Was this helpful?</span>
+                                <button className="feedback-btn" onClick={() => handleFeedback(msg, 'up')} disabled={feedbackState[msg.id]?.rating === 'up'}><FaThumbsUp color={feedbackState[msg.id]?.rating === 'up' ? 'var(--accent-color)' : '#bbb'} /></button>
+                                <button className="feedback-btn" onClick={() => handleFeedback(msg, 'down')} disabled={feedbackState[msg.id]?.rating === 'down'}><FaThumbsDown color={feedbackState[msg.id]?.rating === 'down' ? '#e74c3c' : '#bbb'} /></button>
+                                {feedbackState[msg.id]?.submitted && <span style={{ color: 'var(--accent-color)', marginLeft: 8 }}>Thank you for your feedback!</span>}
+                              </div>
+                              {/* End Feedback UI */}
                               <div className="message-actions">
                                 <button
                                   className="action-btn copy-btn"
@@ -2433,17 +2523,32 @@ function App() {
                   <FaTrash style={{ marginRight: '10px' }} /> Clear All Chats
                 </button>
               </div>
+              {/* Search bar below New Chat button */}
+              <div style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-secondary)', borderRadius: 8, padding: '0.4rem 0.8rem', marginBottom: '1rem', boxShadow: '0 1px 4px var(--shadow-color)' }}>
+                <FaSearch style={{ color: 'var(--text-secondary)', marginRight: 8, fontSize: 16 }} />
+                <input
+                  type="text"
+                  value={chatSearch}
+                  onChange={e => setChatSearch(e.target.value)}
+                  placeholder="Search chats..."
+                  style={{ border: 'none', outline: 'none', background: 'transparent', color: 'var(--text-primary)', fontSize: '1rem', flex: 1 }}
+                />
+              </div>
               <div className="chat-history-list">
-                {Object.entries(groupedSessions).map(([group, groupSessions]) => (
-                  groupSessions.length > 0 && (
+                {Object.entries(groupedSessions).map(([group, groupSessions]) => {
+                  const filteredSessions = groupSessions.filter(session => session.title.toLowerCase().includes(chatSearch.toLowerCase()));
+                  return filteredSessions.length > 0 ? (
                     <div key={group} style={{ marginBottom: 18 }}>
-                      {groupSessions.map(session => (
+                      {filteredSessions.map(session => (
                         <div
                           key={session.id}
                           className={`chat-history-item${session.id === currentSessionId ? ' active' : ''}`}
                           onClick={() => setCurrentSessionId(session.id)}
+                          style={{ position: 'relative' }}
                         >
-                          <FaRegFileAlt size={22} style={{ color: '#bbb' }} />
+                          <span className="chat-icon">
+                            <FaRegFileAlt />
+                          </span>
                           {editingSessionId === session.id ? (
                             <>
                               <input
@@ -2453,51 +2558,61 @@ function App() {
                                 style={{ fontWeight: 600, fontSize: '1rem', borderRadius: 6, border: '1.5px solid var(--border-color)', padding: '2px 8px', marginRight: 6, width: 90 }}
                                 autoFocus
                                 onClick={e => e.stopPropagation()}
-                              />
-                              <button
-                                onClick={async e => {
-                                  e.stopPropagation();
-                                  if (!newSessionTitle.trim()) return;
-                                  try {
-                                    const res = await fetch(`${BACKEND_BASE}/sessions/${session.id}`, {
-                                      method: 'PUT',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ title: newSessionTitle.trim() }),
-                                    });
-                                    if (!res.ok) throw new Error('Failed to update chat name');
-                                    const updated = await res.json();
-                                    setSessions(sessions => sessions.map(s => s.id === session.id ? { ...s, title: updated.title } : s));
-                                    setEditingSessionId(null);
-                                  } catch (err) {
-                                    alert('Could not update chat name.');
+                                onKeyDown={async e => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    if (!newSessionTitle.trim()) return;
+                                    try {
+                                      const res = await fetch(`${BACKEND_BASE}/sessions/${session.id}`, {
+                                        method: 'PUT',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ title: newSessionTitle.trim() }),
+                                      });
+                                      if (!res.ok) throw new Error('Failed to update chat name');
+                                      const updated = await res.json();
+                                      setSessions(sessions => sessions.map(s => s.id === session.id ? { ...s, title: updated.title } : s));
+                                      setEditingSessionId(null);
+                                    } catch (err) {
+                                      alert('Could not update chat name.');
+                                    }
                                   }
                                 }}
-                                style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 6, padding: '2px 8px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', marginRight: 2 }}
-                                title="Save"
-                              ><FaSave /></button>
+                              />
                               <button
                                 onClick={e => { e.stopPropagation(); setEditingSessionId(null); }}
                                 style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', border: 'none', borderRadius: 6, padding: '2px 8px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
                                 title="Cancel"
-                              ><FaTrash /></button>
+                              ><FaTimes /></button>
                             </>
                           ) : (
                             <>
                               <span className="chat-history-title">{String(session.title)}</span>
-                              <button
-                                className="edit-chat-btn"
-                                onClick={e => { e.stopPropagation(); setEditingSessionId(session.id); setNewSessionTitle(session.title); }}
-                                style={{ background: 'var(--bg-secondary)', color: 'var(--accent-color)', border: 'none', borderRadius: 6, padding: '2px 8px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', marginLeft: 4 }}
-                                title="Edit Chat Name"
-                              ><FaEdit /></button>
+                              <div className="chat-actions" style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', position: 'relative' }}>
+                                <button
+                                  className="kebab-menu-btn"
+                                  onClick={e => { e.stopPropagation(); setMenuOpen(menuOpen === session.id ? null : session.id); }}
+                                  title="More options"
+                                >
+                                  <FaEllipsisH />
+                                </button>
+                                {menuOpen === session.id && (
+                                  <div
+                                    className="chat-popup-menu"
+                                    ref={kebabMenuRef}
+                                    style={{ position: 'absolute', right: 0, top: '2.2em', zIndex: 10, background: 'var(--bg-secondary)', borderRadius: 10, boxShadow: '0 4px 16px var(--shadow-color)', minWidth: 120, padding: '0.5rem 0', display: 'flex', flexDirection: 'column' }}
+                                  >
+                                    <button onClick={e => { e.stopPropagation(); setEditingSessionId(session.id); setNewSessionTitle(session.title); setMenuOpen(null); }} style={{ background: 'none', border: 'none', color: 'var(--text-primary)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}><FaEdit style={{ marginRight: 8 }} /> Rename</button>
+                                    <button onClick={e => { e.stopPropagation(); setShowDeleteOverlay(true); setPendingDeleteSessionId(session.id); setMenuOpen(null); }} style={{ background: 'none', border: 'none', color: 'var(--error-color)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}><FaTrash style={{ marginRight: 8 }} /> Delete</button>
+                                  </div>
+                                )}
+                              </div>
                             </>
                           )}
-                          <button className="delete-chat-btn" onClick={e => { e.stopPropagation(); handleDeleteSession(session.id); }}><FaTrash /></button>
                         </div>
                       ))}
                     </div>
-                  )
-                ))}
+                  ) : null;
+                })}
               </div>
             </>
           )}
@@ -2910,6 +3025,38 @@ function App() {
       {showSaveSuccess && (
         <div style={{ position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)', background: 'var(--accent-color)', color: 'white', borderRadius: 8, padding: '12px 32px', fontWeight: 600, fontSize: '1.1rem', zIndex: 3000, boxShadow: '0 2px 12px var(--shadow-color)', animation: 'fadeInModal 0.25s' }}>
           Note saved to project!
+        </div>
+      )}
+      {/* Feedback Modal Overlay */}
+      {feedbackModal.open && (
+        <Modal onClose={() => setFeedbackModal({ open: false, msg: null })}>
+          <FeedbackModalContent
+            msg={feedbackModal.msg}
+            onSubmit={(modalData) => handleSubmitFeedback(feedbackModal.msg, 'down', modalData)}
+            onCancel={() => setFeedbackModal({ open: false, msg: null })}
+          />
+        </Modal>
+      )}
+      {showDeleteOverlay && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.35)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', borderRadius: 18, boxShadow: '0 4px 32px var(--shadow-color)', padding: '2rem 2.5rem', minWidth: 320, maxWidth: 400, width: '100%' }}>
+            <h2 style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 18 }}>Delete Chat?</h2>
+            <div style={{ marginBottom: 24, textAlign: 'left' }}>Are you sure you want to delete this chat? This action cannot be undone.</div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <button
+                onClick={() => { setShowDeleteOverlay(false); setPendingDeleteSessionId(null); }}
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+              >Cancel</button>
+              <button
+                onClick={() => {
+                  handleDeleteSession(pendingDeleteSessionId);
+                  setShowDeleteOverlay(false);
+                  setPendingDeleteSessionId(null);
+                }}
+                style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+              >Delete</button>
+            </div>
+          </div>
         </div>
       )}
     </div>

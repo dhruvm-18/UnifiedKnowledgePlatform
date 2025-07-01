@@ -49,6 +49,8 @@
   background-size: 8px 8px;
   background-blend-mode: overlay; /* Reverted to overlay for better blending */
   /* Removed opacity to ensure all content and background colors are visible */
+  background: var(--bg-secondary, #fff); /* Use theme variable for light mode */
+  margin-top: -24px;
 }
 
 .knowledge-sources-view h1 {
@@ -855,6 +857,7 @@
   );
   background-blend-mode: overlay; /* Reverted to overlay for better blending */
   /* Removed opacity to ensure all content and background colors are visible */
+  background: var(--bg-primary, #18181b); /* Use theme variable for dark mode */
 }
 
 .dark-mode .knowledge-sources-view h1,
@@ -1103,4 +1106,343 @@
 .app-layout.left-collapsed .knowledge-sources-view {
   max-width: 100vw;
   margin: 0;
+}
+
+.answer-feedback-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.98em;
+  color: var(--text-color);
+}
+.feedback-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+}
+.feedback-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.feedback-btn:hover:not(:disabled) {
+  background: var(--accent-color-faint, rgba(37,99,235,0.08));
+}
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  width: 100%;
+}
+.feedback-submit-btn, .feedback-cancel-btn {
+  padding: 4px 14px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  font-size: 0.97em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.feedback-submit-btn {
+  background: var(--accent-color);
+  color: #fff;
+}
+.feedback-submit-btn:hover {
+  background: #174ea6;
+}
+.feedback-cancel-btn {
+  background: var(--border-color);
+  color: var(--text-color);
+}
+.feedback-cancel-btn:hover {
+  background: #eee;
+  color: #222;
+}
+@media (prefers-color-scheme: dark) {
+  .answer-feedback-row {
+    color: var(--text-color-dark, #e5e7eb);
+  }
+  .feedback-form textarea {
+    background: #181c24;
+    color: #e5e7eb;
+    border-color: #2d3748;
+  }
+  .feedback-cancel-btn {
+    background: #23272f;
+    color: #e5e7eb;
+  }
+  .feedback-cancel-btn:hover {
+    background: #2d3748;
+    color: #fff;
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-content {
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary, #222);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  padding: 24px 18px 18px 18px;
+  min-width: 0;
+  max-width: 420px;
+  width: 100%;
+  position: relative;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.dark-mode .modal-content {
+  background: var(--bg-primary, #23272f);
+  color: var(--text-primary, #e5e7eb);
+}
+.light-mode .modal-content {
+  background: var(--bg-primary, #fff);
+  color: var(--text-primary, #222);
+}
+.modal-close-btn {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 1.7em;
+  color: #888;
+  cursor: pointer;
+}
+.feedback-modal-form label {
+  font-weight: 500;
+  margin-top: 10px;
+  display: block;
+}
+.feedback-modal-form textarea {
+  width: 100%;
+  border-radius: 8px;
+  border: 1.5px solid var(--border-color);
+  padding: 8px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  font-size: 1em;
+  resize: vertical;
+  background: var(--bg-secondary, #F3F4F6);
+  color: var(--text-primary, #222);
+}
+.dark-mode .feedback-modal-form textarea {
+  background: #181c24;
+  color: #e5e7eb;
+  border-color: #2d3748;
+}
+.star-rating-row {
+  display: flex;
+  gap: 4px;
+  font-size: 1.7em;
+  margin: 10px 0 12px 0;
+}
+.star {
+  cursor: pointer;
+  color: #bbb;
+  transition: color 0.15s;
+}
+.star.filled {
+  color: #fbbf24;
+}
+.feedback-error {
+  font-size: 0.98em;
+  margin-bottom: 4px;
+}
+@media (prefers-color-scheme: dark) {
+  .modal-content {
+    background: #23272f;
+    color: #e5e7eb;
+  }
+  .modal-close-btn {
+    color: #aaa;
+  }
+  .feedback-modal-form textarea {
+    background: #181c24;
+    color: #e5e7eb;
+    border-color: #2d3748;
+  }
+  .star {
+    color: #444;
+  }
+  .star.filled {
+    color: #fbbf24;
+  }
+}
+.answer-feedback-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 0.98em;
+  color: var(--text-primary);
+  font-family: inherit;
+}
+.dark-mode .answer-feedback-row, .dark-mode .answer-feedback-row span {
+  color: var(--text-primary, #e5e7eb);
+}
+.light-mode .answer-feedback-row, .light-mode .answer-feedback-row span {
+  color: var(--text-primary, #222);
+}
+.answer-feedback-row span {
+  color: inherit;
+  font-family: inherit;
+  font-size: 1em;
+}
+.feedback-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 50%;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+}
+.feedback-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.feedback-btn:hover:not(:disabled) {
+  background: var(--accent-color-faint, rgba(37,99,235,0.08));
+}
+.feedback-btn svg {
+  color: var(--accent-color, #2563eb);
+  font-size: 1.1em;
+}
+.feedback-btn[disabled] svg {
+  color: #bbb;
+}
+.feedback-btn:last-child svg {
+  color: #e74c3c;
+}
+.dark-mode .feedback-btn svg {
+  color: var(--accent-color, #3B82F6);
+}
+.dark-mode .feedback-btn:last-child svg {
+  color: #e74c3c;
+}
+.light-mode .feedback-btn svg {
+  color: var(--accent-color, #2563eb);
+}
+.light-mode .feedback-btn:last-child svg {
+  color: #e74c3c;
+}
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  width: 100%;
+}
+.feedback-submit-btn, .feedback-cancel-btn {
+  padding: 4px 14px;
+  border-radius: 8px;
+  border: none;
+  font-weight: 500;
+  font-size: 0.97em;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+.feedback-submit-btn {
+  background: var(--accent-color);
+  color: #fff;
+}
+.feedback-submit-btn:hover {
+  background: #174ea6;
+}
+.feedback-cancel-btn {
+  background: var(--border-color);
+  color: var(--text-primary);
+}
+.feedback-cancel-btn:hover {
+  background: #eee;
+  color: #222;
+}
+.dark-mode .feedback-cancel-btn {
+  background: #23272f;
+  color: var(--text-primary, #e5e7eb);
+}
+.dark-mode .feedback-cancel-btn:hover {
+  background: #2d3748;
+  color: #fff;
+}
+
+/* Ensure light mode feedback modal textareas are light */
+.light-mode .feedback-modal-form textarea {
+  background: var(--bg-secondary, #F3F4F6);
+  color: var(--text-primary, #222);
+  border-color: var(--border-color, #E5E7EB);
+}
+
+/* Match feedback modal font to new agent overlay */
+.feedback-modal-form textarea, .feedback-modal-form input {
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+.light-mode .feedback-modal-form textarea, .light-mode .feedback-modal-form input {
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+.dark-mode .feedback-modal-form textarea, .dark-mode .feedback-modal-form input {
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+
+.knowledge-header-bg {
+  position: relative;
+  width: 100%;
+  border-radius: 0 0 24px 24px;
+  padding: 2.5rem 2rem 0.5rem 2rem;
+  overflow: hidden;
+  background: var(--bg-secondary, #fff); /* Use theme variable for light mode */
+  margin: 0;
+  box-sizing: border-box;
+  min-height: 220px;
+  height: auto;
+}
+.knowledge-header-bg .header-bg-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  display: block;
+}
+.knowledge-header-bg .knowledge-sources-header,
+.knowledge-header-bg .knowledge-sources-description {
+  position: relative;
+  z-index: 1;
+  color: #23233a;
+  padding: 0;
+}
+.knowledge-sources-view {
+  background: var(--bg-secondary, #fff); /* Use theme variable for light mode */
+}
+.dark-mode .knowledge-header-bg {
+  background: var(--bg-primary, #18181b); /* Use theme variable for dark mode */
+}
+.dark-mode .knowledge-header-bg .header-bg-svg rect {
+  fill: #3a4371 !important;
+}
+.dark-mode .knowledge-header-bg .knowledge-sources-header,
+.dark-mode .knowledge-header-bg .knowledge-sources-description {
+  color: #fff;
+}
+.dark-mode .knowledge-sources-view {
+  background: var(--bg-primary, #18181b); /* Use theme variable for dark mode */
 } 

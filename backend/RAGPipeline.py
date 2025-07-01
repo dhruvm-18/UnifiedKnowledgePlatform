@@ -5,6 +5,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 import os
 from dotenv import load_dotenv
+import json
 
 class RAGPipeline:
     def __init__(self):
@@ -74,6 +75,22 @@ class RAGPipeline:
         """Process a query and return the response"""
         # Get relevant documents
         docs = self.retriever.get_relevant_documents(query)
+        # Feedback-based re-ranking
+        try:
+            with open('backend/chunk_feedback_scores.json', 'r') as f:
+                chunk_scores = json.load(f)
+        except Exception:
+            chunk_scores = {}
+        def get_score(doc):
+            chunk_id = getattr(doc, 'metadata', {}).get('chunk_id') or getattr(doc, 'metadata', {}).get('id')
+            score = 0
+            if chunk_id and chunk_id in chunk_scores:
+                stats = chunk_scores[chunk_id]
+                score += stats.get('net', 0)
+                if stats.get('avg_stars'):
+                    score += stats['avg_stars'] - 3  # Centered at neutral
+            return score
+        docs = sorted(docs, key=get_score, reverse=True)
         context = "\n\n".join(doc.page_content for doc in docs)
         
         # Generate response

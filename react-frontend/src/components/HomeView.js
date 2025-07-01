@@ -78,7 +78,6 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
   // --- Unique Selling Points ---
   const sellingPoints = [
     { icon: <FaStar />, title: 'Cutting-Edge AI', desc: 'Powered by the latest LLMs and custom agents.' },
-    { icon: <FaUsers />, title: 'Team Collaboration', desc: 'Share insights and projects with your team.' },
     { icon: <FaShieldAlt />, title: 'Enterprise Security', desc: 'Your data is encrypted and never leaves your control.' },
     { icon: <FaRocket />, title: 'Lightning Fast', desc: 'Get answers and highlights in seconds, not minutes.' },
   ];
@@ -240,9 +239,9 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
       </div>
 
       {/* --- Instructional Video Section --- */}
-      <div className="instruction-video-section beautiful-card" style={{ margin: '2.5rem auto', maxWidth: 900, borderRadius: 24, boxShadow: '0 4px 32px #0001', padding: '2.5rem 2rem', background: 'var(--bg-secondary)' }}>
+      <div className="instruction-video-section beautiful-card" style={{ margin: '2.5rem auto', maxWidth: 900, borderRadius: 24, padding: '2.5rem 2rem' }}>
         <h2 className="accent-color" style={{ marginBottom: 18, fontWeight: 700, fontSize: '1.5rem', letterSpacing: 0.5 }}><FaVideo style={{ marginRight: 8, color: 'var(--accent-color)' }} /> Watch How It Works</h2>
-        <div className="video-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 320, background: '#f3f4f6', borderRadius: 16, boxShadow: '0 2px 12px #0001' }}>
+        <div className="video-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 320, borderRadius: 16 }}>
           {/* Placeholder for future video */}
           {/* eslint-disable-next-line jsx-a11y/iframe-has-title */}
           <iframe
