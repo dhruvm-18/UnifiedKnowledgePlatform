@@ -107,7 +107,7 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 load_dotenv()
 
 # Configure Gemini API
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyB1whZlck89xDwjawOBsqPCpP8-V-oDwFM") # Using the provided API key
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyD_Jg6V292kWpS64YxzFIJ2UKzXxqd5PYk") # Using the provided API key
 genai.configure(api_key=GOOGLE_API_KEY)
 
 # Configure ElevenLabs API

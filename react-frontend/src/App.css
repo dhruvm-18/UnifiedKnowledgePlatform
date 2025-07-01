@@ -1832,7 +1832,7 @@ html, body, #root, .home-view-container {
 }
 
 .feature-item {
-  background: var(--bg-secondary); /* Background */
+  background: linear-gradient(135deg, #f8fafc 80%, #e0e7ff 100%) !important;
   padding: 2rem; /* Increased padding */
   border-radius: 0.8rem; /* Soft corners */
   box-shadow: 0 4px 12px var(--shadow-color); /* Subtle shadow */
@@ -2069,7 +2069,7 @@ html, body, #root, .home-view-container {
 
 /* --- Crazy Home Page Styles --- */
 .crazy-home .beautiful-card {
-  background: rgba(255,255,255,0.85);
+  background: linear-gradient(120deg, #f8fafc 80%, #e0e7ff 100%);
   border-radius: 24px;
   box-shadow: 0 4px 32px #b3b3ff22, 0 1.5px 8px #6c2eb733;
   margin: 2.5rem auto;
@@ -2079,7 +2079,7 @@ html, body, #root, .home-view-container {
 }
 
 .crazy-feature-card {
-  background: linear-gradient(135deg, #f8fafc 80%, #e0e7ff 100%);
+  background: linear-gradient(135deg, #f8fafc 80%, #e0e7ff 100%) !important;
   border-radius: 22px;
   box-shadow: 0 2px 16px #b3b3ff22;
   border: 1.5px solid #ececff;
@@ -2319,7 +2319,7 @@ html, body, #root, .home-view-container {
   flex: 1 1 180px;
   min-width: 180px;
   max-width: 240px;
-  background: rgba(255,255,255,0.92);
+  background: linear-gradient(135deg, #f8fafc 80%, #e0e7ff 100%) !important;
   border-radius: 18px;
   box-shadow: 0 2px 12px #b3b3ff22;
   padding: 1.5rem 1.2rem;
@@ -2472,7 +2472,7 @@ html, body, #root, .home-view-container {
   position: relative;
   min-width: 200px;
   max-width: 260px;
-  background: rgba(255,255,255,0.92);
+  background: linear-gradient(135deg, #f8fafc 80%, #e0e7ff 100%) !important;
   border-radius: 20px;
   box-shadow: 0 2px 12px #b3b3ff22;
   padding: 2.2rem 1.2rem 1.5rem 1.2rem;
@@ -2613,7 +2613,7 @@ html, body, #root, .home-view-container {
   position: relative;
   min-width: 200px;
   max-width: 260px;
-  background: rgba(255,255,255,0.97);
+  background: linear-gradient(135deg, #f8fafc 80%, #e0e7ff 100%) !important;
   border-radius: 24px;
   box-shadow: 0 2px 16px #b3b3ff22;
   padding: 2.2rem 1.2rem 1.5rem 1.2rem;
@@ -2739,7 +2739,7 @@ html, body, #root, .home-view-container {
   position: relative;
   min-width: 200px;
   max-width: 260px;
-  background: rgba(255,255,255,0.97);
+  background: linear-gradient(135deg, #f8fafc 80%, #e0e7ff 100%) !important;
   border-radius: 24px;
   box-shadow: 0 2px 16px #b3b3ff22;
   padding: 2.2rem 1.2rem 1.5rem 1.2rem;
@@ -2935,4 +2935,28 @@ html, body, #root, .home-view-container {
   background: var(--bg-secondary);
   box-shadow: 0 4px 32px #0008, 0 1.5px 8px #6c2eb755;
   color: var(--text-primary);
+}
+
+.dark-mode .crazy-home .beautiful-card,
+.dark-mode .crazy-feature-card,
+.dark-mode .feature-item,
+.dark-mode .roadmap-step,
+.dark-mode .super-quick-step,
+.dark-mode .super-selling-point {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary);
+}
+.dark-mode .crazy-feature-card h3,
+.dark-mode .feature-item h3,
+.dark-mode .roadmap-step-title,
+.dark-mode .super-quick-content h3,
+.dark-mode .super-selling-content h3 {
+  color: #fff;
+}
+.dark-mode .crazy-feature-card p,
+.dark-mode .feature-item p,
+.dark-mode .roadmap-step-desc,
+.dark-mode .super-quick-content p,
+.dark-mode .super-selling-content p {
+  color: #cbd5e1;
 }

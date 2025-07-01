@@ -1445,4 +1445,33 @@
 }
 .dark-mode .knowledge-sources-view {
   background: var(--bg-primary, #18181b); /* Use theme variable for dark mode */
+}
+
+.modal-content > button,
+.modal-content > div > button {
+  all: unset;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 22px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  display: inline-block;
+  text-align: center;
+  box-sizing: border-box;
+  line-height: 1.1;
+}
+.modal-content > div > button.login-btn.accent-btn {
+  background: var(--accent-color);
+  color: #fff;
+}
+.modal-content > div > button.login-btn.accent-btn:hover {
+  background: var(--accent-color);
+  color: #fff;
+}
+.modal-content > button:hover {
+  background: #e5e7eb;
+  color: var(--text-primary);
 } 

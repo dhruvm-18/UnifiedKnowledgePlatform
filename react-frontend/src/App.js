@@ -22,6 +22,7 @@ import MyProjectsView from './views/MyProjectsView';
 import Modal from './components/Modal'; // (Assume we will create this if not present)
 import FeedbackModalContent from './components/FeedbackModalContent'; // (Assume we will create this if not present)
 import LoginView from './views/LoginView';
+import ProfileModal from './components/ProfileModal';
 
 // Add at the top, before the App component
 const getOrCreateUserId = () => {
@@ -952,10 +953,13 @@ function App() {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      console.log('Selected file:', file.name);
       const reader = new FileReader();
       reader.onloadend = () => {
         setUserAvatar(reader.result);
+        // Save to ukpUser in localStorage
+        const userData = JSON.parse(localStorage.getItem('ukpUser')) || {};
+        userData.avatar = reader.result;
+        localStorage.setItem('ukpUser', JSON.stringify(userData));
       };
       reader.readAsDataURL(file);
     }
@@ -976,13 +980,30 @@ function App() {
     if (userName.trim() === '') {
       setUserName('User');
     }
-    localStorage.setItem('userName', userName);
+    // Save to ukpUser in localStorage
+    const userData = JSON.parse(localStorage.getItem('ukpUser')) || {};
+    userData.name = userName;
+    localStorage.setItem('ukpUser', JSON.stringify(userData));
     setEditingUserName(false);
   };
 
   const handleCancelUserNameEdit = () => {
     setUserName(localStorage.getItem('userName') || 'User');
     setEditingUserName(false);
+  };
+
+  // Add a handler for changing password
+  const handleChangePassword = () => {
+    const newPassword = prompt('Enter new password:');
+    if (newPassword && newPassword.length >= 4) {
+      const userData = JSON.parse(localStorage.getItem('ukpUser')) || {};
+      userData.password = newPassword;
+      localStorage.setItem('ukpUser', JSON.stringify(userData));
+      alert('Password updated!');
+    } else if (newPassword) {
+      alert('Password must be at least 4 characters.');
+    }
+    setShowUserDetailsMenu(false);
   };
 
   // Voice input functionality
@@ -1752,11 +1773,13 @@ function App() {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userEmail');
   };
-
+  const [showProfileModal, setShowProfileModal] = useState(false);
   // Show login page if not logged in
   if (!isLoggedIn) {
     return <LoginView onLogin={handleLogin} />;
   }
+
+
 
   return (
     <div className={`app-layout ${theme}-mode${leftCollapsed ? ' left-collapsed' : ''}${rightCollapsed ? ' right-collapsed' : ''}`}>
@@ -1846,9 +1869,7 @@ function App() {
               </div>
               {showUserDetailsMenu && (
                 <div className="user-details-menu">
-                  <div className="menu-item" onClick={handleChangeAvatarClick}>Change avatar</div>
-                  <div className="menu-item" onClick={handleChangeNameClick}>Change name</div>
-                  <div className="menu-item" onClick={() => console.log('Change Password clicked')}>Change password</div>
+                  <div className="menu-item" onClick={() => { setShowProfileModal(true); setShowUserDetailsMenu(false); }}>Profile</div>
                   <div className="menu-item" onClick={handleLogout}>Log out</div>
                 </div>
               )}
@@ -3101,6 +3122,22 @@ function App() {
             </div>
           </div>
         </div>
+      )}
+      {showProfileModal && (
+        <ProfileModal
+          user={{ name: userName, email: userEmail, avatar: userAvatar, password: (JSON.parse(localStorage.getItem('ukpUser')) || {}).password || '' }}
+          onClose={() => setShowProfileModal(false)}
+          onSave={updatedUser => {
+            if (updatedUser.deleted) {
+              handleLogout();
+              setShowProfileModal(false);
+              return;
+            }
+            setUserName(updatedUser.name);
+            setUserAvatar(updatedUser.avatar);
+            // Password is saved in localStorage by modal
+          }}
+        />
       )}
     </div>
   );
