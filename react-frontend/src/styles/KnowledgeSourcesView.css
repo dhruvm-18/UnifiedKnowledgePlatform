@@ -1405,14 +1405,15 @@
 .knowledge-header-bg {
   position: relative;
   width: 100%;
-  border-radius: 0 0 24px 24px;
+  border-radius: 0;
   padding: 2.5rem 2rem 0.5rem 2rem;
-  overflow: hidden;
-  background: var(--bg-secondary, #fff); /* Use theme variable for light mode */
+  overflow: visible;
+  background: var(--bg-secondary, #fff);
   margin: 0;
   box-sizing: border-box;
   min-height: 220px;
   height: auto;
+  z-index: auto;
 }
 .knowledge-header-bg .header-bg-svg {
   position: absolute;
@@ -1431,10 +1432,10 @@
   padding: 0;
 }
 .knowledge-sources-view {
-  background: var(--bg-secondary, #fff); /* Use theme variable for light mode */
+  background: var(--bg-secondary, #fff);
 }
 .dark-mode .knowledge-header-bg {
-  background: var(--bg-primary, #18181b); /* Use theme variable for dark mode */
+  background: var(--bg-primary, #18181b);
 }
 .dark-mode .knowledge-header-bg .header-bg-svg rect {
   fill: #3a4371 !important;
@@ -1444,7 +1445,7 @@
   color: #fff;
 }
 .dark-mode .knowledge-sources-view {
-  background: var(--bg-primary, #18181b); /* Use theme variable for dark mode */
+  background: var(--bg-primary, #18181b);
 }
 
 .modal-content > button,

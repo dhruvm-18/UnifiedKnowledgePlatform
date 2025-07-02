@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { FaArrowLeft, FaFolderOpen, FaEdit, FaTrash, FaSave, FaPlus, FaRegCommentAlt } from 'react-icons/fa';
+import { Document, Packer, Paragraph, TextRun } from 'docx';
+import { marked } from 'marked';
 
 const BACKEND_BASE = process.env.REACT_APP_BACKEND_BASE || 'http://localhost:5000';
 
@@ -108,6 +110,80 @@ export default function ProjectDetailView({ project, onBack }) {
     }
   };
 
+  // Export selected chat to Word
+  const handleExportChatToWord = () => {
+    if (!selectedChat) return;
+    // Combine all messages (user and assistant) in order
+    const allContent = selectedChat.messages.map(msg => {
+      let senderLabel = msg.sender === 'user' ? 'You:' : 'Assistant:';
+      return `**${senderLabel}**\n${msg.content}`;
+    }).join('\n\n');
+
+    // Convert Markdown to HTML
+    const html = marked.parse(allContent);
+    const parser = new window.DOMParser();
+    const docHtml = parser.parseFromString(html, 'text/html');
+    const body = docHtml.body;
+
+    function parseNode(node) {
+      if (node.nodeType === 3) {
+        return new TextRun(node.textContent);
+      }
+      if (node.nodeType !== 1) return null;
+      switch (node.tagName.toLowerCase()) {
+        case 'strong':
+        case 'b':
+          return new TextRun({ text: node.textContent, bold: true });
+        case 'em':
+        case 'i':
+          return new TextRun({ text: node.textContent, italics: true });
+        case 'u':
+          return new TextRun({ text: node.textContent, underline: {} });
+        case 'br':
+          return new TextRun({ text: '\n' });
+        case 'p':
+          return new Paragraph({ children: Array.from(node.childNodes).map(parseNode).filter(Boolean) });
+        case 'li':
+          return new Paragraph({ text: node.textContent, bullet: { level: 0 } });
+        case 'ul':
+        case 'ol':
+          return Array.from(node.childNodes).map(parseNode).filter(Boolean);
+        case 'h1':
+        case 'h2':
+        case 'h3':
+        case 'h4':
+        case 'h5':
+        case 'h6':
+          return new Paragraph({ text: node.textContent, heading: 'HEADING_1' });
+        default:
+          return new Paragraph({ children: Array.from(node.childNodes).map(parseNode).filter(Boolean) });
+      }
+    }
+    function flatten(arr) {
+      return arr.reduce((acc, val) => acc.concat(Array.isArray(val) ? flatten(val) : val), []);
+    }
+    const docElements = flatten(Array.from(body.childNodes).map(parseNode).filter(Boolean));
+    const cleanDocElements = docElements.filter(Boolean);
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: cleanDocElements,
+        },
+      ],
+    });
+    Packer.toBlob(doc).then((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${selectedChat.title || 'chat-history'}-${new Date().toISOString()}.docx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    });
+  };
+
   if (!project) return null;
   const selectedChat = chats.find(c => c.id === selectedChatId);
   const isDarkMode = document.body.classList.contains('dark-mode') || document.documentElement.classList.contains('dark-mode');
@@ -182,6 +258,11 @@ export default function ProjectDetailView({ project, onBack }) {
                   ><FaEdit /></button>
                 </>
               )}
+              <button
+                onClick={handleExportChatToWord}
+                style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', marginLeft: 12 }}
+                title="Export to Word"
+              >Export to Word</button>
             </div>
             <div style={{ color: '#888', fontSize: '1.05rem', marginBottom: 18 }}>{selectedChat.createdAt ? new Date(selectedChat.createdAt).toLocaleString() : ''}</div>
             <div style={{ background: 'var(--bg-tertiary)', borderRadius: 14, padding: '18px 18px 12px 18px', minHeight: 220, maxHeight: '55vh', overflowY: 'auto', boxShadow: '0 2px 8px var(--shadow-color)', marginBottom: 8 }}>

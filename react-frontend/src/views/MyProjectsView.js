@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FaFolderOpen, FaPlus, FaEdit, FaTrash, FaFileExport, FaSearch } from 'react-icons/fa';
 import ProjectDetailView from './ProjectDetailView';
+import { Document, Packer, Paragraph, TextRun } from 'docx';
+import { marked } from 'marked';
 
 const BACKEND_BASE = process.env.REACT_APP_BACKEND_BASE || 'http://localhost:5000';
 
@@ -106,6 +108,89 @@ export default function MyProjectsView({ refreshKey }) {
     }
   };
 
+  // Export all chats in a project to Word
+  const handleExportProjectToWord = async (project) => {
+    try {
+      const res = await fetch(`${BACKEND_BASE}/projects/${project.id}/chats`);
+      if (!res.ok) throw new Error('Failed to fetch chats');
+      const chats = await res.json();
+      if (!chats.length) return alert('No chats to export for this project.');
+      // Combine all chats/messages
+      const allContent = chats.map(chat => {
+        const chatHeader = `# ${chat.title || 'Chat'} (${chat.createdAt ? new Date(chat.createdAt).toLocaleDateString() : ''})`;
+        const messages = chat.messages.map(msg => {
+          let senderLabel = msg.sender === 'user' ? 'You:' : 'Assistant:';
+          return `**${senderLabel}**\n${msg.content}`;
+        }).join('\n\n');
+        return `${chatHeader}\n\n${messages}`;
+      }).join('\n\n---\n\n');
+      // Convert Markdown to HTML
+      const html = marked.parse(allContent);
+      const parser = new window.DOMParser();
+      const docHtml = parser.parseFromString(html, 'text/html');
+      const body = docHtml.body;
+      function parseNode(node) {
+        if (node.nodeType === 3) {
+          return new TextRun(node.textContent);
+        }
+        if (node.nodeType !== 1) return null;
+        switch (node.tagName.toLowerCase()) {
+          case 'strong':
+          case 'b':
+            return new TextRun({ text: node.textContent, bold: true });
+          case 'em':
+          case 'i':
+            return new TextRun({ text: node.textContent, italics: true });
+          case 'u':
+            return new TextRun({ text: node.textContent, underline: {} });
+          case 'br':
+            return new TextRun({ text: '\n' });
+          case 'p':
+            return new Paragraph({ children: Array.from(node.childNodes).map(parseNode).filter(Boolean) });
+          case 'li':
+            return new Paragraph({ text: node.textContent, bullet: { level: 0 } });
+          case 'ul':
+          case 'ol':
+            return Array.from(node.childNodes).map(parseNode).filter(Boolean);
+          case 'h1':
+          case 'h2':
+          case 'h3':
+          case 'h4':
+          case 'h5':
+          case 'h6':
+            return new Paragraph({ text: node.textContent, heading: 'HEADING_1' });
+          default:
+            return new Paragraph({ children: Array.from(node.childNodes).map(parseNode).filter(Boolean) });
+        }
+      }
+      function flatten(arr) {
+        return arr.reduce((acc, val) => acc.concat(Array.isArray(val) ? flatten(val) : val), []);
+      }
+      const docElements = flatten(Array.from(body.childNodes).map(parseNode).filter(Boolean));
+      const cleanDocElements = docElements.filter(Boolean);
+      const doc = new Document({
+        sections: [
+          {
+            properties: {},
+            children: cleanDocElements,
+          },
+        ],
+      });
+      Packer.toBlob(doc).then((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${project.name || 'project'}-chats-${new Date().toISOString()}.docx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    } catch (err) {
+      alert('Failed to export project chats.');
+    }
+  };
+
   const filteredProjects = projects.filter(p =>
     p.name.toLowerCase().includes(search.toLowerCase()) ||
     p.description.toLowerCase().includes(search.toLowerCase())
@@ -169,7 +254,7 @@ export default function MyProjectsView({ refreshKey }) {
                 <button title="Open" style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600, cursor: 'pointer' }} onClick={() => setSelectedProject(project)}>Open</button>
                 <button title="Edit" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600, cursor: 'pointer' }} onClick={() => openEditModal(project)}><FaEdit /></button>
                 <button title="Delete" style={{ background: 'var(--bg-tertiary)', color: '#e74c3c', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600, cursor: 'pointer' }} onClick={() => { setShowDeleteConfirm(true); setProjectToDelete(project); }}><FaTrash /></button>
-                <button title="Export" style={{ background: 'var(--bg-tertiary)', color: 'var(--accent-color)', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600, cursor: 'pointer' }}><FaFileExport /></button>
+                <button title="Export" style={{ background: 'var(--bg-tertiary)', color: 'var(--accent-color)', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600, cursor: 'pointer' }} onClick={() => handleExportProjectToWord(project)}><FaFileExport /></button>
               </div>
             </div>
           ))}

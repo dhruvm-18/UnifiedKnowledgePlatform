@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import PropTypes from 'prop-types';
-import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes, FaPlus, FaFileAlt, FaRobot, FaBook, FaLightbulb, FaFlask, FaUserTie, FaTrash, FaArrowRight } from 'react-icons/fa';
+import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes, FaPlus, FaFileAlt, FaRobot, FaBook, FaLightbulb, FaFlask, FaUserTie, FaTrash, FaArrowRight, FaArrowDown, FaArrowUp } from 'react-icons/fa';
 import { getIconComponent } from '../utils/iconUtils';
 import '../styles/KnowledgeSourcesView.css';
 import { Element, scroller } from 'react-scroll';
@@ -39,6 +39,7 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
   const [showNewAgentForm, setShowNewAgentForm] = useState(false);
   const [overlayScrollTop, setOverlayScrollTop] = useState(0); // State to store the scroll position for overlay
   const knowledgeSourcesViewRef = useRef(null); // Ref for the main scrollable div
+  const [atBottom, setAtBottom] = useState(false);
 
   const BACKEND_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
@@ -133,6 +134,46 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
     }
   };
 
+  useLayoutEffect(() => {
+    const handleScroll = () => {
+      if (!knowledgeSourcesViewRef.current) return;
+      const { scrollTop, scrollHeight, clientHeight } = knowledgeSourcesViewRef.current;
+      setAtBottom(scrollTop + clientHeight >= scrollHeight - 40);
+    };
+    const ref = knowledgeSourcesViewRef.current;
+    if (ref) {
+      ref.scrollTop = 0;
+      setAtBottom(false); // Always start with down arrow
+      setTimeout(() => {
+        if (ref) {
+          const { scrollTop, scrollHeight, clientHeight } = ref;
+          if (scrollHeight > clientHeight && scrollTop + clientHeight >= scrollHeight - 40) {
+            setAtBottom(true);
+          } else {
+            setAtBottom(false);
+          }
+        }
+      }, 0);
+      handleScroll();
+      ref.addEventListener('scroll', handleScroll);
+    }
+    return () => {
+      if (ref) ref.removeEventListener('scroll', handleScroll);
+    };
+  }, [knowledgeSourcesViewRef]);
+
+  const scrollToBottom = () => {
+    if (knowledgeSourcesViewRef.current) {
+      knowledgeSourcesViewRef.current.scrollTo({ top: knowledgeSourcesViewRef.current.scrollHeight, behavior: 'smooth' });
+    }
+  };
+
+  const scrollToTop = () => {
+    if (knowledgeSourcesViewRef.current) {
+      knowledgeSourcesViewRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   return (
     <>
       <div className="knowledge-header-bg">
@@ -171,7 +212,7 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
         </p>
         {/* (Optional) Tabs, badges, etc. can go here */}
       </div>
-      <div className="knowledge-sources-view" ref={knowledgeSourcesViewRef}>
+      <div className="knowledge-sources-view" ref={knowledgeSourcesViewRef} style={{ position: 'relative' }}>
         {/* Search bar and rest of content below */}
         <div className="search-bar">
           <div className="search-input-container">
@@ -263,6 +304,35 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
             )}
           </Element>
         )}
+
+        {/* Scroll to bottom/up button (always visible, positioned at true bottom right of tab) */}
+        <button
+          className="scroll-to-bottom-btn"
+          onClick={atBottom ? scrollToTop : scrollToBottom}
+          style={{
+            position: 'sticky',
+            float: 'right',
+            right: 5,
+            bottom: 5,
+            zIndex: 50,
+            background: 'var(--accent-color)',
+            color: 'white',
+            border: 'none',
+            borderRadius: '50%',
+            width: 48,
+            height: 48,
+            boxShadow: '0 4px 16px rgba(0,0,0,0.18)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 24,
+            cursor: 'pointer',
+            transition: 'background 0.2s, color 0.2s',
+          }}
+          title={atBottom ? 'Scroll to top' : 'Scroll to bottom'}
+        >
+          {atBottom ? <FaArrowUp /> : <FaArrowDown />}
+        </button>
       </div>
     </>
   );
