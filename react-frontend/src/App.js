@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import './App.css';
 import './styles/backgrounds.css';
 import './styles/modal.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch } from 'react-icons/fa';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch, FaFileImage, FaFilePdf } from 'react-icons/fa';
 import HomeView from './components/HomeView';
 import KnowledgeSourcesView from './components/KnowledgeSourcesView';
 import PDFViewer from './components/PDFViewer';
@@ -263,6 +263,7 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [chatAttachment, setChatAttachment] = useState(null);
   const chatEndRef = useRef(null);
   const inputRef = useRef(null);
   const [listening, setListening] = useState(false);
@@ -1747,6 +1748,27 @@ function App() {
   }
 
 
+  const handleChatFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setChatAttachment({
+          name: file.name,
+          type: file.type,
+          dataUrl: reader.result,
+          file: file
+        });
+      };
+      if (file.type.startsWith('image/')) {
+        reader.readAsDataURL(file);
+      } else {
+        reader.readAsArrayBuffer(file);
+      }
+    }
+    // Reset file input so same file can be uploaded again if needed
+    e.target.value = '';
+  };
 
   return (
     <div className={`app-layout ${theme}-mode${leftCollapsed ? ' left-collapsed' : ''}${rightCollapsed ? ' right-collapsed' : ''}`}>
@@ -2121,6 +2143,19 @@ function App() {
                   </div>
                 )}
                 <div style={{ width: '100%', position: 'relative' }}>
+                  {/* Show file preview above the input box */}
+                  {chatAttachment && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '8px 0' }}>
+                      {chatAttachment.type.startsWith('image/') ? (
+                        <img src={chatAttachment.dataUrl} alt={chatAttachment.name} style={{ maxWidth: 80, maxHeight: 80, borderRadius: 8, border: '1px solid #eee' }} />
+                      ) : chatAttachment.type === 'application/pdf' ? (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FaFilePdf color="#e74c3c" size={32} /> {chatAttachment.name}</span>
+                      ) : (
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FaFileAlt color="#888" size={32} /> {chatAttachment.name}</span>
+                      )}
+                      <button onClick={() => setChatAttachment(null)} style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', fontSize: 18 }} title="Remove attachment"><FaTimes /></button>
+                    </div>
+                  )}
                   <div
                     ref={inputRef}
                     className="chat-input"
@@ -2246,7 +2281,7 @@ function App() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <label htmlFor="file-upload" className="media-upload-btn" style={{ cursor: 'pointer', marginRight: 0 }}>
                       <FaPaperclip size={20} color="var(--text-secondary)" />
-                      <input id="file-upload" type="file" style={{ display: 'none' }} onChange={handleFileUpload} />
+                      <input id="file-upload" type="file" style={{ display: 'none' }} onChange={handleChatFileUpload} />
                     </label>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
