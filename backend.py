@@ -793,26 +793,49 @@ def add_message(session_id):
         prompt_data['prompt'] = pdf_link_instruction + prompt_data['prompt']
     
     if model_name == 'llama3':
-        llama_system_prompt = """
-You are an AI assistant. You MUST follow these rules:
+        from prompts import CORE_INSTRUCTION, FORMAT_PROMPT, DETAILED_RESPONSE_INSTRUCTION, FILTER_PROMPT, GREETING_INSTRUCTION, SUMMARIZATION_INSTRUCTION, COMPARISON_INSTRUCTION, EXTRACTION_INSTRUCTION, ANALYSIS_INSTRUCTION, TECHNICAL_INSTRUCTION, DEFINITION_INSTRUCTION, EXAMPLE_INSTRUCTION, TRANSLATION_INSTRUCTION, CLARIFICATION_INSTRUCTION, GENERAL_INSTRUCTION
+        llama_system_prompt = f"""
+You are a helpful AI assistant. Follow these instructions carefully:
 
-1. Only answer using the provided context. Do NOT use outside knowledge.
-2. Every answer MUST start with: "Thank you for asking. As per the information available to me:"
-3. You MUST use **bold** for key concepts, __underline__ for critical details, and **__both__** for the highest emphasis.
+{CORE_INSTRUCTION}
 
-Example:
-Thank you for asking. As per the information available to me:
+{FORMAT_PROMPT}
 
-**GST Offence** is constituted when an individual or entity fails to comply with the provisions of the Act. __Non-payment of GST__ is a **__critical offence__**.
+{DETAILED_RESPONSE_INSTRUCTION}
 
-**Sources:**
-- (pdf://Sample.pdf/page/12#section=Section_3&highlight=Non-payment of GST ...)
+{FILTER_PROMPT}
+
+{GREETING_INSTRUCTION}
+
+{SUMMARIZATION_INSTRUCTION}
+
+{COMPARISON_INSTRUCTION}
+
+{EXTRACTION_INSTRUCTION}
+
+{ANALYSIS_INSTRUCTION}
+
+{TECHNICAL_INSTRUCTION}
+
+{DEFINITION_INSTRUCTION}
+
+{EXAMPLE_INSTRUCTION}
+
+{TRANSLATION_INSTRUCTION}
+
+{CLARIFICATION_INSTRUCTION}
+
+{GENERAL_INSTRUCTION}
+
+IMPORTANT: Only answer using the provided context. Do NOT use outside knowledge. Always cite your sources using the exact filename, page, and section as shown in the context. Use the format: pdf://<filename>/page/<page_number>#section=<section_name>. Do not invent filenames or page numbers. Do not add disclaimers, do not repeat instructions, and do not add extra commentary.
+
+If any part of your answer is especially important, always underline it using double underscores (e.g., __this is important__). You may also use bold (**like this**) for key concepts, and both (**__like this__**) for the most critical points.
 """
         llama_user_message = f"""{context}
 
 User's Question: {user_message}
 
-REMEMBER: Start your answer with "Thank you for asking. As per the information available to me:", use **bold** and __underline__ as shown in the example, and end with a markdown Sources section as shown in the example above, using the actual filename, page, section, and a highlight from the context. Do NOT use [Source: ...] or any other format for sources.
+REMEMBER: Start your answer with \"Thank you for asking. As per the information available to me:\", use **bold** and __underline__ as shown in the example, and end with a markdown Sources section as shown in the example above, using the actual filename, page, section, and a highlight from the context. Do NOT use [Source: ...] or any other format for sources.
 """
         response = ollama_client.chat(
             model='llama3',
@@ -934,6 +957,171 @@ REMEMBER: Start your answer with "Thank you for asking. As per the information a
             # Keep everything up to the last 'Sources:' line, then only the last 'Sources:' section
             lines = lines[:last_idx] + lines[last_idx:]
             response = '\n'.join(lines)
+    elif model_name == 'mistral':
+        from prompts import CORE_INSTRUCTION, FORMAT_PROMPT, DETAILED_RESPONSE_INSTRUCTION, FILTER_PROMPT, GREETING_INSTRUCTION, SUMMARIZATION_INSTRUCTION, COMPARISON_INSTRUCTION, EXTRACTION_INSTRUCTION, ANALYSIS_INSTRUCTION, TECHNICAL_INSTRUCTION, DEFINITION_INSTRUCTION, EXAMPLE_INSTRUCTION, TRANSLATION_INSTRUCTION, CLARIFICATION_INSTRUCTION, GENERAL_INSTRUCTION
+        mistral_system_prompt = f"""
+You are a helpful AI assistant. Follow these instructions carefully:
+
+{CORE_INSTRUCTION}
+
+{FORMAT_PROMPT}
+
+{DETAILED_RESPONSE_INSTRUCTION}
+
+{FILTER_PROMPT}
+
+{GREETING_INSTRUCTION}
+
+{SUMMARIZATION_INSTRUCTION}
+
+{COMPARISON_INSTRUCTION}
+
+{EXTRACTION_INSTRUCTION}
+
+{ANALYSIS_INSTRUCTION}
+
+{TECHNICAL_INSTRUCTION}
+
+{DEFINITION_INSTRUCTION}
+
+{EXAMPLE_INSTRUCTION}
+
+{TRANSLATION_INSTRUCTION}
+
+{CLARIFICATION_INSTRUCTION}
+
+{GENERAL_INSTRUCTION}
+
+IMPORTANT: Only answer using the provided context. Do NOT use outside knowledge. Always cite your sources using the exact filename, page, and section as shown in the context. Use the format: pdf://<filename>/page/<page_number>#section=<section_name>. Do not invent filenames or page numbers. Do not add disclaimers, do not repeat instructions, and do not add extra commentary.
+
+If any part of your answer is especially important, always underline it using double underscores (e.g., __this is important__). You may also use bold (**like this**) for key concepts, and both (**__like this__**) for the most critical points.
+"""
+        mistral_user_message = f"""{context}
+
+User's Question: {user_message}
+
+REMEMBER: Start your answer with \"Thank you for asking. As per the information available to me:\", use **bold** and __underline__ as shown in the example, and end with a markdown Sources section as shown in the example above, using the actual filename, page, section, and a highlight from the context. Do NOT use [Source: ...] or any other format for sources.
+"""
+        response = ollama_client.chat(
+            model='mistral',
+            messages=[
+                {"role": "system", "content": mistral_system_prompt},
+                {"role": "user", "content": mistral_user_message}
+            ]
+        )['message']['content']
+        model_used = 'mistral'
+        # ENFORCEMENT: Only skip post-processing if a valid markdown link is present
+        valid_filenames = set(doc.metadata.get('source') for doc in docs)
+        found_valid_markdown_link = False
+        markdown_link_pattern = re.compile(r'\(pdf://[\w\-.]+\.pdf(?:/page/\d+)?(?:#section=[^&\s)]+)?(?:&highlight=[^\s)]+)?\)')
+        if markdown_link_pattern.search(response):
+            found_valid_markdown_link = True
+        if not found_valid_markdown_link:
+            logger.warning(f"[MISTRAL ENFORCEMENT] No valid markdown link found in response. Valid filenames: {valid_filenames}")
+            answer_text = response.strip()
+            # Ultra-flexible regex to match various citation patterns
+            source_pattern = re.compile(r"""
+                (?:
+                    (?P<filename>[\w\-]+\.pdf)[\s,;:()\n]*
+                    (?:Section[:\s]*?(?P<section1>[\w\-]+)[\s,;:()\n]*)?
+                    (?:Page[:\s]*?(?P<page1>\d+))?
+                )|
+                (?:
+                    (?:Page[:\s]*?(?P<page2>\d+)[\s,;:()\n]*)
+                    (?:Section[:\s]*?(?P<section2>[\w\-]+)[\s,;:()\n]*)?
+                    (?P<filename2>[\w\-]+\.pdf)
+                )|
+                (?:
+                    (?:Section[:\s]*?(?P<section3>[\w\-]+)[\s,;:()\n]*)
+                    (?P<filename3>[\w\-]+\.pdf)[\s,;:()\n]*
+                    (?:Page[:\s]*?(?P<page3>\d+))?
+                )|
+                (?:
+                    (?P<filename4>[\w\-]+\.pdf)[\s,;:()\n]*\(\s*Page\s*(?P<page4>\d+)\s*\)
+                )|
+                (?:
+                    Page\s*(?P<page5>\d+)\s*of\s*(?P<filename5>[\w\-]+\.pdf)
+                )
+            """, re.IGNORECASE | re.VERBOSE)
+            matches = list(source_pattern.finditer(answer_text))
+            links = []
+            spans_to_remove = []
+            for match in matches:
+                filename = (
+                    match.group('filename') or match.group('filename2') or match.group('filename3') or match.group('filename4') or match.group('filename5')
+                )
+                page = (
+                    match.group('page1') or match.group('page2') or match.group('page3') or match.group('page4') or match.group('page5')
+                )
+                section = (
+                    match.group('section1') or match.group('section2') or match.group('section3')
+                )
+                if filename:
+                    highlight = ''
+                    for doc in docs:
+                        doc_filename = doc.metadata.get('source', '')
+                        doc_page = str(doc.metadata.get('page', ''))
+                        if doc_filename.lower() == filename.lower() and (not page or doc_page == page):
+                            words = doc.page_content.split()
+                            highlight = ' '.join(words[:20]) if words else ''
+                            break
+                    if not highlight and docs:
+                        words = docs[0].page_content.split()
+                        highlight = ' '.join(words[:20]) if words else ''
+                    link = f"(pdf://{filename}"
+                    if page:
+                        link += f"/page/{page}"
+                    if section:
+                        link += f"#section={section}"
+                    if highlight:
+                        from urllib.parse import quote
+                        link += f"&highlight={quote(highlight)}"
+                    link += ")"
+                    links.append(f"- {link}")
+                    # Record the span to remove
+                    spans_to_remove.append(match.span())
+            # Remove all matched citation spans from the answer text
+            if spans_to_remove:
+                # Remove from end to start to avoid messing up indices
+                for start, end in sorted(spans_to_remove, reverse=True):
+                    answer_text = answer_text[:start] + answer_text[end:]
+            if links:
+                # Remove any line that starts with (optionally bolded) 'Sources', with or without a colon, and any text after it
+                answer_text = re.sub(r'(?im)^\s*(\*\*\s*)?Sources\*\*?\s*:?.*$', '', answer_text)
+                response = f"{answer_text.strip()}\n\n**Sources:**\n" + '\n'.join(links)
+            else:
+                if docs:
+                    top_doc = docs[0]
+                    filename = top_doc.metadata.get('source', 'Unknown.pdf')
+                    page = top_doc.metadata.get('page', None)
+                    section = top_doc.metadata.get('section', None)
+                    words = top_doc.page_content.split()
+                    highlight = ' '.join(words[:20]) if words else ''
+                    link = f"(pdf://{filename}"
+                    if page:
+                        link += f"/page/{page}"
+                    if section:
+                        link += f"#section={section}"
+                    if highlight:
+                        from urllib.parse import quote
+                        link += f"&highlight={quote(highlight)}"
+                    link += ")"
+                    answer_text = re.sub(r'(?im)^\s*(\*\*\s*)?Sources\*\*?\s*:?.*$', '', answer_text)
+                    response = f"{answer_text.strip()}\n\n**Sources:**\n- {link}"
+                else:
+                    response = "I cannot answer based on the provided information."
+        # Log the final response string before returning
+        logger.info(f"[FINAL MISTRAL RESPONSE TO FRONTEND] {response}")
+        # Remove all but the last 'Sources:' section (optionally bolded, with or without colon)
+        # Split by lines, keep only the last occurrence of a 'Sources:' line and its following lines
+        lines = response.splitlines()
+        sources_indices = [i for i, line in enumerate(lines) if re.match(r'(?i)^\s*(\*\*\s*)?Sources\*\*?\s*:?.*$', line)]
+        if len(sources_indices) > 1:
+            # Remove all but the last 'Sources:' line and its following lines
+            last_idx = sources_indices[-1]
+            # Keep everything up to the last 'Sources:' line, then only the last 'Sources:' section
+            lines = lines[:last_idx] + lines[last_idx:]
+            response = '\n'.join(lines)
     else:
         # Default: Gemini
         # Create the chain
@@ -962,7 +1150,7 @@ REMEMBER: Start your answer with "Thank you for asking. As per the information a
 
     # Remove all but the last 'Sources:' section (optionally bolded, with or without colon)
     def remove_duplicate_sources_sections(text):
-        pattern = re.compile(r'(?im)^\s*(\*\*\s*)?Sources\*\*?\s*:?.*$', re.MULTILINE)
+        pattern = re.compile(r'(?im)^\s*(\*{0,2}\s*)?Sources(\*{0,2})?\s*:?.*$', re.MULTILINE)
         matches = list(pattern.finditer(text))
         if len(matches) <= 1:
             return text

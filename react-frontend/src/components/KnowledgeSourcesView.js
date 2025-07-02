@@ -140,9 +140,9 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
           <rect x="-60" y="10" width="340" height="48" rx="18" opacity="0.18" transform="rotate(-8 110 34)" />
           <rect x="320" y="30" width="420" height="54" rx="18" opacity="0.13" transform="rotate(-4 530 57)" />
           <rect x="800" y="0" width="320" height="44" rx="18" opacity="0.16" transform="rotate(7 960 22)" />
-          <rect x="180" y="110" width="320" height="38" rx="18" opacity="0.11" transform="rotate(-6 340 129)" />
+          <rect x="180" y="110" width="320" height="50" rx="18" opacity="0.11" transform="rotate(-6 340 129)" />
           <rect x="600" y="120" width="380" height="50" rx="18" opacity="0.14" transform="rotate(5 790 145)" />
-          <rect x="1020" y="80" width="220" height="36" rx="18" opacity="0.10" transform="rotate(-10 1130 98)" />
+          <rect x="1020" y="80" width="220" height="50" rx="18" opacity="0.10" transform="rotate(-10 1130 98)" />
         </svg>
         <div className="knowledge-sources-header">
           <h1>Knowledge Sources</h1>
