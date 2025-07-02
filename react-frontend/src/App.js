@@ -2258,16 +2258,13 @@ function App() {
                           onMouseDown={() => {
                             const div = inputRef.current;
                             if (div) {
-                              const text = div.innerText;
-                              const lastAt = text.lastIndexOf('@');
-                              if (lastAt !== -1) {
-                                const before = text.slice(0, lastAt + 1);
-                                div.innerText = before + agent.fullName + ' ';
-                                setInput(div.innerText);
-                                setShowAgentDropdown(false);
-                                setFilteredAgents([]);
-                                restoreSelection(div, div.innerText.length);
-                              }
+                              // Update active agent (not dedicated/locked)
+                              setActiveAgentDetails(agent);
+                              div.innerText = '';
+                              setInput('');
+                              setShowAgentDropdown(false);
+                              setFilteredAgents([]);
+                              restoreSelection(div, 0);
                             }
                           }}
                         >
