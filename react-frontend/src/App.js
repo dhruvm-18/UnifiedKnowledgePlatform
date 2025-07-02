@@ -259,6 +259,7 @@ function App() {
   const [sessions, setSessions] = useState([]);
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [isDedicatedChat, setIsDedicatedChat] = useState(false);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
@@ -330,6 +331,47 @@ function App() {
       setCurrentAgents([]);
     }
   }, [BACKEND_BASE]);
+
+  useEffect(() => {
+    const storedAgent = localStorage.getItem('activeAgentDetails');
+    const storedDedicated = localStorage.getItem('isDedicatedChat');
+    if (storedAgent) {
+      try {
+        setActiveAgentDetails(JSON.parse(storedAgent));
+      } catch {}
+    }
+    if (storedDedicated) {
+      setIsDedicatedChat(storedDedicated === 'true');
+    }
+    setShowAgentDropdown(false);
+    setFilteredAgents([]);
+  }, []);
+
+  // When switching to chat view, reset dropdown state and reload agents if needed
+  useEffect(() => {
+    if (currentView === 'chat') {
+      setShowAgentDropdown(false);
+      setFilteredAgents([]);
+      // Optionally reload agents if needed (uncomment if agents are not always loaded)
+      // fetchAgents();
+    }
+  }, [currentView]);
+  
+  useEffect(() => {
+    const storedAgent = localStorage.getItem('activeAgentDetails');
+    const storedDedicated = localStorage.getItem('isDedicatedChat');
+    if (storedAgent) {
+      try {
+        setActiveAgentDetails(JSON.parse(storedAgent));
+      } catch {}
+    }
+    if (storedDedicated) {
+      setIsDedicatedChat(storedDedicated === 'true');
+    }
+    setShowAgentDropdown(false);
+    setFilteredAgents([]);
+  }, []);
+
 
   // Call fetchInitialAgents on component mount
   useEffect(() => {
@@ -1161,12 +1203,14 @@ function App() {
       localStorage.setItem(`sessionAgent_${session.id}`, agentId);
       localStorage.setItem('activeAgentId', agentId);
       localStorage.setItem('isDedicatedChat', 'true');
+      localStorage.setItem('activeAgentDetails', JSON.stringify(agent));
     }
     // Clear input as it's a dedicated chat, no need for @mention prefix
     if (inputRef.current) {
       inputRef.current.innerText = '';
       inputRef.current.focus();
     }
+    setIsDedicatedChat(true);
     return session.id;
   };
 
@@ -1770,6 +1814,9 @@ function App() {
     e.target.value = '';
   };
 
+  // Restore agent and chat mode from localStorage on mount, and reset dropdown state
+  
+
   return (
     <div className={`app-layout ${theme}-mode${leftCollapsed ? ' left-collapsed' : ''}${rightCollapsed ? ' right-collapsed' : ''}`}>
       <aside className={`left-sidebar${leftCollapsed ? ' collapsed' : ''}`}>
@@ -2111,7 +2158,80 @@ function App() {
               <div className="chat-wave-bg" />
             <div className="floating-input-row anchored-bottom">
               <div className="floating-input-inner" style={{ flexDirection: 'column', alignItems: 'stretch', gap: 0, padding: '0.4rem 1rem' }}>
-                {activeAgentDetails && (
+                {!activeAgentDetails && (
+                  <div
+                    className="ukp-mode-banner"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      background: 'rgba(240,244,255,0.95)',
+                      border: '1.5px solid var(--accent-color)',
+                      borderRadius: 999,
+                      padding: '3px 14px',
+                      fontSize: '0.98rem',
+                      fontWeight: 500,
+                      color: 'var(--accent-color)',
+                      marginBottom: 6,
+                      maxWidth: '100%',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    <span style={{ fontWeight: 700 }}>UKP Mode</span>
+                    <span style={{ color: '#888', fontWeight: 400, marginLeft: 8 }}>Ask anything across all knowledge sources</span>
+                  </div>
+                )}
+                {activeAgentDetails && !isDedicatedChat && (
+                  <div
+                    className="dedicated-agent-inline"
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 8,
+                      background: 'rgba(240,244,255,0.95)',
+                      border: '1.5px solid var(--accent-color)',
+                      borderRadius: 999,
+                      padding: '3px 14px',
+                      fontSize: '0.98rem',
+                      fontWeight: 500,
+                      color: 'var(--accent-color)',
+                      marginBottom: 6,
+                      maxWidth: '100%',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      position: 'relative'
+                    }}
+                  >
+                    {activeAgentDetails?.icon && (
+                      <span style={{ fontSize: 18, color: 'var(--accent-color)' }}>
+                        {getIconComponent(activeAgentDetails.iconType)}
+                      </span>
+                    )}
+                    <span>
+                      Chatting with: <span style={{ fontWeight: 700 }}>{activeAgentDetails?.fullName}</span>
+                    </span>
+                    <button
+                      onClick={() => { setActiveAgentDetails(null); setIsDedicatedChat(false); localStorage.removeItem('activeAgentDetails'); localStorage.setItem('isDedicatedChat', 'false'); }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: '#bbb',
+                        cursor: 'pointer',
+                        fontSize: 18,
+                        marginLeft: 10,
+                        padding: 0,
+                        lineHeight: 1
+                      }}
+                      title="Clear agent"
+                    >
+                      <FaTimes />
+                    </button>
+                  </div>
+                )}
+                {activeAgentDetails && isDedicatedChat && (
                   <div
                     className="dedicated-agent-inline"
                     style={{
@@ -2160,7 +2280,7 @@ function App() {
                     ref={inputRef}
                     className="chat-input"
                     contentEditable={true}
-                    data-placeholder="Your entire knowledge base, one question away..."
+                    data-placeholder={!activeAgentDetails ? 'Ask anything across all knowledge sources...' : 'Your entire knowledge base, one question away...'}
                     onInput={e => {
                       const div = e.target;
                       const savedCaretOffset = saveSelection(div);
@@ -2260,6 +2380,9 @@ function App() {
                             if (div) {
                               // Update active agent (not dedicated/locked)
                               setActiveAgentDetails(agent);
+                              setIsDedicatedChat(false);
+                              localStorage.setItem('activeAgentDetails', JSON.stringify(agent));
+                              localStorage.setItem('isDedicatedChat', 'false');
                               div.innerText = '';
                               setInput('');
                               setShowAgentDropdown(false);
