@@ -1,1 +1,22 @@
-{}
+{
+    "ac9d4309-3f7b-462b-8d70-33d58d60bffd": {
+        "id": "ac9d4309-3f7b-462b-8d70-33d58d60bffd",
+        "title": "hi",
+        "createdAt": "2025-07-02T17:00:22.168036",
+        "messages": [
+            {
+                "sender": "user",
+                "content": "hi",
+                "agentId": null,
+                "lang": "en"
+            },
+            {
+                "sender": "assistant",
+                "content": "Hello! How can I help you today?",
+                "agentId": null,
+                "lang": "en"
+            }
+        ],
+        "agentId": null
+    }
+}

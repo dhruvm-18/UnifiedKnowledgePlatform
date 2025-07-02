@@ -726,7 +726,8 @@ function App() {
     let pdfSourceToSend = activeAgentDetails?.pdfSource || null;
     let contextualAgentAssignment = false;
 
-    const agentMentionRegex = /^@([^\s]+(?:\s[^\s]+)*)\s*(.*)$/;
+    // Fix regex for agent mention
+    const agentMentionRegex = /^@([\w\s]+)\s*(.*)$/;
     const agentMentionMatch = userInput.match(agentMentionRegex);
 
     const isFirstMessageInNewSession = messages.length === 0 && !currentSessionId;
@@ -791,108 +792,72 @@ function App() {
       lang: detectedLang
     };
 
-    setMessages(msgs => [...msgs, userMessage]);
-    setChatStarted(true);
+    // If no session, create one and add the message to the new chat immediately
+    if (!sessionId) {
+      const newSession = await startNewSession();
+      sessionId = newSession.id || newSession; // startNewSession may return id or session object
+      setCurrentSessionId(sessionId);
+      setMessages([userMessage]);
+      setChatStarted(true);
+      setShowWelcome(false);
+    } else {
+      setMessages(msgs => [...msgs, userMessage]);
+      setChatStarted(true);
+    }
 
     try {
-      if (!sessionId) {
-        const newSessionData = await startNewSession();
-        sessionId = newSessionData.id;
+      const modelBackendName = modelOptions.find(m => m.name === selectedModel)?.backendName || 'gemini';
+      abortControllerRef.current = new AbortController();
+      const res = await fetch(`${BACKEND_BASE}/sessions/${sessionId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          message: translatedInput,
+          userName: userName, 
+          agentId: agentIdToSend,
+          pdfSource: pdfSourceToSend,
+          lang: detectedLang,
+          model: modelBackendName // <-- always include model
+        }),
+        signal: abortControllerRef.current.signal
+      });
+      abortControllerRef.current = null;
 
-        const modelBackendName = modelOptions.find(m => m.name === selectedModel)?.backendName || 'gemini';
-        abortControllerRef.current = new AbortController();
-        const res = await fetch(`${BACKEND_BASE}/sessions/${sessionId}/messages`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            message: translatedInput,
-            userName: userName, 
-            agentId: agentIdToSend,
-            pdfSource: pdfSourceToSend,
-            lang: detectedLang,
-            model: modelBackendName, // <-- always include model
-          }),
-          signal: abortControllerRef.current.signal
+      if (res.ok) {
+        const data = await res.json();
+        let assistantContent = data && data.response !== undefined ? String(data.response) : 'Error: Could not retrieve response from backend.';
+        const assistantAgentId = data.metadata && data.metadata.agent_id ? data.metadata.agent_id : null;
+
+        if (detectedLang !== 'en') {
+          try {
+            const backTrans = await sarvamTranslate(assistantContent, detectedLang, 'en');
+            assistantContent = backTrans.translated_text || assistantContent;
+          } catch (err) {
+            console.error('Sarvam Translate failed (output)', err);
+            // Fallback: show English
+          }
+        }
+
+        const responseAgent = currentAgents.find(agent => agent.id === assistantAgentId);
+        const assistantAgentFullName = responseAgent ? responseAgent.fullName : null;
+        const assistantAgentIcon = responseAgent ? responseAgent.iconType : null;
+
+        setMessages(msgs => {
+          // If this is a new session, replace the messages; otherwise, append
+          if (!currentSessionId) {
+            return [userMessage, { sender: 'assistant', content: assistantContent, agentId: assistantAgentId, agentName: assistantAgentFullName, agentIcon: assistantAgentIcon, lang: detectedLang, modelUsed: data.model_used, modelDisplayName: data.model_used ? modelOptions.find(m => m.backendName === data.model_used).name : null, modelDisplayIcon: data.model_used ? modelOptions.find(m => m.backendName === data.model_used).icon : null }];
+          } else {
+            return [...msgs, { sender: 'assistant', content: assistantContent, agentId: assistantAgentId, agentName: assistantAgentFullName, agentIcon: assistantAgentIcon, lang: detectedLang, modelUsed: data.model_used, modelDisplayName: data.model_used ? modelOptions.find(m => m.backendName === data.model_used).name : null, modelDisplayIcon: data.model_used ? modelOptions.find(m => m.backendName === data.model_used).icon : null }];
+          }
         });
-        abortControllerRef.current = null;
-
-        if (res.ok) {
-          const data = await res.json();
-          let assistantContent = data && data.response !== undefined ? String(data.response) : 'Error: Could not retrieve response from backend.';
-          const assistantAgentId = data.metadata && data.metadata.agent_id ? data.metadata.agent_id : null;
-
-          // Translate back if needed
-          if (detectedLang !== 'en') {
-            try {
-              const backTrans = await sarvamTranslate(assistantContent, detectedLang, 'en');
-              assistantContent = backTrans.translated_text || assistantContent;
-            } catch (err) {
-              console.error('Sarvam Translate failed (output)', err);
-              // Fallback: show English
-            }
-          }
-
-          const responseAgent = currentAgents.find(agent => agent.id === assistantAgentId);
-          const assistantAgentFullName = responseAgent ? responseAgent.fullName : null;
-          const assistantAgentIcon = responseAgent ? responseAgent.iconType : null;
-
-          setMessages([userMessage, { sender: 'assistant', content: assistantContent, agentId: assistantAgentId, agentName: assistantAgentFullName, agentIcon: assistantAgentIcon, lang: detectedLang, modelUsed: data.model_used, modelDisplayName: data.model_used ? modelOptions.find(m => m.backendName === data.model_used).name : null, modelDisplayIcon: data.model_used ? modelOptions.find(m => m.backendName === data.model_used).icon : null }]);
-          if (data && data.session) {
-            setSessions(sessions => sessions.map(session =>
-              session.id === data.session.id ? data.session : session
-            ));
-          }
-        } else {
-          const errorData = await res.json();
-          throw new Error(errorData.error || `Failed to send message: ${res.status}`);
+        if (data && data.session) {
+          setSessions(sessions => sessions.map(session =>
+            session.id === data.session.id ? data.session : session
+          ));
         }
       } else {
-        const modelBackendName = modelOptions.find(m => m.name === selectedModel)?.backendName || 'gemini';
-        abortControllerRef.current = new AbortController();
-        const res = await fetch(`${BACKEND_BASE}/sessions/${sessionId}/messages`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            message: translatedInput,
-            userName: userName, 
-            agentId: agentIdToSend,
-            pdfSource: pdfSourceToSend,
-            lang: detectedLang,
-            model: modelBackendName // <-- now included for existing sessions
-          }),
-          signal: abortControllerRef.current.signal
-        });
-        abortControllerRef.current = null;
-
-        if (res.ok) {
-          const data = await res.json();
-          let assistantContent = data && data.response !== undefined ? String(data.response) : 'Error: Could not retrieve response from backend.';
-          const assistantAgentId = data.metadata && data.metadata.agent_id ? data.metadata.agent_id : null;
-
-          if (detectedLang !== 'en') {
-            try {
-              const backTrans = await sarvamTranslate(assistantContent, detectedLang, 'en');
-              assistantContent = backTrans.translated_text || assistantContent;
-            } catch (err) {
-              console.error('Sarvam Translate failed (output)', err);
-              // Fallback: show English
-            }
-          }
-
-          const responseAgent = currentAgents.find(agent => agent.id === assistantAgentId);
-          const assistantAgentFullName = responseAgent ? responseAgent.fullName : null;
-          const assistantAgentIcon = responseAgent ? responseAgent.iconType : null;
-
-          setMessages(msgs => [...msgs, { sender: 'assistant', content: assistantContent, agentId: assistantAgentId, agentName: assistantAgentFullName, agentIcon: assistantAgentIcon, lang: detectedLang, modelUsed: data.model_used, modelDisplayName: data.model_used ? modelOptions.find(m => m.backendName === data.model_used).name : null, modelDisplayIcon: data.model_used ? modelOptions.find(m => m.backendName === data.model_used).icon : null }]);
-          if (data && data.session) {
-            setSessions(sessions => sessions.map(session =>
-              session.id === data.session.id ? data.session : session
-            ));
-          }
-        } else {
-          const errorData = await res.json();
-          throw new Error(errorData.error || `Failed to send message: ${res.status}`);
-        }
+        const errorData = await res.json();
+        throw new Error(errorData.error || `Failed to send message: ${res.status}`);
       }
     } catch (err) {
       if (err.name === 'AbortError') {
