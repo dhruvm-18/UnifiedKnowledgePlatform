@@ -2838,11 +2838,11 @@ function App() {
               }}
             />
           </div>
-          <h2 style={{ fontWeight: 700, fontSize: '1.3rem', marginBottom: 24 }}>New Agent</h2>
+          <h2 style={{ fontWeight: 700, fontSize: '1.3rem', marginBottom: 24 }}>New Knowledge Source</h2>
           <div style={{ marginBottom: 18 }}>
             <input
               type="text"
-              placeholder="Agent Name"
+              placeholder="Knowledge Source Name"
               value={newAgentName}
               onChange={(e) => setNewAgentName(e.target.value)}
               required
@@ -2862,7 +2862,7 @@ function App() {
               }}
             />
             <textarea
-              placeholder="Agent Description"
+              placeholder="Knowledge Source Description"
               value={newAgentDescription}
               onChange={(e) => setNewAgentDescription(e.target.value)}
               required
@@ -2989,7 +2989,7 @@ function App() {
               }}
             />
           </div>
-          <h2 style={{ fontWeight: 700, fontSize: '1.3rem', marginBottom: 24 }}>Edit Agent</h2>
+          <h2 style={{ fontWeight: 700, fontSize: '1.3rem', marginBottom: 24 }}>Edit Knowledge Source</h2>
           <div style={{ marginBottom: 18 }}>
             <input
               type="text"
@@ -2997,6 +2997,7 @@ function App() {
               onChange={e => setEditedName(e.target.value)}
               required
               disabled={isSubmitting}
+              placeholder="Knowledge Source Name"
               style={{
                 width: '100%',
                 padding: '10px 5px',
@@ -3016,6 +3017,7 @@ function App() {
               onChange={e => setEditedDescription(e.target.value)}
               required
               disabled={isSubmitting}
+              placeholder="Knowledge Source Description"
               style={{
                 width: '100%',
                 padding: '10px 5px',

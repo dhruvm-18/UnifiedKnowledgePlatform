@@ -201,9 +201,9 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
               fontSize: '1rem',
               cursor: 'pointer'
             }}
-            onClick={() => setShowNewAgentOverlay(true)}
+            onClick={() => { setShowNewAgentOverlay(true); setAgentToEdit(null); setNewAgentName(''); setNewAgentDescription(''); }}
           >
-            <FaPlus /> New Agent
+            <FaPlus /> New Knowledge Source
           </button>
         </div>
         <p className="knowledge-sources-description">
