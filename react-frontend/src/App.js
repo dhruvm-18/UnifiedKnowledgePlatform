@@ -4,6 +4,8 @@ import './App.css';
 import './styles/backgrounds.css';
 import './styles/modal.css';
 import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch, FaFileImage, FaFilePdf, FaEye, FaFileWord, FaFileExcel, FaFileAudio, FaFile } from 'react-icons/fa';
+import { Image as ReactImage } from 'react-image';
+import ReactAudioPlayer from 'react-audio-player';
 import HomeView from './components/HomeView';
 import KnowledgeSourcesView from './components/KnowledgeSourcesView';
 import PDFViewer from './components/PDFViewer';
@@ -189,6 +191,9 @@ function App() {
   // Initialize currentAgents by fetching from backend on mount
   const [currentAgents, setCurrentAgents] = useState([]);
 
+  // Add new state for source opener modal
+  const [sourcePreview, setSourcePreview] = useState({ type: null, url: null, name: null, docxHtml: null, csvRows: null });
+
 // 1. Generalize the handler (move inside App)
 const handleOpenSourceLink = (e, href, msg = null) => {
   e.preventDefault();
@@ -292,29 +297,122 @@ function renderAssistantContent(content, handleOpenSourceLink, sourceHighlights 
       const isSourceLink = cleanHref && cleanHref.startsWith(BACKEND_BASE + '/pdfs/');
       if (isSourceLink) {
         // Parse filename and extension
-        const url = new URL(cleanHref);
+        const url = new URL(cleanHref, window.location.origin);
         const filename = url.pathname.split('/').pop();
         const ext = filename.split('.').pop().toLowerCase();
-        // Friendly label
-        let label = filename;
+        // PDF button logic
+        if (ext === 'pdf') {
+          return (
+            <button
+              type="button"
+              aria-label={`Open PDF file: ${filename}`}
+              onClick={e => handleOpenSourceLink(e, cleanHref, sourceHighlights)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '4px 12px',
+                margin: '2px',
+                backgroundColor: '#d32f2f',
+                color: 'white',
+                border: 'none',
+                borderRadius: '14px',
+                fontSize: '0.95em',
+                fontWeight: 500,
+                cursor: 'pointer',
+                boxShadow: '0 1px 4px #0001',
+                transition: 'background 0.2s, color 0.2s',
+                outline: 'none',
+              }}
+            >
+              <FaFilePdf style={{ color: 'white', fontSize: 18 }} />
+              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120 }}>{filename}</span>
+            </button>
+          );
+        }
+        // Non-PDF button logic
+        // Color coding by type
+        let bgColor = '#495057';
+        let icon = <FaFile style={{ color: 'white', fontSize: 18 }} />;
+        let type = 'other';
+        if (['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].includes(ext)) {
+          bgColor = '#6c2eb7';
+          icon = <FaFileImage style={{ color: 'white', fontSize: 18 }} />;
+          type = 'image';
+        } else if (['mp3', 'wav', 'ogg', 'm4a', 'aac'].includes(ext)) {
+          bgColor = '#fbc02d';
+          icon = <FaFileAudio style={{ color: 'white', fontSize: 18 }} />;
+          type = 'audio';
+        } else if (['doc', 'docx'].includes(ext)) {
+          bgColor = '#1976d2';
+          icon = <FaFileWord style={{ color: 'white', fontSize: 18 }} />;
+          type = 'docx';
+        } else if (['xls', 'xlsx', 'csv'].includes(ext)) {
+          bgColor = '#388e3c';
+          icon = <FaFileExcel style={{ color: 'white', fontSize: 18 }} />;
+          type = 'spreadsheet';
+        } else if (['txt'].includes(ext)) {
+          bgColor = '#616161';
+          icon = <FaFileAlt style={{ color: 'white', fontSize: 18 }} />;
+          type = 'text';
+        }
         return (
-          <a
-            href={cleanHref}
-            onClick={e => handleOpenSourceLink(e, cleanHref, sourceHighlights)}
+          <button
+            type="button"
+            aria-label={`Open file: ${filename}`}
+            onClick={async e => {
+              e.preventDefault();
+              // Fetch and preview logic for source opener
+              const res = await fetch(cleanHref);
+              const blob = await res.blob();
+              if (type === 'image') {
+                setSourcePreview({ type, url: URL.createObjectURL(blob), name: filename });
+              } else if (type === 'audio') {
+                setSourcePreview({ type, url: URL.createObjectURL(blob), name: filename });
+              } else if (type === 'spreadsheet') {
+                // CSV/Excel preview as table
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  const text = e.target.result;
+                  const rows = text.split('\n').map(row => row.split(','));
+                  setSourcePreview({ type, csvRows: rows, url: null, name: filename });
+                };
+                reader.readAsText(blob);
+              } else if (type === 'docx') {
+                // DOCX preview as HTML
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                  const arrayBuffer = e.target.result;
+                  const container = document.createElement('div');
+                  await renderDocxPreview(arrayBuffer, container);
+                  setSourcePreview({ type, docxHtml: container.innerHTML, url: null, name: filename });
+                };
+                reader.readAsArrayBuffer(blob);
+              } else {
+                setSourcePreview({ type, url: URL.createObjectURL(blob), name: filename });
+              }
+            }}
             style={{
-              display: 'inline-block',
-              padding: '3px 7px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '4px 12px',
               margin: '2px',
-              backgroundColor: '#495057',
+              backgroundColor: bgColor,
               color: 'white',
-              borderRadius: '12px',
-              textDecoration: 'none',
-              fontSize: '0.8em',
-              cursor: 'pointer'
+              border: 'none',
+              borderRadius: '14px',
+              fontSize: '0.95em',
+              fontWeight: 500,
+              cursor: 'pointer',
+              boxShadow: '0 1px 4px #0001',
+              transition: 'background 0.2s, color 0.2s',
+              outline: 'none',
             }}
           >
-            {label}
-          </a>
+            {icon}
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 120 }}>{filename}</span>
+          </button>
         );
       }
       // Check if the href is one of our PDF links
@@ -3513,6 +3611,62 @@ function getFileType(file) {
                 );
               }
             })()}
+          </div>
+        </Modal>
+      )}
+      {sourcePreview.url && (
+        <Modal onClose={() => setSourcePreview({ type: null, url: null, name: null, docxHtml: null, csvRows: null })} size="large">
+          <div style={{ width: '100%', height: '80vh', minWidth: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+            <button
+              onClick={() => setSourcePreview({ type: null, url: null, name: null, docxHtml: null, csvRows: null })}
+              style={{
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                zIndex: 100,
+                background: '#fff',
+                border: 'none',
+                borderRadius: '50%',
+                width: 40,
+                height: 40,
+                boxShadow: '0 2px 8px #0002',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'background 0.2s',
+              }}
+              title="Close Preview"
+            >
+              <FaTimes size={20} color="#374151" />
+            </button>
+            {sourcePreview.type === 'image' ? (
+              <ReactImage src={sourcePreview.url} style={{ maxWidth: '90vw', maxHeight: '75vh', borderRadius: 12, boxShadow: '0 2px 16px #0002' }} alt="Preview" />
+            ) : sourcePreview.type === 'audio' ? (
+              <ReactAudioPlayer src={sourcePreview.url} controls style={{ width: '100%' }} />
+            ) : sourcePreview.type === 'spreadsheet' && sourcePreview.csvRows ? (
+              <div style={{ overflow: 'auto', maxHeight: '70vh', width: '100%' }}>
+                <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                  <tbody>
+                    {sourcePreview.csvRows.map((row, i) => (
+                      <tr key={i}>
+                        {row.map((cell, j) => (
+                          <td key={j} style={{ border: '1px solid #ccc', padding: 4 }}>{cell}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : sourcePreview.type === 'docx' && sourcePreview.docxHtml ? (
+              <div style={{ overflow: 'auto', maxHeight: '70vh', width: '100%' }} dangerouslySetInnerHTML={{ __html: sourcePreview.docxHtml }} />
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                <div style={{ fontSize: 48, marginBottom: 16 }}><FaFile style={{ color: 'white' }} /></div>
+                <div style={{ fontSize: 18, color: '#555', wordBreak: 'break-all' }}>{sourcePreview.name}</div>
+                <div style={{ color: '#888', marginTop: 12 }}>No preview available for this file type.</div>
+              </div>
+            )}
           </div>
         </Modal>
       )}
