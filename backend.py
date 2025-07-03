@@ -1,4 +1,5 @@
 import os
+import mimetypes
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["PATH"] += os.pathsep + r"C:\ffmpeg\bin\bin"
@@ -1444,79 +1445,32 @@ REMEMBER: Start your answer with \"Thank you for asking. As per the information 
 # Add route to serve PDF files
 @app.route('/pdfs/<path:filename>')
 def serve_pdf(filename):
-    """Serve PDF files from the backend/pdfs directory"""
+    """Serve files from the backend/pdfs directory with correct MIME type"""
     try:
-        # Extract page number and section from query parameters
-        page = request.args.get('page') # This is the LOGICAL page number from the frontend
-        section = request.args.get('section') # This is the rule/section fragment
-        
-        # Log the request details
-        print(f"DEBUG: [serve_pdf] PDF request - File: {filename}, Page (logical): {page}, Section (rule/fragment): {section}") # Debug print
-        logger.info(f"PDF request - File: {filename}, Page (logical): {page}, Section (rule/fragment): {section}")
-        
-        # Construct the full path to the PDF file using the UPLOAD_FOLDER
-        pdf_directory = app.config['UPLOAD_FOLDER'] # Use the configured UPLOAD_FOLDER
+        pdf_directory = app.config['UPLOAD_FOLDER']
         pdf_path = os.path.join(pdf_directory, filename)
-        print(f"DEBUG: [serve_pdf] Constructed pdf_path: {pdf_path}") # Debug print
-        
         if not os.path.exists(pdf_path):
-            print(f"DEBUG: [serve_pdf] PDF file not found: {pdf_path}") # Debug print
-            logger.error(f"PDF file not found: {pdf_path}")
-            return jsonify({'error': 'PDF file not found'}), 404
-            
-        # Read the PDF file
+            logger.error(f"File not found: {pdf_path}")
+            return jsonify({'error': 'File not found'}), 404
+        # Guess the correct MIME type
+        mime_type, _ = mimetypes.guess_type(pdf_path)
+        if not mime_type:
+            mime_type = 'application/octet-stream'
         with open(pdf_path, 'rb') as f:
-            pdf_data = f.read()
-            
-        # Create response with PDF data
+            file_data = f.read()
         response = app.response_class(
-            response=pdf_data,
+            response=file_data,
             status=200,
-            mimetype='application/pdf'
+            mimetype=mime_type
         )
-        
-        # Add CORS headers explicitly for PDF serving
+        # Add CORS headers
         response.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
         response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-        response.headers['Access-Control-Expose-Headers'] = 'X-PDF-Page, X-PDF-Section' # Keep both for flexibility
         response.headers['Access-Control-Allow-Credentials'] = 'true'
-
-        # Add page and section information to headers
-        if page:
-            # Get the page label to actual page number map (will use manual or pypdf)
-            page_map = get_label_to_page_map(pdf_path) # Use pdf_path directly here
-            print(f"DEBUG: [serve_pdf] Received page_map from get_label_to_page_map: {page_map}") # Debug print
-            
-            # Convert the logical page number (from URL) to the actual PDF page number
-            # If not found in map, fallback to parsing as int or default to 1
-            actual_pdf_page_to_open = page_map.get(page)
-            if actual_pdf_page_to_open is None:
-                try:
-                    actual_pdf_page_to_open = int(page) # Try parsing as int if not in map
-                    print(f"DEBUG: [serve_pdf] Logical page '{page}' not in map, parsed as int: {actual_pdf_page_to_open}") # Debug print
-                except ValueError:
-                    actual_pdf_page_to_open = 1 # Default to page 1 if not a valid number
-                    print(f"DEBUG: [serve_pdf] Logical page '{page}' not int, defaulting to: {actual_pdf_page_to_open}") # Debug print
-            else:
-                print(f"DEBUG: [serve_pdf] Logical page '{page}' mapped to actual_pdf_page_to_open: {actual_pdf_page_to_open}") # Debug print
-            
-            # Apply 33-page offset ONLY for Rules of Procedure PDF
-            if filename == 'Rules_of_Procedures_Lok_Sabha.pdf':
-                actual_pdf_page_to_open += 33
-                print(f"DEBUG: [serve_pdf] Applied +33 offset for Rules_of_Procedures_Lok_Sabha.pdf. New page: {actual_pdf_page_to_open}")
-
-            response.headers['X-PDF-Page'] = str(actual_pdf_page_to_open)
-
-        # If a section/rule was provided, pass it as well (though PDF viewers mostly use #page)
-        if section:
-            response.headers['X-PDF-Section'] = section # Pass the original rule/section fragment
-            
         return response
-        
     except Exception as e:
-        print(f"DEBUG: [serve_pdf] Error opening PDF: {str(e)}") # Debug print
-        logger.error(f"Error opening PDF: {str(e)}")
+        logger.error(f"Error serving file: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 ALLOWED_EXTENSIONS = {'pdf'}
