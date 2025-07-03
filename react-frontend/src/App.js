@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import './App.css';
 import './styles/backgrounds.css';
 import './styles/modal.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch, FaFileImage, FaFilePdf, FaEye } from 'react-icons/fa';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch, FaFileImage, FaFilePdf, FaEye, FaFileWord, FaFileExcel, FaFileAudio, FaFile } from 'react-icons/fa';
 import HomeView from './components/HomeView';
 import KnowledgeSourcesView from './components/KnowledgeSourcesView';
 import PDFViewer from './components/PDFViewer';
@@ -253,6 +253,30 @@ function renderAssistantContent(content, handleOpenPdfLink, sourceHighlights = n
   // Render the entire content using ReactMarkdown with custom renderers
   // Ensure the final content passed to ReactMarkdown is a string
   return <ReactMarkdown remarkPlugins={[remarkGfm]} components={renderers}>{String(processedContent)}</ReactMarkdown>;
+}
+
+// Helper to get icon by file type
+function getFileTypeIcon(file) {
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.pdf')) return <FaFilePdf style={{ color: '#d32f2f' }} />;
+  if (name.endsWith('.doc') || name.endsWith('.docx')) return <FaFileWord style={{ color: '#1976d2' }} />;
+  if (name.endsWith('.xls') || name.endsWith('.xlsx') || name.endsWith('.csv')) return <FaFileExcel style={{ color: '#388e3c' }} />;
+  if (name.endsWith('.txt')) return <FaFileAlt style={{ color: '#616161' }} />;
+  if (name.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/)) return <FaFileImage style={{ color: '#6c2eb7' }} />;
+  if (name.match(/\.(mp3|wav|ogg|m4a|aac)$/)) return <FaFileAudio style={{ color: '#fbc02d' }} />;
+  return <FaFile style={{ color: '#888' }} />;
+}
+
+// Helper to get file type for preview
+function getFileType(file) {
+  const name = file.name.toLowerCase();
+  if (name.endsWith('.pdf')) return 'pdf';
+  if (name.endsWith('.doc') || name.endsWith('.docx')) return 'docx';
+  if (name.endsWith('.xls') || name.endsWith('.xlsx') || name.endsWith('.csv')) return 'spreadsheet';
+  if (name.endsWith('.txt')) return 'text';
+  if (name.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/)) return 'image';
+  if (name.match(/\.(mp3|wav|ogg|m4a|aac)$/)) return 'audio';
+  return 'other';
 }
 
 function App() {
@@ -1379,11 +1403,11 @@ function App() {
 
   // Handler: PDF file input change
   const handlePdfChange = (e) => {
-    const files = Array.from(e.target.files).filter(file => file.type === 'application/pdf');
+    const files = Array.from(e.target.files);
     if (files.length > 0) {
       setSelectedPdfs(files);
     } else {
-      alert('Please select PDF files');
+      setSelectedPdfs([]);
     }
   };
 
@@ -1829,6 +1853,11 @@ function App() {
     setSelectedPdfs([]);
     setShowNewAgentOverlay(false);
   };
+
+  // Handler to remove a file from selectedPdfs
+  function handleRemoveFile(idx) {
+    setSelectedPdfs(prev => prev.filter((_, i) => i !== idx));
+  }
 
   return (
     <div className={`app-layout ${theme}-mode${leftCollapsed ? ' left-collapsed' : ''}${rightCollapsed ? ' right-collapsed' : ''}`}>
@@ -2938,7 +2967,7 @@ function App() {
               <div style={{ flex: '0 0 auto' }}>
                 <input
                   type="file"
-                  accept=".pdf"
+                  accept="*"
                   multiple
                   onChange={handlePdfChange}
                   id="pdf-upload"
@@ -2953,7 +2982,8 @@ function App() {
               <span className="file-chosen-text" style={{
                 fontSize: '0.95em',
                 display: 'grid',
-                gridTemplateColumns: '1fr 36px',
+                gridTemplateColumns: '24px 1fr 36px 32px',
+                columnGap: 8,
                 rowGap: 2,
                 maxHeight: 68,
                 overflowY: 'auto',
@@ -2966,9 +2996,10 @@ function App() {
                 {selectedPdfs.length > 0
                   ? selectedPdfs.map((f, idx) => (
                       <React.Fragment key={f.name + idx}>
+                        <span style={{ width: 24, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{getFileTypeIcon(f)}</span>
                         <span
                           style={{
-                            maxWidth: 180,
+                            maxWidth: 120,
                             overflow: 'hidden',
                             textOverflow: 'ellipsis',
                             whiteSpace: 'nowrap',
@@ -3000,6 +3031,28 @@ function App() {
                           title="Preview"
                         >
                           <FaEye />
+                        </button>
+                        <button
+                          type="button"
+                          style={{
+                            fontSize: '1.1em',
+                            width: 28,
+                            height: 28,
+                            borderRadius: 6,
+                            border: 'none',
+                            background: 'transparent',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#d32f2f',
+                            marginLeft: 0,
+                          }}
+                          onClick={() => handleRemoveFile(idx)}
+                          disabled={isSubmitting}
+                          title="Remove"
+                        >
+                          <FaTimes />
                         </button>
                       </React.Fragment>
                     ))
@@ -3331,12 +3384,65 @@ function App() {
       {/* PDF Preview Modal */}
       {previewPdfFile && (
         <Modal onClose={() => setPreviewPdfFile(null)} size="large">
-          <div style={{ width: '100%', height: '80vh', minWidth: 320 }}>
-            <PDFViewer
-              pdfUrl={URL.createObjectURL(previewPdfFile)}
-              onClose={() => setPreviewPdfFile(null)}
-              previewMode={true}
-            />
+          <div style={{ width: '100%', height: '80vh', minWidth: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+            <button
+              onClick={() => setPreviewPdfFile(null)}
+              style={{
+                position: 'absolute',
+                top: 16,
+                right: 16,
+                zIndex: 100,
+                background: '#fff',
+                border: 'none',
+                borderRadius: '50%',
+                width: 40,
+                height: 40,
+                boxShadow: '0 2px 8px #0002',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'background 0.2s',
+              }}
+              title="Close Preview"
+            >
+              <FaTimes size={20} color="#374151" />
+            </button>
+            {(() => {
+              const type = getFileType(previewPdfFile);
+              if (type === 'pdf' || type === 'text' || type === 'docx' || type === 'spreadsheet') {
+                return (
+                  <PDFViewer
+                    pdfUrl={URL.createObjectURL(previewPdfFile)}
+                    onClose={() => setPreviewPdfFile(null)}
+                    previewMode={true}
+                  />
+                );
+              } else if (type === 'image') {
+                return (
+                  <img
+                    src={URL.createObjectURL(previewPdfFile)}
+                    alt={previewPdfFile.name}
+                    style={{ maxWidth: '90vw', maxHeight: '75vh', borderRadius: 12, boxShadow: '0 2px 16px #0002' }}
+                  />
+                );
+              } else if (type === 'audio') {
+                return (
+                  <audio controls style={{ width: '100%' }}>
+                    <source src={URL.createObjectURL(previewPdfFile)} />
+                    Your browser does not support the audio element.
+                  </audio>
+                );
+              } else {
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
+                    <div style={{ fontSize: 48, marginBottom: 16 }}>{getFileTypeIcon(previewPdfFile)}</div>
+                    <div style={{ fontSize: 18, color: '#555', wordBreak: 'break-all' }}>{previewPdfFile.name}</div>
+                    <div style={{ color: '#888', marginTop: 12 }}>No preview available</div>
+                  </div>
+                );
+              }
+            })()}
           </div>
         </Modal>
       )}
