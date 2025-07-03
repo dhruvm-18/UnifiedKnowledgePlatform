@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import PropTypes from 'prop-types';
-import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes, FaPlus, FaFileAlt, FaRobot, FaBook, FaLightbulb, FaFlask, FaUserTie, FaTrash, FaArrowRight, FaArrowDown, FaArrowUp } from 'react-icons/fa';
+import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes, FaPlus, FaFileAlt, FaRobot, FaBook, FaLightbulb, FaFlask, FaUserTie, FaTrash, FaArrowRight, FaArrowDown, FaArrowUp, FaSync } from 'react-icons/fa';
 import { getIconComponent } from '../utils/iconUtils';
 import '../styles/KnowledgeSourcesView.css';
 import { Element, scroller } from 'react-scroll';
@@ -62,6 +62,7 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
 
   // Function to fetch agents from the backend
   const fetchAgents = useCallback(async () => {
+    setIsSubmitting(true);
     try {
       const response = await fetch(`${BACKEND_BASE}/agents`);
       if (!response.ok) {
@@ -72,12 +73,12 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
       onAgentDataChange(data); // Notify parent component (App.js) of the fetched agents
     } catch (error) {
       console.error('Error fetching agents:', error);
-      // Fallback to KNOWLEDGE_AGENT_CONST if fetching fails (for development convenience)
-      // In a production app, you might want a more robust error display
-      setAgents([]); // Or KNOWLEDGE_AGENT_CONST if you want hardcoded defaults
+      setAgents([]);
       onAgentDataChange([]);
+    } finally {
+      setIsSubmitting(false);
     }
-  }, [BACKEND_BASE, onAgentDataChange]);
+  }, [BACKEND_BASE, onAgentDataChange, setIsSubmitting]);
 
   // Fetch agents on component mount
   useEffect(() => {
@@ -215,7 +216,7 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
       <div className="knowledge-sources-view" ref={knowledgeSourcesViewRef} style={{ position: 'relative' }}>
         {/* Search bar and rest of content below */}
         <div className="search-bar">
-          <div className="search-input-container">
+          <div className="search-input-container" style={{ display: 'flex', alignItems: 'center' }}>
             <FaSearch className="search-icon" />
             <input
               type="text"
@@ -223,6 +224,23 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+            <button
+              onClick={fetchAgents}
+              title="Refresh Knowledge Sources"
+              style={{
+                background: 'none',
+                border: 'none',
+                marginLeft: 8,
+                cursor: 'pointer',
+                padding: 4,
+                display: 'flex',
+                alignItems: 'center',
+                color: 'var(--accent-color)',
+                fontSize: 20
+              }}
+            >
+              <FaSync className={`${isSubmitting ? 'refresh-spin' : ''} refresh-hover-spin`} />
+            </button>
           </div>
         </div>
 
