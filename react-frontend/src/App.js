@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import './App.css';
 import './styles/backgrounds.css';
 import './styles/modal.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch, FaFileImage, FaFilePdf } from 'react-icons/fa';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch, FaFileImage, FaFilePdf, FaEye } from 'react-icons/fa';
 import HomeView from './components/HomeView';
 import KnowledgeSourcesView from './components/KnowledgeSourcesView';
 import PDFViewer from './components/PDFViewer';
@@ -257,6 +257,7 @@ function renderAssistantContent(content, handleOpenPdfLink, sourceHighlights = n
 
 function App() {
   const [sessions, setSessions] = useState([]);
+  const [previewPdfFile, setPreviewPdfFile] = useState(null);
   const [currentSessionId, setCurrentSessionId] = useState(null);
   const [messages, setMessages] = useState([]);
   const [isDedicatedChat, setIsDedicatedChat] = useState(false);
@@ -1817,6 +1818,18 @@ function App() {
   // Restore agent and chat mode from localStorage on mount, and reset dropdown state
   
 
+ // Track file to preview
+
+  const handleCancelNewAgent = () => {
+    setNewAgentName('');
+    setNewAgentDescription('');
+    setNewAgentTileLineStartColor('');
+    setNewAgentTileLineEndColor('');
+    setNewAgentIconType('FaFileAlt');
+    setSelectedPdfs([]);
+    setShowNewAgentOverlay(false);
+  };
+
   return (
     <div className={`app-layout ${theme}-mode${leftCollapsed ? ' left-collapsed' : ''}${rightCollapsed ? ' right-collapsed' : ''}`}>
       <aside className={`left-sidebar${leftCollapsed ? ' collapsed' : ''}`}>
@@ -2883,6 +2896,9 @@ function App() {
               }}
             />
             {/* Icon selection and PDF upload remain unchanged */}
+            <div className="selected-icon-preview" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', margin: '0 0 12px 0', fontSize: 32 }}>
+              {getIconComponent(newAgentIconType, { size: '32px' })}
+            </div>
             <div className="icon-selection-container">
               <label htmlFor="icon-select" className="icon-select-label">Choose an Icon:</label>
               <select
@@ -2917,34 +2933,83 @@ function App() {
                 <option value="FaCheck">Check</option>
                 <option value="FaTimes">Times</option>
               </select>
-              <div className="selected-icon-preview">
-                {getIconComponent(newAgentIconType, { size: '22px' })}
-              </div>
             </div>
-            <div className="pdf-upload-section" style={{ margin: '10px 0' }}>
-              <input
-                type="file"
-                accept=".pdf"
-                multiple
-                onChange={handlePdfChange}
-                id="pdf-upload"
-                className="pdf-upload-input-hidden"
-                required
-                disabled={isSubmitting}
-              />
-              <label htmlFor="pdf-upload" className="file-upload-button" style={{ fontSize: '1rem', padding: '10px 18px' }}>
-                <FaFileAlt /> Choose Files
-              </label>
-              <span className="file-chosen-text" style={{ fontSize: '0.95em' }}>
+            <div className="pdf-upload-row" style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: 18, width: '100%', margin: '10px 0' }}>
+              <div style={{ flex: '0 0 auto' }}>
+                <input
+                  type="file"
+                  accept=".pdf"
+                  multiple
+                  onChange={handlePdfChange}
+                  id="pdf-upload"
+                  className="pdf-upload-input-hidden"
+                  required
+                  disabled={isSubmitting}
+                />
+                <label htmlFor="pdf-upload" className="file-upload-button" style={{ fontSize: '1rem', padding: '10px 18px', minWidth: 160, display: 'inline-flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+                  <FaFileAlt style={{ marginRight: 8 }} /> Choose Files
+                </label>
+              </div>
+              <span className="file-chosen-text" style={{
+                fontSize: '0.95em',
+                display: 'grid',
+                gridTemplateColumns: '1fr 36px',
+                rowGap: 2,
+                maxHeight: 68,
+                overflowY: 'auto',
+                marginTop: 0,
+                marginBottom: 2,
+                flex: '1 1 0',
+                justifySelf: 'end',
+                minWidth: 0
+              }}>
                 {selectedPdfs.length > 0
-                  ? selectedPdfs.map(f => f.name).join(', ')
-                  : 'No files chosen'}
+                  ? selectedPdfs.map((f, idx) => (
+                      <React.Fragment key={f.name + idx}>
+                        <span
+                          style={{
+                            maxWidth: 180,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            display: 'block',
+                            fontSize: '1em',
+                            lineHeight: '34px',
+                          }}
+                          title={f.name}
+                        >
+                          {f.name}
+                        </span>
+                        <button
+                          type="button"
+                          style={{
+                            fontSize: '1.1em',
+                            width: 32,
+                            height: 32,
+                            borderRadius: 6,
+                            border: '1px solid #ccc',
+                            background: '#f3f3f3',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            marginLeft: 0,
+                          }}
+                          onClick={() => setPreviewPdfFile(f)}
+                          disabled={isSubmitting}
+                          title="Preview"
+                        >
+                          <FaEye />
+                        </button>
+                      </React.Fragment>
+                    ))
+                  : <span style={{ color: '#888', fontStyle: 'italic', lineHeight: '34px' }}>No files chosen</span>}
               </span>
             </div>
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
             <button
-              onClick={() => setShowNewAgentOverlay(false)}
+              onClick={handleCancelNewAgent}
               style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
               disabled={isSubmitting}
             >Cancel</button>
@@ -3262,6 +3327,18 @@ function App() {
             // Password is saved in localStorage by modal
           }}
         />
+      )}
+      {/* PDF Preview Modal */}
+      {previewPdfFile && (
+        <Modal onClose={() => setPreviewPdfFile(null)} size="large">
+          <div style={{ width: '100%', height: '80vh', minWidth: 320 }}>
+            <PDFViewer
+              pdfUrl={URL.createObjectURL(previewPdfFile)}
+              onClose={() => setPreviewPdfFile(null)}
+              previewMode={true}
+            />
+          </div>
+        </Modal>
       )}
     </div>
   );

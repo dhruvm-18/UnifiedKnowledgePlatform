@@ -11,7 +11,7 @@ const PDF_DPI = 150;
 const PDF_DEFAULT_DPI = 70;
 const DPI_SCALE = PDF_DPI / PDF_DEFAULT_DPI;
 
-const PDFViewer = ({ pdfUrl, pageNumber = 1, highlightTexts = null, highlightText = null, section = null, onClose }) => {
+const PDFViewer = ({ pdfUrl, pageNumber = 1, highlightTexts = null, highlightText = null, section = null, onClose, previewMode = false }) => {
   const [error, setError] = useState(null);
   const [numPages, setNumPages] = useState(null);
   const canvasRef = useRef(null);
@@ -298,6 +298,9 @@ const PDFViewer = ({ pdfUrl, pageNumber = 1, highlightTexts = null, highlightTex
       minHeight: 480,
       color: isDarkMode ? '#f3f4f6' : '#222',
       transition: 'background 0.2s, color 0.2s',
+      display: 'flex',
+      flexDirection: previewMode ? 'row' : 'column',
+      alignItems: 'stretch',
     }}>
       {/* Floating close button */}
       <button
@@ -325,66 +328,90 @@ const PDFViewer = ({ pdfUrl, pageNumber = 1, highlightTexts = null, highlightTex
         <FaTimes size={20} color={isDarkMode ? '#f3f4f6' : '#374151'} />
       </button>
       {/* Controls */}
-      <div className="pdf-controls" style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 16,
-        padding: '18px 24px 8px 24px',
-        borderRadius: 18,
-        background: isDarkMode ? '#23262f' : '#fff',
-        boxShadow: isDarkMode ? '0 2px 16px #0008' : '0 2px 16px #0001',
-        margin: '0 auto',
-        maxWidth: 480,
-        color: isDarkMode ? '#f3f4f6' : '#222',
-      }}>
-        <button onClick={handlePrevPage} disabled={currentPage <= 1} className="pdf-nav-btn" title="Previous Page"><FaChevronLeft /></button>
-        <span className="pdf-page-info" style={{ fontWeight: 500, fontSize: '1.05em', color: isDarkMode ? '#f3f4f6' : '#374151' }}>Page {currentPage}{numPages ? ` of ${numPages}` : ''}</span>
-        <button onClick={handleNextPage} disabled={numPages ? currentPage >= numPages : false} className="pdf-nav-btn" title="Next Page"><FaChevronRight /></button>
-        <span style={{ width: 24 }} />
-        <button onClick={handleZoomOut} className="pdf-zoom-btn" title="Zoom Out"><FaSearchMinus /></button>
-        <button onClick={handleZoomIn} className="pdf-zoom-btn" title="Zoom In"><FaSearchPlus /></button>
-        {/* Toggle for highlights */}
-        <button
-          onClick={() => setShowHighlights(v => !v)}
-          className="pdf-highlight-toggle-btn"
-          style={{
-            marginLeft: 16,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            background: showHighlights ? '#6c2eb7' : (isDarkMode ? '#23262f' : '#f3f4f6'),
-            color: showHighlights ? '#fff' : (isDarkMode ? '#f3f4f6' : '#374151'),
-            border: 'none',
-            borderRadius: 8,
-            padding: '7px 16px',
-            fontWeight: 500,
-            fontSize: '1em',
-            boxShadow: showHighlights ? '0 2px 8px #6c2eb733' : '0 2px 8px #0001',
-            cursor: 'pointer',
-            transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
-            outline: showHighlights ? '2px solid #6c2eb7' : 'none',
-            height: 40,
-            minWidth: 160,
-          }}
-          onMouseOver={e => e.currentTarget.style.background = showHighlights ? '#5a249a' : (isDarkMode ? '#23262f' : '#e5e7eb')}
-          onMouseOut={e => e.currentTarget.style.background = showHighlights ? '#6c2eb7' : (isDarkMode ? '#23262f' : '#f3f4f6')}
-        >
-          <FaHighlighter size={15} style={{ marginRight: 4, opacity: showHighlights ? 1 : 0.7 }} />
-          {showHighlights ? 'Remove Highlight' : 'Highlight Answer in PDF'}
-        </button>
-      </div>
+      {previewMode ? (
+        <div className="pdf-controls-vertical" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 18,
+          padding: '32px 8px 8px 8px',
+          borderRadius: 18,
+          background: isDarkMode ? '#23262f' : 'transparent',
+          boxShadow: 'none',
+          margin: 0,
+          height: '100%',
+          color: isDarkMode ? '#f3f4f6' : '#222',
+          zIndex: 2,
+        }}>
+          <button onClick={handlePrevPage} disabled={currentPage <= 1} className="pdf-nav-btn pdf-circle-btn" title="Previous Page"><FaChevronLeft /></button>
+          <span className="pdf-page-info" style={{ fontWeight: 500, fontSize: '1.05em', color: isDarkMode ? '#f3f4f6' : '#374151', writingMode: 'vertical-lr', textAlign: 'center', margin: '12px 0' }}>Page {currentPage}{numPages ? ` of ${numPages}` : ''}</span>
+          <button onClick={handleNextPage} disabled={numPages ? currentPage >= numPages : false} className="pdf-nav-btn pdf-circle-btn" title="Next Page"><FaChevronRight /></button>
+          <button onClick={handleZoomOut} className="pdf-zoom-btn pdf-circle-btn" title="Zoom Out" style={{ marginTop: 18 }}><FaSearchMinus /></button>
+          <button onClick={handleZoomIn} className="pdf-zoom-btn pdf-circle-btn" title="Zoom In"><FaSearchPlus /></button>
+        </div>
+      ) : (
+        <div className="pdf-controls" style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          gap: 16,
+          padding: '18px 24px 8px 24px',
+          borderRadius: 18,
+          background: isDarkMode ? '#23262f' : '#fff',
+          boxShadow: isDarkMode ? '0 2px 16px #0008' : '0 2px 16px #0001',
+          margin: '0 auto',
+          maxWidth: 480,
+          color: isDarkMode ? '#f3f4f6' : '#222',
+        }}>
+          <button onClick={handlePrevPage} disabled={currentPage <= 1} className="pdf-nav-btn" title="Previous Page"><FaChevronLeft /></button>
+          <span className="pdf-page-info" style={{ fontWeight: 500, fontSize: '1.05em', color: isDarkMode ? '#f3f4f6' : '#374151' }}>Page {currentPage}{numPages ? ` of ${numPages}` : ''}</span>
+          <button onClick={handleNextPage} disabled={numPages ? currentPage >= numPages : false} className="pdf-nav-btn" title="Next Page"><FaChevronRight /></button>
+          <span style={{ width: 24 }} />
+          <button onClick={handleZoomOut} className="pdf-zoom-btn" title="Zoom Out"><FaSearchMinus /></button>
+          <button onClick={handleZoomIn} className="pdf-zoom-btn" title="Zoom In"><FaSearchPlus /></button>
+          {/* Toggle for highlights */}
+          <button
+            onClick={() => setShowHighlights(v => !v)}
+            className="pdf-highlight-toggle-btn"
+            style={{
+              marginLeft: 16,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              background: showHighlights ? '#6c2eb7' : (isDarkMode ? '#23262f' : '#f3f4f6'),
+              color: showHighlights ? '#fff' : (isDarkMode ? '#f3f4f6' : '#374151'),
+              border: 'none',
+              borderRadius: 8,
+              padding: '7px 16px',
+              fontWeight: 500,
+              fontSize: '1em',
+              boxShadow: showHighlights ? '0 2px 8px #6c2eb733' : '0 2px 8px #0001',
+              cursor: 'pointer',
+              transition: 'background 0.2s, color 0.2s, box-shadow 0.2s',
+              outline: showHighlights ? '2px solid #6c2eb7' : 'none',
+              height: 40,
+              minWidth: 160,
+            }}
+            onMouseOver={e => e.currentTarget.style.background = showHighlights ? '#5a249a' : (isDarkMode ? '#23262f' : '#e5e7eb')}
+            onMouseOut={e => e.currentTarget.style.background = showHighlights ? '#6c2eb7' : (isDarkMode ? '#23262f' : '#f3f4f6')}
+          >
+            <FaHighlighter size={15} style={{ marginRight: 4, opacity: showHighlights ? 1 : 0.7 }} />
+            {showHighlights ? 'Remove Highlight' : 'Highlight Answer in PDF'}
+          </button>
+        </div>
+      )}
       {/* PDFTextHighlighter viewer */}
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400, padding: 8 }}>
+      <div className={previewMode ? 'pdf-preview-scroll-area' : ''} style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: 0, padding: 0, overflow: previewMode ? 'auto' : 'visible' }}>
         <PDFTextHighlighter
           pdfUrl={pdfUrl}
           pageNumber={currentPage}
-          highlightTexts={showHighlights ? allHighlights : []}
+          highlightTexts={previewMode ? [] : (showHighlights ? allHighlights : [])}
           section={section}
           scale={scale}
           onNumPages={handleNumPages}
         />
-        {showHighlightBtn && selectedText && (
+        {/* No highlight button in previewMode */}
+        {!previewMode && showHighlightBtn && selectedText && (
           <button
             style={{
               position: 'absolute',
@@ -398,7 +425,6 @@ const PDFViewer = ({ pdfUrl, pageNumber = 1, highlightTexts = null, highlightTex
               padding: '6px 14px',
               fontWeight: 600,
               boxShadow: '0 2px 8px #0002',
-              cursor: 'pointer',
             }}
             onClick={handleAddHighlight}
           >
