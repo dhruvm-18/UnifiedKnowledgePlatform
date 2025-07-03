@@ -127,6 +127,18 @@
       ],
       "tileLineStartColor": "",
       "tileLineEndColor": ""
+    },
+    {
+      "agentId": "agent_1751570116569",
+      "name": "docx",
+      "description": "docx",
+      "iconType": "FaFileAlt",
+      "buttonText": "Start Chat",
+      "pdfSources": [
+        "ISS_Report.docx"
+      ],
+      "tileLineStartColor": "",
+      "tileLineEndColor": ""
     }
   ]
 }

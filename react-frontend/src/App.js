@@ -21,11 +21,13 @@ import AgentOverlay from './components/AgentOverlay';
 import { Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell } from "docx";
 import { marked } from "marked";
 import MyProjectsView from './views/MyProjectsView';
-import Modal from './components/Modal'; // (Assume we will create this if not present)
-import FeedbackModalContent from './components/FeedbackModalContent'; // (Assume we will create this if not present)
+import Modal from './components/Modal';
+import FeedbackModalContent from './components/FeedbackModalContent';
 import LoginView from './views/LoginView';
 import ProfileModal from './components/ProfileModal';
 import { renderAsync as renderDocxPreview } from 'docx-preview';
+import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 
 // Add at the top, before the App component
 const getOrCreateUserId = () => {
@@ -192,7 +194,7 @@ function App() {
   const [currentAgents, setCurrentAgents] = useState([]);
 
   // Add new state for source opener modal
-  const [sourcePreview, setSourcePreview] = useState({ type: null, url: null, name: null, docxHtml: null, csvRows: null });
+  const [sourcePreview, setSourcePreview] = useState({ type: null, url: null, name: null, docxHtml: null, csvRows: null, loading: false, error: null });
 
 // 1. Generalize the handler (move inside App)
 const handleOpenSourceLink = (e, href, msg = null) => {
@@ -362,34 +364,57 @@ function renderAssistantContent(content, handleOpenSourceLink, sourceHighlights 
             aria-label={`Open file: ${filename}`}
             onClick={async e => {
               e.preventDefault();
-              // Fetch and preview logic for source opener
-              const res = await fetch(cleanHref);
-              const blob = await res.blob();
-              if (type === 'image') {
-                setSourcePreview({ type, url: URL.createObjectURL(blob), name: filename });
-              } else if (type === 'audio') {
-                setSourcePreview({ type, url: URL.createObjectURL(blob), name: filename });
-              } else if (type === 'spreadsheet') {
-                // CSV/Excel preview as table
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  const text = e.target.result;
-                  const rows = text.split('\n').map(row => row.split(','));
-                  setSourcePreview({ type, csvRows: rows, url: null, name: filename });
-                };
-                reader.readAsText(blob);
-              } else if (type === 'docx') {
-                // DOCX preview as HTML
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                  const arrayBuffer = e.target.result;
-                  const container = document.createElement('div');
-                  await renderDocxPreview(arrayBuffer, container);
-                  setSourcePreview({ type, docxHtml: container.innerHTML, url: null, name: filename });
-                };
-                reader.readAsArrayBuffer(blob);
-              } else {
-                setSourcePreview({ type, url: URL.createObjectURL(blob), name: filename });
+              setSourcePreview({ type, url: null, name: filename, docxHtml: null, csvRows: null, loading: true, error: null });
+              try {
+                const res = await fetch(cleanHref);
+                const blob = await res.blob();
+                if (type === 'image') {
+                  setSourcePreview({ type, url: URL.createObjectURL(blob), name: filename, loading: false });
+                } else if (type === 'audio') {
+                  setSourcePreview({ type, url: URL.createObjectURL(blob), name: filename, loading: false });
+                } else if (type === 'spreadsheet') {
+                  // Excel/CSV preview
+                  if (['csv'].includes(ext)) {
+                    // Use PapaParse for CSV
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                      const text = e.target.result;
+                      const parsed = Papa.parse(text, { skipEmptyLines: true });
+                      setSourcePreview({ type, csvRows: parsed.data, url: null, name: filename, loading: false });
+                    };
+                    reader.readAsText(blob);
+                  } else {
+                    // Use SheetJS for .xls/.xlsx
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                      const data = new Uint8Array(e.target.result);
+                      const workbook = XLSX.read(data, { type: 'array' });
+                      const sheetName = workbook.SheetNames[0];
+                      const worksheet = workbook.Sheets[sheetName];
+                      const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                      setSourcePreview({ type, csvRows: rows, url: null, name: filename, loading: false });
+                    };
+                    reader.readAsArrayBuffer(blob);
+                  }
+                } else if (type === 'docx') {
+                  // DOCX preview as HTML
+                  const reader = new FileReader();
+                  reader.onload = async (e) => {
+                    try {
+                      const arrayBuffer = e.target.result;
+                      const container = document.createElement('div');
+                      await renderDocxPreview(arrayBuffer, container);
+                      setSourcePreview({ type, docxHtml: container.innerHTML, url: null, name: filename, loading: false });
+                    } catch (err) {
+                      setSourcePreview({ type, docxHtml: null, url: null, name: filename, loading: false, error: 'Failed to render DOCX.' });
+                    }
+                  };
+                  reader.readAsArrayBuffer(blob);
+                } else {
+                  setSourcePreview({ type, url: URL.createObjectURL(blob), name: filename, loading: false });
+                }
+              } catch (err) {
+                setSourcePreview({ type, url: null, name: filename, loading: false, error: 'Failed to load file.' });
               }
             }}
             style={{
@@ -3614,11 +3639,11 @@ function getFileType(file) {
           </div>
         </Modal>
       )}
-      {sourcePreview.url && (
-        <Modal onClose={() => setSourcePreview({ type: null, url: null, name: null, docxHtml: null, csvRows: null })} size="large">
+      {sourcePreview.type && (
+        <Modal onClose={() => setSourcePreview({ type: null, url: null, name: null, docxHtml: null, csvRows: null, loading: false, error: null })} size="large">
           <div style={{ width: '100%', height: '80vh', minWidth: 320, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
             <button
-              onClick={() => setSourcePreview({ type: null, url: null, name: null, docxHtml: null, csvRows: null })}
+              onClick={() => setSourcePreview({ type: null, url: null, name: null, docxHtml: null, csvRows: null, loading: false, error: null })}
               style={{
                 position: 'absolute',
                 top: 16,
@@ -3640,8 +3665,12 @@ function getFileType(file) {
             >
               <FaTimes size={20} color="#374151" />
             </button>
-            {sourcePreview.type === 'image' ? (
-              <ReactImage src={sourcePreview.url} style={{ maxWidth: '90vw', maxHeight: '75vh', borderRadius: 12, boxShadow: '0 2px 16px #0002' }} alt="Preview" />
+            {sourcePreview.loading ? (
+              <div style={{ color: '#888', fontSize: 20 }}>Loading preview...</div>
+            ) : sourcePreview.error ? (
+              <div style={{ color: 'red', fontSize: 18 }}>{sourcePreview.error}</div>
+            ) : sourcePreview.type === 'image' ? (
+              <img src={sourcePreview.url} style={{ maxWidth: '90vw', maxHeight: '75vh', borderRadius: 12, boxShadow: '0 2px 16px #0002' }} alt="Preview" />
             ) : sourcePreview.type === 'audio' ? (
               <ReactAudioPlayer src={sourcePreview.url} controls style={{ width: '100%' }} />
             ) : sourcePreview.type === 'spreadsheet' && sourcePreview.csvRows ? (
