@@ -115,6 +115,18 @@
       ],
       "tileLineStartColor": "",
       "tileLineEndColor": ""
+    },
+    {
+      "agentId": "agent_1751546471999",
+      "name": "audio",
+      "description": "audio",
+      "iconType": "FaFileAlt",
+      "buttonText": "Start Chat",
+      "pdfSources": [
+        "Nvidia_Podcast.mp3"
+      ],
+      "tileLineStartColor": "",
+      "tileLineEndColor": ""
     }
   ]
 }

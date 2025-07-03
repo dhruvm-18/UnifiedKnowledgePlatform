@@ -1,6 +1,8 @@
 import os
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["PATH"] += os.pathsep + r"C:\ffmpeg\bin\bin"
+os.environ["FFMPEG_BINARY"] = r"C:\ffmpeg\bin\bin\ffmpeg.exe"
 
 import json
 from datetime import datetime
