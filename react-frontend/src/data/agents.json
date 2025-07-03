@@ -91,6 +91,30 @@
       ],
       "tileLineStartColor": "Violet",
       "tileLineEndColor": "Black"
+    },
+    {
+      "agentId": "agent_1751543130789",
+      "name": "img",
+      "description": "img",
+      "iconType": "FaFileAlt",
+      "buttonText": "Start Chat",
+      "pdfSources": [
+        "political.png"
+      ],
+      "tileLineStartColor": "",
+      "tileLineEndColor": ""
+    },
+    {
+      "agentId": "agent_1751545216911",
+      "name": "csv",
+      "description": "csv",
+      "iconType": "FaFileAlt",
+      "buttonText": "Start Chat",
+      "pdfSources": [
+        "customers-100.csv"
+      ],
+      "tileLineStartColor": "",
+      "tileLineEndColor": ""
     }
   ]
 }

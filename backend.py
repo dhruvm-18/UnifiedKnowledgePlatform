@@ -55,6 +55,23 @@ from elevenlabs.client import ElevenLabs # Import the client class
 import requests
 from ollama import Client as OllamaClient
 import threading
+import pandas as pd
+import pdfplumber
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+from PIL import Image
+import cv2
+import numpy as np
+import json as pyjson
+# PATCH: Add Whisper for server-side audio transcription
+try:
+    import whisper
+    whisper_model = whisper.load_model('base')
+    WHISPER_AVAILABLE = True
+except Exception as e:
+    WHISPER_AVAILABLE = False
+    whisper_model = None
+    print(f"[WARNING] Whisper not available: {e}")
 
 # Suppress Faiss GPU warnings
 warnings.filterwarnings("ignore", message=".*GpuIndexIVFFlat.*")
@@ -101,7 +118,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 logger.info(f"UPLOAD_FOLDER resolved to: {UPLOAD_FOLDER}")
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 
 # Load environment variables
 load_dotenv()
@@ -705,13 +722,216 @@ def load_pdf_as_documents(pdf_filename):
     except Exception as e:
         logger.error(f"Error loading PDF {pdf_filename}: {e}")
         return []
+def batch_embed_and_index(docs, embeddings, batch_size=500):
+    from backend.utils import initialize_faiss_index
+    all_docs = []
+    for i in range(0, len(docs), batch_size):
+        batch = docs[i:i+batch_size]
+        # Embed the batch (but do not use precomputed_vectors)
+        # vectors = embeddings.embed_documents([doc.page_content for doc in batch])
+        all_docs.extend(batch)
+    # Now build the FAISS index with all docs (let initialize_faiss_index compute embeddings)
+    vectorstore = initialize_faiss_index(all_docs, embeddings)
+    return vectorstore
 
-# Build agent-specific retrievers
+# Build agent-specific retrievers (PATCH: build for all file types, not just PDFs)
+def extract_structured(file_path):
+    ext = file_path.lower().split('.')[-1]
+    try:
+        if ext == 'csv':
+            df = pd.read_csv(file_path)
+        elif ext == 'xlsx':
+            df = pd.read_excel(file_path)
+        elif ext == 'json':
+            with open(file_path, 'r', encoding='utf-8') as f:
+                data = pyjson.load(f)
+            if isinstance(data, list):
+                df = pd.json_normalize(data)
+            else:
+                df = pd.json_normalize([data])
+        else:
+            raise ValueError('Unsupported structured file')
+        if df.empty:
+            logger.warning(f"Structured file {file_path} is empty.")
+            return []
+        return df.to_dict(orient='records')
+    except Exception as e:
+        logger.error(f"Failed to extract structured data from {file_path}: {e}")
+        return []
+
+def extract_text(file_path):
+    with open(file_path, 'r', encoding='utf-8') as f:
+        return f.read()
+
+def extract_pdf(file_path):
+    extracted_text = []
+    with pdfplumber.open(file_path) as pdf:
+        for page in pdf.pages:
+            text = page.extract_text() or ''
+            if text.strip():
+                extracted_text.append(text)
+            else:
+                # Fallback: Convert page to image and run Tesseract OCR
+                pil_img = page.to_image(resolution=300).original
+                img_gray = pil_img.convert('L')
+                img_np = np.array(img_gray)
+                img_bin = cv2.adaptiveThreshold(img_np, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 2)
+                img_pil = Image.fromarray(img_bin)
+                ocr_text = pytesseract.image_to_string(img_pil)
+                extracted_text.append(ocr_text)
+    return '\n'.join(extracted_text)
+
+def preprocess_image_for_ocr(image):
+    img_gray = image.convert('L')
+    img_np = np.array(img_gray)
+    img_bin = cv2.adaptiveThreshold(img_np, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 31, 2)
+    img_pil = Image.fromarray(img_bin)
+    if img_pil.width < 600:
+        scale = 600 / img_pil.width
+        new_size = (int(img_pil.width * scale), int(img_pil.height * scale))
+        img_pil = img_pil.resize(new_size, Image.ANTIALIAS)
+    return img_pil
+
+def extract_image(file_path, use_trocr=False):
+    try:
+        try:
+            image = Image.open(file_path).convert('RGB')
+            logger.info(f"Loaded image {file_path} with Pillow.")
+        except Exception as pil_e:
+            logger.warning(f"Pillow failed to open {file_path}: {pil_e}. Trying OpenCV...")
+            img_cv = cv2.imread(file_path)
+            if img_cv is None:
+                logger.error(f"OpenCV failed to open {file_path} as image.")
+                return ''
+            image = Image.fromarray(cv2.cvtColor(img_cv, cv2.COLOR_BGR2RGB))
+            logger.info(f"Loaded image {file_path} with OpenCV.")
+        preprocessed = preprocess_image_for_ocr(image)
+        if not use_trocr:
+            try:
+                text = pytesseract.image_to_string(preprocessed)
+                logger.info(f"Extracted text from image {file_path} using Tesseract, length: {len(text)} chars.")
+                return text
+            except Exception as tess_e:
+                logger.error(f"Tesseract OCR failed for {file_path}: {tess_e}")
+                return ''
+        else:
+            # Add TrOCR logic here if needed
+            return ''
+    except Exception as e:
+        logger.error(f"Failed to extract text from image {file_path}: {e}")
+        return ''
+
+def extract_content(file_path, file_type, audio_transcript=None):
+    ext = file_path.lower().split('.')[-1]
+    if file_type == 'audio':
+        return audio_transcript or ''
+    elif ext in ['csv', 'xlsx', 'json']:
+        return extract_structured(file_path)
+    elif ext in ['txt']:
+        return extract_text(file_path)
+    elif ext in ['pdf']:
+        return extract_pdf(file_path)
+    elif ext in ['jpg', 'jpeg', 'png', 'bmp', 'webp', 'tiff']:
+        return extract_image(file_path, use_trocr=False)
+    else:
+        return None
+
+def extract_audio_transcript(file_path):
+    if not os.path.exists(file_path):
+        logger.error(f"Audio file not found for transcription: {file_path}")
+        return None
+    if not WHISPER_AVAILABLE:
+        logger.error("Whisper is not available for audio transcription.")
+        return None
+    try:
+        result = whisper_model.transcribe(file_path)
+        return result['text']
+    except Exception as e:
+        logger.error(f"Whisper transcription failed for {file_path}: {e}")
+        return None
+
 for agent_id, agent in AGENTS_DATA.items():
     pdfs = agent.get('pdfSources', [])
     agent_docs = []
-    for pdf in pdfs:
-        agent_docs.extend(load_pdf_as_documents(pdf))
+    for filename in pdfs:
+        ext = filename.lower().split('.')[-1]
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        try:
+            logger.info(f"[STARTUP] Processing file '{filename}' (type: {ext}) for retriever...")
+            if ext == 'pdf':
+                agent_docs.extend(load_pdf_as_documents(filename))
+            elif ext in ['csv', 'xlsx', 'json']:
+                content = extract_structured(file_path)
+                if content:
+                    logger.info(f"[STARTUP] Extracted structured data from {filename}, {len(content)} rows.")
+                    import json as pyjson
+                    from langchain.text_splitter import RecursiveCharacterTextSplitter
+                    docs = []
+                    for i, row in enumerate(content):
+                        row_text = pyjson.dumps(row, ensure_ascii=False)
+                        if len(row_text) > 1000:
+                            chunks = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100).split_text(row_text)
+                            for chunk in chunks:
+                                docs.append(Document(page_content=chunk, metadata={"source": filename, "file_type": ext, "row": i}))
+                        else:
+                            docs.append(Document(page_content=row_text, metadata={"source": filename, "file_type": ext, "row": i}))
+                    logger.info(f"[STARTUP] Created {len(docs)} document chunks for {filename}")
+                    # Batch embed and index
+                    agent_vectorstore = batch_embed_and_index(docs, embeddings, batch_size=500)
+                    agent_retrievers[agent_id] = agent_vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 20})
+                    logger.info(f"[PATCH] Built retriever for new agent {agent_id} with {len(docs)} docs (batched embedding).")
+                    agent_docs.extend(docs)
+                else:
+                    logger.warning(f"[STARTUP] No structured data extracted from {filename} (type: {ext})")
+                    continue
+            elif ext in ['jpg', 'jpeg', 'png', 'bmp', 'webp', 'tiff']:
+                content = extract_image(file_path, use_trocr=False)
+                if content:
+                    logger.info(f"[STARTUP] Extracted text from image {filename}, length: {len(content)} chars.")
+                    from langchain.text_splitter import RecursiveCharacterTextSplitter
+                    docs = [Document(page_content=chunk, metadata={"source": filename, "file_type": ext})
+                            for chunk in RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100).split_text(content) if chunk.strip()]
+                    logger.info(f"[STARTUP] Created {len(docs)} document chunks for {filename}")
+                    agent_docs.extend(docs)
+                else:
+                    logger.warning(f"[STARTUP] No text extracted from image {filename} (type: {ext})")
+            elif ext in ['mp3', 'wav', 'ogg', 'm4a']:
+                transcript_path = os.path.splitext(file_path)[0] + '.txt'
+                if os.path.exists(transcript_path):
+                    with open(transcript_path, 'r', encoding='utf-8') as tf:
+                        content = tf.read()
+                    logger.info(f"[STARTUP] Loaded transcript for {filename}, length: {len(content)} chars")
+                else:
+                    # Try to generate transcript with Whisper
+                    content = extract_audio_transcript(file_path)
+                    if content:
+                        with open(transcript_path, 'w', encoding='utf-8') as tf:
+                            tf.write(content)
+                        logger.info(f"Transcribed and saved transcript for {filename} at {transcript_path}")
+                    else:
+                        logger.warning(f"No transcript found or generated for audio file {filename}. Skipping retriever creation for this file.")
+                        continue
+                if content:
+                    from langchain.text_splitter import RecursiveCharacterTextSplitter
+                    docs = [Document(page_content=chunk, metadata={"source": filename, "file_type": ext})
+                            for chunk in RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100).split_text(content) if chunk.strip()]
+                    logger.info(f"Created {len(docs)} document chunks for {filename}")
+                    agent_docs.extend(docs)
+            elif ext == 'txt':
+                content = extract_text(file_path)
+                if content:
+                    logger.info(f"[STARTUP] Extracted text from {filename}, length: {len(content)} chars.")
+                    from langchain.text_splitter import RecursiveCharacterTextSplitter
+                    docs = [Document(page_content=chunk, metadata={"source": filename, "file_type": ext})
+                            for chunk in RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100).split_text(content) if chunk.strip()]
+                    logger.info(f"[STARTUP] Created {len(docs)} document chunks for {filename}")
+                    agent_docs.extend(docs)
+                else:
+                    logger.warning(f"[STARTUP] No text extracted from {filename} (type: {ext})")
+            else:
+                logger.warning(f"[STARTUP] Unsupported file type for retriever: {filename} (type: {ext})")
+        except Exception as e:
+            logger.error(f"[STARTUP] Error extracting/processing {filename} (type: {ext}): {e}")
     if agent_docs:
         agent_vectorstore = initialize_faiss_index(agent_docs, embeddings)
         agent_retrievers[agent_id] = agent_vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 20})
@@ -1468,16 +1688,91 @@ def add_agent():
         # Load PDFs and build retriever for the new agent
         pdfs = agent_data.get('pdfSources', [])
         agent_docs = []
-        for pdf in pdfs:
-            agent_docs.extend(load_pdf_as_documents(pdf))
+        for filename in pdfs:
+            ext = filename.lower().split('.')[-1]
+            file_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            try:
+                logger.info(f"Processing file '{filename}' (type: {ext}) for retriever...")
+                if ext == 'pdf':
+                    agent_docs.extend(load_pdf_as_documents(filename))
+                elif ext in ['csv', 'xlsx', 'json']:
+                    content = extract_structured(file_path)
+                    if content:
+                        logger.info(f"Extracted structured data from {filename}, {len(content)} rows.")
+                        import json as pyjson
+                        from langchain.text_splitter import RecursiveCharacterTextSplitter
+                        docs = []
+                        for i, row in enumerate(content):
+                            row_text = pyjson.dumps(row, ensure_ascii=False)
+                            if len(row_text) > 1000:
+                                chunks = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100).split_text(row_text)
+                                for chunk in chunks:
+                                    docs.append(Document(page_content=chunk, metadata={"source": filename, "file_type": ext, "row": i}))
+                            else:
+                                docs.append(Document(page_content=row_text, metadata={"source": filename, "file_type": ext, "row": i}))
+                        logger.info(f"Created {len(docs)} document chunks for {filename}")
+                        # Batch embed and index
+                        agent_vectorstore = batch_embed_and_index(docs, embeddings, batch_size=500)
+                        agent_retrievers[agent_id] = agent_vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 20})
+                        logger.info(f"[PATCH] Built retriever for new agent {agent_id} with {len(docs)} docs (batched embedding).")
+                        agent_docs.extend(docs)
+                    else:
+                        logger.warning(f"No structured data extracted from {filename} (type: {ext})")
+                        continue
+                elif ext in ['jpg', 'jpeg', 'png', 'bmp', 'webp', 'tiff']:
+                    content = extract_image(file_path, use_trocr=False)
+                    if content:
+                        logger.info(f"Extracted text from image {filename}, length: {len(content)} chars.")
+                        from langchain.text_splitter import RecursiveCharacterTextSplitter
+                        docs = [Document(page_content=chunk, metadata={"source": filename, "file_type": ext})
+                                for chunk in RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100).split_text(content) if chunk.strip()]
+                        logger.info(f"Created {len(docs)} document chunks for {filename}")
+                        agent_docs.extend(docs)
+                    else:
+                        logger.warning(f"No text extracted from image {filename} (type: {ext})")
+                elif ext in ['mp3', 'wav', 'ogg', 'm4a']:
+                    transcript_path = os.path.splitext(file_path)[0] + '.txt'
+                    if os.path.exists(transcript_path):
+                        with open(transcript_path, 'r', encoding='utf-8') as tf:
+                            content = tf.read()
+                        logger.info(f"Loaded transcript for {filename}, length: {len(content)} chars")
+                    else:
+                        # Try to generate transcript with Whisper
+                        content = extract_audio_transcript(file_path)
+                        if content:
+                            with open(transcript_path, 'w', encoding='utf-8') as tf:
+                                tf.write(content)
+                            logger.info(f"Transcribed and saved transcript for {filename} at {transcript_path}")
+                        else:
+                            logger.warning(f"No transcript found or generated for audio file {filename}. Skipping retriever creation for this file.")
+                            continue
+                    if content:
+                        from langchain.text_splitter import RecursiveCharacterTextSplitter
+                        docs = [Document(page_content=chunk, metadata={"source": filename, "file_type": ext})
+                                for chunk in RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100).split_text(content) if chunk.strip()]
+                        logger.info(f"Created {len(docs)} document chunks for {filename}")
+                        agent_docs.extend(docs)
+                elif ext == 'txt':
+                    content = extract_text(file_path)
+                    if content:
+                        logger.info(f"Extracted text from {filename}, length: {len(content)} chars.")
+                        from langchain.text_splitter import RecursiveCharacterTextSplitter
+                        docs = [Document(page_content=chunk, metadata={"source": filename, "file_type": ext})
+                                for chunk in RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100).split_text(content) if chunk.strip()]
+                        logger.info(f"Created {len(docs)} document chunks for {filename}")
+                        agent_docs.extend(docs)
+                    else:
+                        logger.warning(f"No text extracted from {filename} (type: {ext})")
+                else:
+                    logger.warning(f"Unsupported file type for retriever: {filename} (type: {ext})")
+            except Exception as e:
+                logger.error(f"Error extracting/processing {filename} (type: {ext}): {e}")
         if agent_docs:
             agent_vectorstore = initialize_faiss_index(agent_docs, embeddings)
             agent_retrievers[agent_id] = agent_vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 20})
-            logger.info(f"[PATCH] Built retriever for new agent {agent_id} with {len(agent_docs)} docs.")
+            logger.info(f"Built retriever for agent {agent_id} with {len(agent_docs)} docs.")
         else:
             logger.warning(f"[PATCH] No documents found for new agent {agent_id}. Retriever not built.")
-        # --- PATCH END ---
-
         return jsonify({
             'message': 'Agent created successfully',
             'agent': agent_data,
@@ -1829,6 +2124,45 @@ def submit_feedback():
     except Exception as e:
         logger.error(f"Error saving feedback: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.errorhandler(404)
+def not_found_error(error):
+    return jsonify({'error': 'Not found', 'success': False}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({'error': 'Internal server error', 'success': False}), 500
+
+@app.route('/upload', methods=['POST'])
+def upload_any():
+    """Handle uploads of any file type, save them, and return filenames."""
+    if request.method == 'OPTIONS':
+        return '', 200
+    try:
+        if 'files' not in request.files:
+            logger.error("No files part in request")
+            return jsonify({'error': 'No files part', 'success': False}), 400
+        files = request.files.getlist('files')
+        if not files or all(f.filename == '' for f in files):
+            logger.error("No selected files")
+            return jsonify({'error': 'No selected files', 'success': False}), 400
+        saved_filenames = []
+        for file in files:
+            filename = secure_filename(file.filename)
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+            logger.info(f"Saving file: {filepath}")
+            file.save(filepath)
+            saved_filenames.append(filename)
+        return jsonify({
+            'message': 'Files uploaded successfully',
+            'results': [{'filename': fn} for fn in saved_filenames],
+            'success': True
+        })
+    except Exception as e:
+        logger.error(f"Unexpected error in upload_any route: {str(e)}")
+        return jsonify({'error': f'Unexpected error: {str(e)}', 'success': False}), 500
+
 
 if __name__ == '__main__':
     print("Starting Flask app...")

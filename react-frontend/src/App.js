@@ -1451,39 +1451,36 @@ function App() {
   const handleNewAgentSubmit = async (e) => {
     e.preventDefault();
     if (!newAgentName || !newAgentDescription || selectedPdfs.length === 0) {
-      alert('Please fill in all fields and select at least one PDF file');
+      alert('Please fill in all fields and select at least one file');
       return;
     }
     setIsSubmitting(true);
     setOverlaySuccessMessage('');
     try {
-      // Upload PDFs
+      // Upload files (all types)
       const formData = new FormData();
       selectedPdfs.forEach((file) => {
         formData.append('files', file);
       });
-      const uploadResponse = await fetch(`${BACKEND_BASE}/upload-pdf`, {
+      // You can add more fields if needed (e.g., file_type, audio_transcript)
+      const uploadResponse = await fetch(`${BACKEND_BASE}/upload`, {
         method: 'POST',
         body: formData,
         headers: { 'Accept': 'application/json' },
       });
-      if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json();
-        throw new Error(errorData.error || 'Failed to upload PDFs');
-      }
       const uploadData = await uploadResponse.json();
-      if (!uploadData.success) {
-        throw new Error(uploadData.error || 'Failed to upload PDFs');
+      if (!uploadData.success || !uploadData.results) {
+        throw new Error(uploadData.error || 'Failed to upload files');
       }
-      const pdfFilenames = uploadData.filenames;
-      // Create new agent
+      const uploadedFilenames = uploadData.results.map(r => r.filename);
+      // Create new agent (still using /agents endpoint)
       const newAgentPayload = {
         iconType: newAgentIconType,
         name: newAgentName,
         description: newAgentDescription,
         buttonText: 'Start Chat',
         agentId: `agent_${Date.now()}`,
-        pdfSources: pdfFilenames,
+        pdfSources: uploadedFilenames, // This field is still used for all files
         tileLineStartColor: newAgentTileLineStartColor,
         tileLineEndColor: newAgentTileLineEndColor,
       };
