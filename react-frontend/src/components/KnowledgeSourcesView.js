@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import PropTypes from 'prop-types';
-import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes, FaPlus, FaFileAlt, FaRobot, FaBook, FaLightbulb, FaFlask, FaUserTie, FaTrash, FaArrowRight, FaArrowDown, FaArrowUp, FaSync, FaFilePdf, FaFileImage, FaFileCsv, FaFileAudio, FaFileWord } from 'react-icons/fa';
+import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes, FaPlus, FaFileAlt, FaRobot, FaBook, FaLightbulb, FaFlask, FaUserTie, FaTrash, FaArrowRight, FaArrowDown, FaArrowUp, FaSync, FaFilePdf, FaFileImage, FaFileCsv, FaFileAudio, FaFileWord, FaEllipsisH } from 'react-icons/fa';
 import { getIconComponent } from '../utils/iconUtils';
 import '../styles/KnowledgeSourcesView.css';
 import { Element, scroller } from 'react-scroll';
@@ -40,6 +40,10 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
   const [overlayScrollTop, setOverlayScrollTop] = useState(0); // State to store the scroll position for overlay
   const knowledgeSourcesViewRef = useRef(null); // Ref for the main scrollable div
   const [atBottom, setAtBottom] = useState(false);
+  const [showDeleteAgentOverlay, setShowDeleteAgentOverlay] = useState(false);
+  const [pendingDeleteAgentId, setPendingDeleteAgentId] = useState(null);
+  const [openKebabMenu, setOpenKebabMenu] = useState(null);
+  const kebabMenuRef = useRef(null);
 
   const BACKEND_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
@@ -115,24 +119,38 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
     }
   };
 
-  const handleDeleteAgent = async (agentId) => {
-    if (window.confirm('Are you sure you want to delete this agent?')) {
-      try {
-        const response = await fetch(`${BACKEND_BASE}/agents/${agentId}`, {
+  const handleDeleteAgentClick = (agentId) => {
+    setShowDeleteAgentOverlay(true);
+    setPendingDeleteAgentId(agentId);
+  };
+
+  const confirmDeleteAgent = async () => {
+    if (!pendingDeleteAgentId) return;
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`${BACKEND_BASE}/agents/${pendingDeleteAgentId}`, {
           method: 'DELETE',
         });
-
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Failed to delete agent');
         }
-
-        fetchAgents(); // Re-fetch agents to update state after deletion
+      fetchAgents();
+      setShowDeleteAgentOverlay(false);
+      setPendingDeleteAgentId(null);
       } catch (error) {
         console.error('Error deleting agent:', error);
         alert(`Failed to delete agent: ${error.message}`);
-      }
+      setShowDeleteAgentOverlay(false);
+      setPendingDeleteAgentId(null);
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const cancelDeleteAgent = () => {
+    setShowDeleteAgentOverlay(false);
+    setPendingDeleteAgentId(null);
   };
 
   useLayoutEffect(() => {
@@ -174,6 +192,20 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
       knowledgeSourcesViewRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
+
+  // Close kebab menu on outside click
+  useEffect(() => {
+    if (!openKebabMenu) return;
+    function handleClickOutside(event) {
+      if (kebabMenuRef.current && !kebabMenuRef.current.contains(event.target)) {
+        setOpenKebabMenu(null);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openKebabMenu]);
 
   return (
     <>
@@ -269,15 +301,109 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
         {/* Agent Cards Grid - Add class when searching */}
         {agents.length > 0 && (
           <Element name="knowledge-sources-scroll-container" className={`agent-grid ${isSearching ? 'agent-cards-grid--searching' : ''}`}>
-            {filteredAgents.map((agent) => (
+            {filteredAgents.map((agent) => {
+              // Determine main file type from first source
+              let mainType = 'Other';
+              let mainIcon = <FaFileAlt style={{ color: '#555', marginRight: 4 }} />;
+              let badgeColor = '#888';
+              const firstSource = agent.pdfSources && agent.pdfSources[0] ? agent.pdfSources[0].toLowerCase() : '';
+              if (firstSource.endsWith('.pdf')) {
+                mainType = 'PDF';
+                mainIcon = <FaFilePdf style={{ color: '#e74c3c', marginRight: 4 }} />;
+                badgeColor = '#e74c3c';
+              } else if (firstSource.match(/\.(png|jpg|jpeg|gif)$/)) {
+                mainType = 'Image';
+                mainIcon = <FaFileImage style={{ color: '#3498db', marginRight: 4 }} />;
+                badgeColor = '#3498db';
+              } else if (firstSource.endsWith('.csv')) {
+                mainType = 'CSV';
+                mainIcon = <FaFileCsv style={{ color: '#27ae60', marginRight: 4 }} />;
+                badgeColor = '#27ae60';
+              } else if (firstSource.endsWith('.mp3')) {
+                mainType = 'Audio';
+                mainIcon = <FaFileAudio style={{ color: '#f39c12', marginRight: 4 }} />;
+                badgeColor = '#f39c12';
+              } else if (firstSource.endsWith('.doc') || firstSource.endsWith('.docx')) {
+                mainType = 'Word';
+                mainIcon = <FaFileWord style={{ color: '#2980b9', marginRight: 4 }} />;
+                badgeColor = '#2980b9';
+              }
+              return (
               <div
                 key={agent.agentId}
                 className="agent-card"
                 style={{
                   '--tile-line-gradient-start': agent.tileLineStartColor,
                   '--tile-line-gradient-end': agent.tileLineEndColor,
+                  position: 'relative',
                 }}
               >
+                {/* Kebab menu in upper right corner */}
+                <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 3 }}>
+                  <button
+                    className="kebab-menu-btn"
+                    onClick={e => { e.stopPropagation(); setOpenKebabMenu(openKebabMenu === agent.agentId ? null : agent.agentId); }}
+                    title="More options"
+                    style={{ background: 'none', border: 'none', color: '#95a5a6', fontSize: '1.2em', cursor: 'pointer', padding: 8, borderRadius: '50%' }}
+                  >
+                    <FaEllipsisH />
+                  </button>
+                  {openKebabMenu === agent.agentId && (
+                    <div
+                      ref={kebabMenuRef}
+                      style={{
+                        position: 'absolute',
+                        top: 36,
+                        right: 0,
+                        background: 'var(--bg-secondary)',
+                        borderRadius: 10,
+                        boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                        minWidth: 120,
+                        padding: '0.5rem 0',
+                        zIndex: 10,
+                        display: 'flex',
+                        flexDirection: 'column',
+                      }}
+                    >
+                      <button
+                        onClick={e => { e.stopPropagation(); setAgentToEdit(agent); setEditedName(agent.name); setEditedDescription(agent.description); setEditedTileLineStartColor(colorNameToHex(agent.tileLineStartColor) || ''); setEditedTileLineEndColor(colorNameToHex(agent.tileLineEndColor) || ''); setOpenKebabMenu(null); }}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-primary)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
+                      >
+                        <FaEdit style={{ marginRight: 8 }} /> Edit Tile
+                      </button>
+                      <button
+                        onClick={e => { e.stopPropagation(); handleDeleteAgentClick(agent.agentId); setOpenKebabMenu(null); }}
+                        style={{ background: 'none', border: 'none', color: 'var(--error-color)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
+                      >
+                        <FaTrash style={{ marginRight: 8 }} /> Delete
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
+                  {/* Minimalist file type icon badge with tooltip */}
+                  {firstSource && (
+                    <div
+                      title={mainType}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: '#fff',
+                        borderRadius: '50%',
+                        width: 22,
+                        height: 22,
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.08)',
+                        marginRight: 2,
+                        border: '1px solid #eee',
+                        cursor: 'default',
+                      }}
+                    >
+                      {React.cloneElement(mainIcon, { size: 14, style: { verticalAlign: 'middle' } })}
+                    </div>
+                  )}
+                  <div className="agent-tag">Agent</div>
+                </div>
                 <div className="agent-icon">{getIconComponent(agent.iconType)}</div>
                 <h3>{agent.name}</h3>
                 <p>{agent.description}</p>
@@ -285,59 +411,43 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
                   <div className="source-info">
                     <p>Sources:</p>
                     <ul>
-                      {agent.pdfSources.map((source, index) => {
-                        let icon = <FaFileAlt style={{ color: '#555', marginRight: 6 }} />;
-                        if (source.toLowerCase().endsWith('.pdf')) {
-                          icon = <FaFilePdf style={{ color: '#e74c3c', marginRight: 6 }} />;
-                        } else if (source.toLowerCase().match(/\.(png|jpg|jpeg|gif)$/)) {
-                          icon = <FaFileImage style={{ color: '#3498db', marginRight: 6 }} />;
-                        } else if (source.toLowerCase().endsWith('.csv')) {
-                          icon = <FaFileCsv style={{ color: '#27ae60', marginRight: 6 }} />;
-                        } else if (source.toLowerCase().endsWith('.mp3')) {
-                          icon = <FaFileAudio style={{ color: '#f39c12', marginRight: 6 }} />;
-                        } else if (source.toLowerCase().endsWith('.doc') || source.toLowerCase().endsWith('.docx')) {
-                          icon = <FaFileWord style={{ color: '#2980b9', marginRight: 6 }} />;
-                        }
-                        return (
-                          <li key={index} style={{ display: 'flex', alignItems: 'center' }}>
-                            {icon}
-                            {source}
-                          </li>
-                        );
-                      })}
+                        {agent.pdfSources.map((source, index) => {
+                          let icon = <FaFileAlt style={{ color: '#555', marginRight: 6 }} />;
+                          if (source.toLowerCase().endsWith('.pdf')) {
+                            icon = <FaFilePdf style={{ color: '#e74c3c', marginRight: 6 }} />;
+                          } else if (source.toLowerCase().match(/\.(png|jpg|jpeg|gif)$/)) {
+                            icon = <FaFileImage style={{ color: '#3498db', marginRight: 6 }} />;
+                          } else if (source.toLowerCase().endsWith('.csv')) {
+                            icon = <FaFileCsv style={{ color: '#27ae60', marginRight: 6 }} />;
+                          } else if (source.toLowerCase().endsWith('.mp3')) {
+                            icon = <FaFileAudio style={{ color: '#f39c12', marginRight: 6 }} />;
+                          } else if (source.toLowerCase().endsWith('.doc') || source.toLowerCase().endsWith('.docx')) {
+                            icon = <FaFileWord style={{ color: '#2980b9', marginRight: 6 }} />;
+                          }
+                          return (
+                            <li key={index} style={{ display: 'flex', alignItems: 'center' }}>
+                              {icon}
+                              {source}
+                            </li>
+                          );
+                        })}
                     </ul>
                   </div>
                 )}
                 <div className="agent-card-footer">
-                  <div className="agent-tag">Agent</div>
                   <div className="agent-actions-right">
                     <button
                       className="start-chat-btn"
                       onClick={() => onStartChatWithAgent(agent.agentId)}
                     >
-                      <span>{agent.buttonText}</span>
+                      <span>Try Out</span>
                       <FaArrowRight className="start-chat-arrow" />
                     </button>
-                    <div className="tile-actions">
-                      <button
-                        className="edit-button"
-                        onClick={() => handleEditAgent(agent)}
-                        title="Edit Agent"
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        className="delete-btn"
-                        onClick={() => handleDeleteAgent(agent.agentId)}
-                        title="Delete Agent"
-                      >
-                        <FaTimes />
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
-            ))}
+              );
+            })}
             {filteredAgents.length === 0 && (
               <p>No agents found matching your search.</p>
             )}
@@ -373,6 +483,26 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
           {atBottom ? <FaArrowUp /> : <FaArrowDown />}
         </button>
       </div>
+      {/* Delete Agent Confirmation Overlay */}
+      {showDeleteAgentOverlay && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.35)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', borderRadius: 18, boxShadow: '0 4px 32px var(--shadow-color)', padding: '2rem 2.5rem', minWidth: 320, maxWidth: 400, width: '100%' }}>
+            <h2 style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 18 }}>Delete Agent?</h2>
+            <div style={{ marginBottom: 24, textAlign: 'left' }}>Are you sure you want to delete this agent? This action cannot be undone.</div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <button
+                onClick={cancelDeleteAgent}
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+              >Cancel</button>
+              <button
+                onClick={confirmDeleteAgent}
+                style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
+                disabled={isSubmitting}
+              >Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

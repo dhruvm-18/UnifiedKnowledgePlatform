@@ -101,8 +101,8 @@
       "pdfSources": [
         "political.png"
       ],
-      "tileLineStartColor": "",
-      "tileLineEndColor": ""
+      "tileLineStartColor": "#000000",
+      "tileLineEndColor": "#ffffff"
     },
     {
       "agentId": "agent_1751545216911",
@@ -113,8 +113,8 @@
       "pdfSources": [
         "customers-100.csv"
       ],
-      "tileLineStartColor": "",
-      "tileLineEndColor": ""
+      "tileLineStartColor": "#ffc800",
+      "tileLineEndColor": "#000000"
     },
     {
       "agentId": "agent_1751570116569",
@@ -125,8 +125,8 @@
       "pdfSources": [
         "ISS_Report.docx"
       ],
-      "tileLineStartColor": "",
-      "tileLineEndColor": ""
+      "tileLineStartColor": "#d4ff00",
+      "tileLineEndColor": "#000000"
     },
     {
       "agentId": "agent_1751610432887",
@@ -137,8 +137,8 @@
       "pdfSources": [
         "Gen_AI.mp3"
       ],
-      "tileLineStartColor": "",
-      "tileLineEndColor": ""
+      "tileLineStartColor": "#00ffd5",
+      "tileLineEndColor": "#000000"
     }
   ]
 }
