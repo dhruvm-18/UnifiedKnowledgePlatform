@@ -853,6 +853,9 @@ def extract_audio_transcript(file_path):
         logger.error(f"Whisper transcription failed for {file_path}: {e}")
         return None
 
+
+import docx2txt
+
 for agent_id, agent in AGENTS_DATA.items():
     pdfs = agent.get('pdfSources', [])
     agent_docs = []
@@ -931,14 +934,26 @@ for agent_id, agent in AGENTS_DATA.items():
                     agent_docs.extend(docs)
                 else:
                     logger.warning(f"[STARTUP] No text extracted from {filename} (type: {ext})")
+            elif ext == 'docx':
+                try:
+                    text = docx2txt.process(file_path)
+                    from langchain.text_splitter import RecursiveCharacterTextSplitter
+                    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+                    chunks = splitter.split_text(text)
+                    docs = [Document(page_content=chunk, metadata={"source": filename, "file_type": ext}) for chunk in chunks]
+                    logger.info(f"[STARTUP] Created {len(docs)} document chunks for DOCX {filename}")
+                    agent_vectorstore = batch_embed_and_index(docs, embeddings, batch_size=500)
+                    agent_retrievers[agent_id] = agent_vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 20})
+                    logger.info(f"[PATCH] Built retriever for new agent {agent_id} with {len(docs)} docs (batched embedding, DOCX).")
+                    agent_docs.extend(docs)
+                except Exception as docx_e:
+                    logger.warning(f"[STARTUP] Failed to process DOCX {filename}: {docx_e}")
+                    continue
             else:
                 logger.warning(f"[STARTUP] Unsupported file type for retriever: {filename} (type: {ext})")
         except Exception as e:
-            logger.error(f"[STARTUP] Error extracting/processing {filename} (type: {ext}): {e}")
-    if agent_docs:
-        agent_vectorstore = initialize_faiss_index(agent_docs, embeddings)
-        agent_retrievers[agent_id] = agent_vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 20})
-        logger.info(f"Built retriever for agent {agent_id} with {len(agent_docs)} docs.")
+            logger.warning(f"[STARTUP] Failed to process file {filename}: {e}")
+            continue
     all_documents.extend(agent_docs)
 
 # Build a general retriever for all documents as fallback
@@ -1719,21 +1734,36 @@ def add_agent():
                         agent_docs.extend(docs)
                     else:
                         logger.warning(f"No text extracted from {filename} (type: {ext})")
+                elif ext == 'docx':
+                    try:
+                        text = docx2txt.process(file_path)
+                        from langchain.text_splitter import RecursiveCharacterTextSplitter
+                        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+                        chunks = splitter.split_text(text)
+                        docs = [Document(page_content=chunk, metadata={"source": filename, "file_type": ext}) for chunk in chunks]
+                        logger.info(f"[STARTUP] Created {len(docs)} document chunks for DOCX {filename}")
+                        agent_vectorstore = batch_embed_and_index(docs, embeddings, batch_size=500)
+                        agent_retrievers[agent_id] = agent_vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 20})
+                        logger.info(f"[PATCH] Built retriever for new agent {agent_id} with {len(docs)} docs (batched embedding, DOCX).")
+                        agent_docs.extend(docs)
+                    except Exception as docx_e:
+                        logger.warning(f"[STARTUP] Failed to process DOCX {filename}: {docx_e}")
+                        continue
                 else:
                     logger.warning(f"Unsupported file type for retriever: {filename} (type: {ext})")
             except Exception as e:
                 logger.error(f"Error extracting/processing {filename} (type: {ext}): {e}")
-        if agent_docs:
-            agent_vectorstore = initialize_faiss_index(agent_docs, embeddings)
-            agent_retrievers[agent_id] = agent_vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 20})
-            logger.info(f"Built retriever for agent {agent_id} with {len(agent_docs)} docs.")
-        else:
-            logger.warning(f"[PATCH] No documents found for new agent {agent_id}. Retriever not built.")
-        return jsonify({
-            'message': 'Agent created successfully',
-            'agent': agent_data,
-            'success': True
-        }), 201
+            if agent_docs:
+                agent_vectorstore = initialize_faiss_index(agent_docs, embeddings)
+                agent_retrievers[agent_id] = agent_vectorstore.as_retriever(search_type="similarity", search_kwargs={"k": 20})
+                logger.info(f"Built retriever for agent {agent_id} with {len(agent_docs)} docs.")
+            else:
+                logger.warning(f"[PATCH] No documents found for new agent {agent_id}. Retriever not built.")
+            return jsonify({
+                'message': 'Agent created successfully',
+                'agent': agent_data,
+                'success': True
+            }), 201
     except Exception as e:
         logger.error(f"Error adding agent: {str(e)}")
         return jsonify({'error': f'Error adding agent: {str(e)}', 'success': False}), 500
