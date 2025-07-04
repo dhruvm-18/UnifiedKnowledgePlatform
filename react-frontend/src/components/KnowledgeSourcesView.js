@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useLayoutEffect } from 'react';
 import PropTypes from 'prop-types';
-import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes, FaPlus, FaFileAlt, FaRobot, FaBook, FaLightbulb, FaFlask, FaUserTie, FaTrash, FaArrowRight, FaArrowDown, FaArrowUp, FaSync } from 'react-icons/fa';
+import { FaShieldAlt, FaSearch, FaGavel, FaEdit, FaSave, FaTimes, FaPlus, FaFileAlt, FaRobot, FaBook, FaLightbulb, FaFlask, FaUserTie, FaTrash, FaArrowRight, FaArrowDown, FaArrowUp, FaSync, FaFilePdf, FaFileImage, FaFileCsv, FaFileAudio, FaFileWord } from 'react-icons/fa';
 import { getIconComponent } from '../utils/iconUtils';
 import '../styles/KnowledgeSourcesView.css';
 import { Element, scroller } from 'react-scroll';
@@ -187,7 +187,28 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
           <rect x="1020" y="80" width="220" height="50" rx="18" opacity="0.10" transform="rotate(-10 1130 98)" />
         </svg>
         <div className="knowledge-sources-header">
-          <h1>Knowledge Sources</h1>
+          <h1 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            Knowledge Sources
+            <button
+              onClick={fetchAgents}
+              title="Refresh Knowledge Sources"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                background: 'var(--accent-color)',
+                color: 'white',
+                border: 'none',
+                borderRadius: 18,
+                padding: '6px 12px',
+                fontWeight: 600,
+                fontSize: '1rem',
+                cursor: 'pointer',
+                marginLeft: 12
+              }}
+            >
+              <FaSync className={`${isSubmitting ? 'refresh-spin' : ''} refresh-hover-spin`} />
+            </button>
+          </h1>
           <button
             style={{
               display: 'flex',
@@ -224,23 +245,6 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
-            <button
-              onClick={fetchAgents}
-              title="Refresh Knowledge Sources"
-              style={{
-                background: 'none',
-                border: 'none',
-                marginLeft: 8,
-                cursor: 'pointer',
-                padding: 4,
-                display: 'flex',
-                alignItems: 'center',
-                color: 'var(--accent-color)',
-                fontSize: 20
-              }}
-            >
-              <FaSync className={`${isSubmitting ? 'refresh-spin' : ''} refresh-hover-spin`} />
-            </button>
           </div>
         </div>
 
@@ -281,9 +285,26 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
                   <div className="source-info">
                     <p>Sources:</p>
                     <ul>
-                      {agent.pdfSources.map((source, index) => (
-                        <li key={index}>{source}</li>
-                      ))}
+                      {agent.pdfSources.map((source, index) => {
+                        let icon = <FaFileAlt style={{ color: '#555', marginRight: 6 }} />;
+                        if (source.toLowerCase().endsWith('.pdf')) {
+                          icon = <FaFilePdf style={{ color: '#e74c3c', marginRight: 6 }} />;
+                        } else if (source.toLowerCase().match(/\.(png|jpg|jpeg|gif)$/)) {
+                          icon = <FaFileImage style={{ color: '#3498db', marginRight: 6 }} />;
+                        } else if (source.toLowerCase().endsWith('.csv')) {
+                          icon = <FaFileCsv style={{ color: '#27ae60', marginRight: 6 }} />;
+                        } else if (source.toLowerCase().endsWith('.mp3')) {
+                          icon = <FaFileAudio style={{ color: '#f39c12', marginRight: 6 }} />;
+                        } else if (source.toLowerCase().endsWith('.doc') || source.toLowerCase().endsWith('.docx')) {
+                          icon = <FaFileWord style={{ color: '#2980b9', marginRight: 6 }} />;
+                        }
+                        return (
+                          <li key={index} style={{ display: 'flex', alignItems: 'center' }}>
+                            {icon}
+                            {source}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </div>
                 )}
