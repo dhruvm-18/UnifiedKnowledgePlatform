@@ -139,22 +139,6 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme }) {
               <div style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 2 }}>{name}</div>
               <div style={{ color: '#888', fontSize: '1.01rem', marginBottom: 8 }}>{user.email}</div>
             </div>
-            <div style={{ width: '100%', marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
-              <span style={{ fontWeight: 500 }}>Theme:</span>
-              <Switch
-                onChange={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-                checked={theme === 'dark'}
-                checkedIcon={<FaSun style={{ color: '#fff', fontSize: 16, paddingLeft: 6 }} />}
-                uncheckedIcon={<FaMoon style={{ color: '#222', fontSize: 16, paddingLeft: 6 }} />}
-                onColor="#23233a"
-                offColor="#f5f5f5"
-                onHandleColor="#9c27b0"
-                offHandleColor="#ffd600"
-                height={22}
-                width={48}
-              />
-              <span style={{ marginLeft: 8, fontWeight: 500 }}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-            </div>
             <div style={{ display: 'flex', gap: 10, width: '100%', marginTop: 10 }}>
               <button className="login-btn" style={{ width: '50%' }} onClick={() => setEditMode(true)}>Edit</button>
               <button className="login-btn" style={{ width: '50%' }} onClick={() => setShowPasswordForm(true)}>Change Password</button>
