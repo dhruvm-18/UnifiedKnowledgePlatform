@@ -196,6 +196,9 @@ function App() {
   // Add new state for source opener modal
   const [sourcePreview, setSourcePreview] = useState({ type: null, url: null, name: null, docxHtml: null, csvRows: null, loading: false, error: null });
 
+  // Add at the top, with other refs
+  const userDetailsMenuRef = useRef(null);
+
 // 1. Generalize the handler (move inside App)
 const handleOpenSourceLink = (e, href, msg = null) => {
   e.preventDefault();
@@ -697,15 +700,12 @@ function getFileType(file) {
   useEffect(() => {
     const handleDocumentClick = (e) => {
       if (showUserDetailsMenu) {
-        const leftSidebar = document.querySelector('.left-sidebar');
-        if (leftSidebar && !leftSidebar.contains(e.target)) {
-            setShowUserDetailsMenu(false);
+        if (userDetailsMenuRef.current && !userDetailsMenuRef.current.contains(e.target)) {
+          setShowUserDetailsMenu(false);
         }
       }
     };
-
     document.addEventListener('click', handleDocumentClick);
-
     return () => {
       document.removeEventListener('click', handleDocumentClick);
     };
@@ -2056,19 +2056,7 @@ function getFileType(file) {
             >
               <FaGlobe style={{ marginRight: '10px' }} /> Supported Languages
             </button>
-            <button
-              className="sidebar-nav-item theme-toggle"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-            >
-              {theme === 'dark' ? (
-                <FaSun style={{ marginRight: '10px' }} />
-              ) : (
-                <FaMoon style={{ marginRight: '10px' }} />
-              )}
-              {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
-            </button>
-            <div className="user-details" onClick={() => setShowUserDetailsMenu(!showUserDetailsMenu)}>
+            <div className="user-details" onClick={e => { e.stopPropagation(); setShowUserDetailsMenu(!showUserDetailsMenu); }}>
               <div className="user-avatar">
                 {userAvatar && <img src={userAvatar} alt="avatar" style={{ width: 40, height: 40, borderRadius: '50%' }} />}
                 {!userAvatar && <div className="user-avatar-initial">{userName.charAt(0)}</div>}
@@ -2096,7 +2084,37 @@ function getFileType(file) {
                 <div className="user-email">{userEmail}</div>
               </div>
               {showUserDetailsMenu && (
-                <div className="user-details-menu">
+                <div className="user-details-menu" ref={userDetailsMenuRef}>
+                  <div
+                    className="theme-slider-row"
+                    style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 16px', cursor: 'pointer', userSelect: 'none' }}
+                    onClick={e => {
+                      e.stopPropagation();
+                      setTheme(theme === 'dark' ? 'light' : 'dark');
+                    }}
+                  >
+                    <div className={`theme-slider${theme === 'dark' ? ' dark' : ''}`}
+                      style={{ position: 'relative', width: 48, height: 22, borderRadius: 12, background: theme === 'dark' ? '#23233a' : '#f5f5f5', transition: 'background 0.2s', border: '1px solid #ccc' }}
+                    >
+                      <span style={{ position: 'absolute', left: 6, top: 3, zIndex: 2 }}><FaMoon style={{ color: '#888', fontSize: 14 }} /></span>
+                      <span style={{ position: 'absolute', right: 6, top: 3, zIndex: 2 }}><FaSun style={{ color: '#ffd600', fontSize: 14 }} /></span>
+                      <div className="theme-slider-thumb" style={{
+                        position: 'absolute',
+                        top: 2,
+                        left: theme === 'dark' ? 26 : 2,
+                        width: 18,
+                        height: 18,
+                        borderRadius: '50%',
+                        background: theme === 'dark' ? '#9c27b0' : '#ffd600',
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.12)',
+                        transition: 'left 0.22s cubic-bezier(.4,2.2,.6,1), background 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }} />
+                    </div>
+                    <span style={{ fontWeight: 500 }}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                  </div>
                   <div className="menu-item" onClick={() => { setShowProfileModal(true); setShowUserDetailsMenu(false); }}>Profile</div>
                   <div className="menu-item" onClick={handleLogout}>Log out</div>
                 </div>
@@ -3529,6 +3547,8 @@ function getFileType(file) {
             setUserAvatar(updatedUser.avatar);
             // Password is saved in localStorage by modal
           }}
+          theme={theme}
+          setTheme={setTheme}
         />
       )}
       {/* PDF Preview Modal */}

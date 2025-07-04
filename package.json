@@ -20,6 +20,7 @@
     "react-markdown": "^10.1.0",
     "react-pdf": "^9.2.1",
     "react-scroll": "^1.9.3",
+    "react-switch": "^7.1.0",
     "remark-gfm": "^4.0.1",
     "styled-components": "^6.1.18",
     "talkify": "^2.2.0",
