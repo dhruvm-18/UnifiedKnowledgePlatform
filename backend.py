@@ -1869,17 +1869,28 @@ def elevenlabs_stt():
             return jsonify({'error': 'No audio file provided'}), 400
 
         audio_file = request.files['audio']
-        audio_data = audio_file.read()
+        import tempfile, os
+        filename = audio_file.filename
+        ext = os.path.splitext(filename)[1] or '.webm'
+        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+            audio_file.save(tmp.name)
+            tmp.flush()
+            temp_path = tmp.name
 
-        # Placeholder for actual ElevenLabs STT integration
-        # The ElevenLabs Python SDK primarily focuses on TTS.
-        # For STT, you might need to use a different library or make a direct API call.
-        # Example of how you might call their STT if a client method existed:
-        # transcript = elevenlabs_client.speech_to_text.transcribe(audio_data)
+        if not WHISPER_AVAILABLE:
+            os.remove(temp_path)
+            return jsonify({'error': 'Whisper is not available for audio transcription.'}), 500
+        try:
+            result = whisper_model.transcribe(temp_path, language=None)  # auto-detect language
+            transcript = result['text']
+            detected_language = result.get('language', 'unknown')
+        except Exception as e:
+            logger.error(f"Whisper transcription failed for uploaded audio: {e}")
+            os.remove(temp_path)
+            return jsonify({'error': str(e)}), 500
 
-        transcript = "This is a placeholder for transcribed text from ElevenLabs STT."
-
-        response = jsonify({'transcript': transcript})
+        os.remove(temp_path)
+        response = jsonify({'transcript': transcript, 'language': detected_language})
         response.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
         response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
@@ -2149,6 +2160,50 @@ def upload_any():
         logger.error(f"Unexpected error in upload_any route: {str(e)}")
         return jsonify({'error': f'Unexpected error: {str(e)}', 'success': False}), 500
 
+@app.route('/whisper/stt', methods=['POST', 'OPTIONS'])
+def whisper_stt():
+    if request.method == 'OPTIONS':
+        return '', 200
+    try:
+        if 'audio' not in request.files:
+            return jsonify({'error': 'No audio file provided'}), 400
+
+        audio_file = request.files['audio']
+        import os, uuid
+
+        # Ensure the temp audio directory exists
+        temp_audio_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backend', 'audio_temp')
+        os.makedirs(temp_audio_dir, exist_ok=True)
+
+        filename = audio_file.filename
+        ext = os.path.splitext(filename)[1] or '.webm'
+        temp_path = os.path.join(temp_audio_dir, f"{uuid.uuid4().hex}{ext}")
+
+        audio_file.save(temp_path)
+
+        if not WHISPER_AVAILABLE:
+            os.remove(temp_path)
+            return jsonify({'error': 'Whisper is not available for audio transcription.'}), 500
+        try:
+            result = whisper_model.transcribe(temp_path, language=None)  # auto-detect language
+            transcript = result['text']
+            detected_language = result.get('language', 'unknown')
+        except Exception as e:
+            logger.error(f"Whisper transcription failed for uploaded audio: {e}")
+            os.remove(temp_path)
+            return jsonify({'error': str(e)}), 500
+
+        os.remove(temp_path)
+        response = jsonify({'transcript': transcript, 'language': detected_language})
+        response.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
+        response.headers['Access-Control-Allow-Methods'] = 'POST, OPTIONS'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
+        response.headers['Access-Control-Allow-Credentials'] = 'true'
+        return response
+
+    except Exception as e:
+        logger.error(f"Whisper STT error: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("Starting Flask app...")

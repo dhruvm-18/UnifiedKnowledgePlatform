@@ -1197,7 +1197,14 @@ function getFileType(file) {
     if (listening) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      let recorder;
+      let mimeType = '';
+      if (MediaRecorder.isTypeSupported('audio/ogg')) {
+        mimeType = 'audio/ogg';
+      } else {
+        mimeType = '';
+      }
+      recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       setMediaRecorder(recorder);
       setAudioChunks([]);
 
@@ -1206,14 +1213,15 @@ function getFileType(file) {
       };
 
       recorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // Adjust MIME type if necessary
+        const extension = mimeType === 'audio/ogg' ? 'ogg' : 'webm';
+        const audioBlob = new Blob(audioChunks, { type: mimeType || 'audio/webm' });
         setAudioChunks([]); // Clear chunks after stopping
 
         const formData = new FormData();
-        formData.append('audio', audioBlob, 'recording.webm');
+        formData.append('audio', audioBlob, `recording.${extension}`);
 
         try {
-          const response = await fetch(`${BACKEND_BASE}/elevenlabs/stt`, {
+          const response = await fetch(`${BACKEND_BASE}/whisper/stt`, {
             method: 'POST',
             body: formData,
           });
