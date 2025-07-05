@@ -392,6 +392,7 @@
 .new-agent-card .agent-icon {
   color: #3498db;
   background: none;
+  background-clip: border-box;
   -webkit-background-clip: border-box;
   -webkit-text-fill-color: inherit;
   font-size: 4em;
@@ -910,6 +911,7 @@
 .dark-mode .agent-icon {
   color: var(--accent-color) !important;
   background: none !important;
+  background-clip: unset !important;
   -webkit-background-clip: unset !important;
   -webkit-text-fill-color: unset !important;
 }

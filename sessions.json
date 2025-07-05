@@ -1,1 +1,22 @@
-{}
+{
+    "ac1b6517-45aa-4337-8d6f-703077cd116d": {
+        "id": "ac1b6517-45aa-4337-8d6f-703077cd116d",
+        "title": "hi",
+        "createdAt": "2025-07-05T22:26:27.746000",
+        "messages": [
+            {
+                "sender": "user",
+                "content": "hi",
+                "agentId": null,
+                "lang": "en"
+            },
+            {
+                "sender": "assistant",
+                "content": "Understood. I will follow these instructions carefully for all future interactions.",
+                "agentId": null,
+                "lang": "en"
+            }
+        ],
+        "agentId": null
+    }
+}
