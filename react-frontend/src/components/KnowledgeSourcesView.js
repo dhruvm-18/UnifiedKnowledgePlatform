@@ -33,6 +33,43 @@ const colorNameToHex = (color) => {
   return colors[lower] || color;
 };
 
+function getCapabilitiesFromSources(sources = []) {
+  const extToCaps = {
+    pdf: ['PDF Analysis', 'Text Summarization', 'Document Search', 'Knowledge Extraction'],
+    png: ['Image Analysis', 'OCR Extraction', 'Visual Search', 'Knowledge Extraction'],
+    jpg: ['Image Analysis', 'OCR Extraction', 'Visual Search', 'Knowledge Extraction'],
+    jpeg: ['Image Analysis', 'OCR Extraction', 'Visual Search', 'Knowledge Extraction'],
+    gif: ['Image Analysis', 'OCR Extraction', 'Visual Search', 'Knowledge Extraction'],
+    bmp: ['Image Analysis', 'OCR Extraction', 'Visual Search', 'Knowledge Extraction'],
+    webp: ['Image Analysis', 'OCR Extraction', 'Visual Search', 'Knowledge Extraction'],
+    tiff: ['Image Analysis', 'OCR Extraction', 'Visual Search', 'Knowledge Extraction'],
+    mp3: ['Audio Transcription', 'Audio Analysis', 'Speech-to-Text', 'Knowledge Extraction'],
+    wav: ['Audio Transcription', 'Audio Analysis', 'Speech-to-Text', 'Knowledge Extraction'],
+    m4a: ['Audio Transcription', 'Audio Analysis', 'Speech-to-Text', 'Knowledge Extraction'],
+    flac: ['Audio Transcription', 'Audio Analysis', 'Speech-to-Text', 'Knowledge Extraction'],
+    ogg: ['Audio Transcription', 'Audio Analysis', 'Speech-to-Text', 'Knowledge Extraction'],
+    aac: ['Audio Transcription', 'Audio Analysis', 'Speech-to-Text', 'Knowledge Extraction'],
+    csv: ['Data Visualization', 'Data Analysis', 'Table Extraction', 'Knowledge Extraction'],
+    xlsx: ['Data Visualization', 'Data Analysis', 'Table Extraction', 'Knowledge Extraction'],
+    txt: ['Text Summarization', 'Document Search', 'Knowledge Extraction', 'Text Analysis'],
+    doc: ['Word Analysis', 'Text Summarization', 'Document Search', 'Knowledge Extraction'],
+    docx: ['Word Analysis', 'Text Summarization', 'Document Search', 'Knowledge Extraction'],
+    json: ['Data Extraction', 'Data Visualization', 'Knowledge Extraction', 'Structured Search'],
+  };
+  const caps = new Set();
+  sources.forEach(src => {
+    const ext = src.split('.').pop().toLowerCase();
+    if (extToCaps[ext]) {
+      extToCaps[ext].forEach(cap => caps.add(cap));
+    }
+  });
+  // If no known file types, fallback to a generic capability
+  if (caps.size === 0) {
+    caps.add('Knowledge Extraction');
+  }
+  return Array.from(caps);
+}
+
 function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNewAgentOverlay, setShowNewAgentOverlay, agentToEdit, setAgentToEdit, overlaySuccessMessage, setOverlaySuccessMessage, isSubmitting, setIsSubmitting, newAgentName, setNewAgentName, newAgentDescription, setNewAgentDescription, newAgentTileLineStartColor, setNewAgentTileLineStartColor, newAgentTileLineEndColor, setNewAgentTileLineEndColor, newAgentIconType, setNewAgentIconType, selectedPdfs, setSelectedPdfs, editedName, setEditedName, editedDescription, setEditedDescription, editedTileLineStartColor, setEditedTileLineStartColor, editedTileLineEndColor, setEditedTileLineEndColor, refreshKey }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [agents, setAgents] = useState([]); // Initialize as empty, will fetch from backend
@@ -44,6 +81,10 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
   const [pendingDeleteAgentId, setPendingDeleteAgentId] = useState(null);
   const [openKebabMenu, setOpenKebabMenu] = useState(null);
   const kebabMenuRef = useRef(null);
+  const [showAboutModal, setShowAboutModal] = useState(false);
+  const [aboutAgent, setAboutAgent] = useState(null);
+  const [aboutOverlayPos, setAboutOverlayPos] = useState(null);
+  const aboutBtnRefs = useRef({});
 
   const BACKEND_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
@@ -302,6 +343,7 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
         {agents.length > 0 && (
           <Element name="knowledge-sources-scroll-container" className={`agent-grid ${isSearching ? 'agent-cards-grid--searching' : ''}`}>
             {filteredAgents.map((agent) => {
+              const capabilities = getCapabilitiesFromSources(agent.pdfSources);
               // Determine main file type from first source
               let mainType = 'Other';
               let mainIcon = <FaFileAlt style={{ color: '#555', marginRight: 4 }} />;
@@ -372,6 +414,43 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
                         <FaEdit style={{ marginRight: 8 }} /> Edit Tile
                       </button>
                       <button
+                        ref={el => aboutBtnRefs.current[agent.agentId] = el}
+                        onClick={e => {
+                          e.stopPropagation();
+                          const rect = aboutBtnRefs.current[agent.agentId]?.getBoundingClientRect();
+                          setAgentToEdit(null);
+                          setAboutAgent(agent);
+                          setShowAboutModal(true);
+                          setOpenKebabMenu(null);
+                          if (rect) {
+                            // Calculate overlay position
+                            const overlayHeight = 220; // estimated overlay height in px
+                            const margin = 12; // px from edge
+                            let top = rect.bottom + window.scrollY + 6;
+                            let left = rect.left + window.scrollX;
+                            // If overlay would go off bottom, show above button
+                            if (top + overlayHeight > window.scrollY + window.innerHeight - margin) {
+                              top = rect.top + window.scrollY - overlayHeight - 6;
+                              if (top < window.scrollY + margin) top = window.scrollY + margin;
+                            }
+                            // If overlay would go off right, adjust
+                            if (left + 400 > window.scrollX + window.innerWidth - margin) {
+                              left = window.scrollX + window.innerWidth - 400 - margin;
+                            }
+                            setAboutOverlayPos({
+                              top,
+                              left,
+                              width: rect.width
+                            });
+                          } else {
+                            setAboutOverlayPos(null);
+                          }
+                        }}
+                        style={{ background: 'none', border: 'none', color: 'var(--text-primary)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
+                      >
+                        <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%', background: '#3498db', color: 'white', fontWeight: 700, fontSize: 13, marginRight: 8 }}>i</span> About
+                      </button>
+                      <button
                         onClick={e => { e.stopPropagation(); handleDeleteAgentClick(agent.agentId); setOpenKebabMenu(null); }}
                         style={{ background: 'none', border: 'none', color: 'var(--error-color)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
                       >
@@ -407,34 +486,21 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
                 <div className="agent-icon">{getIconComponent(agent.iconType)}</div>
                 <h3>{agent.name}</h3>
                 <p>{agent.description}</p>
-                {agent.pdfSources && agent.pdfSources.length > 0 && (
-                  <div className="source-info">
-                    <p>Sources:</p>
-                    <ul>
-                        {agent.pdfSources.map((source, index) => {
-                          let icon = <FaFileAlt style={{ color: '#555', marginRight: 6 }} />;
-                          if (source.toLowerCase().endsWith('.pdf')) {
-                            icon = <FaFilePdf style={{ color: '#e74c3c', marginRight: 6 }} />;
-                          } else if (source.toLowerCase().match(/\.(png|jpg|jpeg|gif)$/)) {
-                            icon = <FaFileImage style={{ color: '#3498db', marginRight: 6 }} />;
-                          } else if (source.toLowerCase().endsWith('.csv')) {
-                            icon = <FaFileCsv style={{ color: '#27ae60', marginRight: 6 }} />;
-                          } else if (source.toLowerCase().endsWith('.mp3')) {
-                            icon = <FaFileAudio style={{ color: '#f39c12', marginRight: 6 }} />;
-                          } else if (source.toLowerCase().endsWith('.doc') || source.toLowerCase().endsWith('.docx')) {
-                            icon = <FaFileWord style={{ color: '#2980b9', marginRight: 6 }} />;
-                          }
-                          return (
-                            <li key={index} style={{ display: 'flex', alignItems: 'center' }}>
-                              {icon}
-                              {source}
-                            </li>
-                          );
-                        })}
-                    </ul>
+                {/* Capabilities pills */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '8px 0' }}>
+                  {capabilities.map((cap, idx) => (
+                    <span key={idx} style={{ background: '#f4f4f4', color: '#333', borderRadius: 16, padding: '4px 12px', fontSize: 13, fontWeight: 500, display: 'inline-block' }}>{cap}</span>
+                  ))}
+                </div>
+                <div className="agent-card-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    {/* File count */}
+                    <span style={{ color: '#666', fontSize: 13 }}>{agent.pdfSources ? `${agent.pdfSources.length} files trained` : 'No files'}</span>
+                    {/* Status */}
+                    <span style={{ color: '#4caf50', fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <span style={{ width: 8, height: 8, background: '#4caf50', borderRadius: '50%', display: 'inline-block' }}></span> Active
+                    </span>
                   </div>
-                )}
-                <div className="agent-card-footer">
                   <div className="agent-actions-right">
                     <button
                       className="start-chat-btn"
@@ -499,6 +565,52 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
                 style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
                 disabled={isSubmitting}
               >Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* About Overlay */}
+      {showAboutModal && aboutAgent && aboutOverlayPos && (
+        <div className="modal-overlay" style={{ zIndex: 4000 }} onClick={() => setShowAboutModal(false)}>
+          <div className="modal-content-small" onClick={e => e.stopPropagation()} style={{
+            maxWidth: 400,
+            minHeight: 120,
+            position: 'absolute',
+            left: aboutOverlayPos.left,
+            top: aboutOverlayPos.top + 6, // small offset below button
+            background: 'white',
+            borderRadius: 16,
+            boxShadow: '0 4px 32px rgba(0,0,0,0.18)',
+            padding: '2rem 2.5rem',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: '50%', background: '#3498db', color: 'white', fontWeight: 700, fontSize: 15 }}>i</span>
+              <h2 style={{ margin: 0, fontSize: '1.2rem' }}>About: {aboutAgent.name}</h2>
+            </div>
+            <div style={{ marginBottom: 12, textAlign: 'center' }}>
+              <strong>Capabilities:</strong>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8, justifyContent: 'center' }}>
+                {getCapabilitiesFromSources(aboutAgent.pdfSources).map((cap, idx) => (
+                  <span key={idx} style={{ background: '#f4f4f4', color: '#333', borderRadius: 16, padding: '4px 12px', fontSize: 13, fontWeight: 500, display: 'inline-block' }}>{cap}</span>
+                ))}
+              </div>
+            </div>
+            <div style={{ marginBottom: 8, textAlign: 'center' }}><strong>Files Used:</strong></div>
+            <ul style={{ paddingLeft: 0, margin: 0, listStyle: 'none', textAlign: 'center' }}>
+              {(aboutAgent.pdfSources || []).map((source, idx) => (
+                <li key={idx} style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                  {source}
+                  {/* Preview button logic here */}
+                </li>
+              ))}
+            </ul>
+            <div style={{ marginTop: 18, textAlign: 'center' }}>
+              <button onClick={() => setShowAboutModal(false)} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}>Close</button>
             </div>
           </div>
         </div>
