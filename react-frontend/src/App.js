@@ -234,8 +234,17 @@ function renderAssistantContent(content, handleOpenSourceLink, sourceHighlights 
   // Ensure content is a string before processing
   let stringContent = String(content);
 
+  // Normalize bolded markdown links: **[filename.ext]** (filename.ext) or **[filename.ext]**(filename.ext)
+  stringContent = stringContent.replace(/\*\*\[([^\]]+)\]\*\*\s*\(([^)]+)\)/g, (match, label, p1) => `(${p1.trim()})`);
+
+  // Normalize markdown links with optional spaces: [filename.ext] (filename.ext) or [filename.ext](filename.ext)
+  stringContent = stringContent.replace(/\[[^\]]+\]\s*\(([^)]+)\)/g, (match, p1) => `(${p1.trim()})`);
+
+  // NEW: Convert any (filename.ext) to [filename.ext](filename.ext) for all file types
+  stringContent = stringContent.replace(/\(([^\s()]+\.[\w]+)\)/g, (match, p1) => `[${p1}](${p1})`);
+
   // Replace all raw pdf://... or @pdf://... links with just (<url>) (no markdown link, no brackets, no label)
-  stringContent = stringContent.replace(/@?pdf:\/\/[\w\-.]+\.pdf(?:\/page\/\d+)?(?:#section=[^&\s)]+)?(?:&highlight=[^\s)]+)?/g, match => {
+  stringContent = stringContent.replace(/@?pdf:\/\/[\w\-.]+\.[\w]+(?:\/page\/\d+)?(?:#section=[^&\s)]+)?(?:&highlight=[^\s)]+)?/g, match => {
     // Remove leading @ if present
     const cleanLink = match.replace(/^@/, '');
     // Render as just (<url>)
@@ -302,9 +311,20 @@ function renderAssistantContent(content, handleOpenSourceLink, sourceHighlights 
       let cleanHref = href;
       // Only handle links to our backend /pdfs/ directory
       const isSourceLink = cleanHref && cleanHref.startsWith(BACKEND_BASE + '/pdfs/');
-      if (isSourceLink) {
+      // NEW: If the href is just a filename (with or without spaces), treat it as a file in /pdfs/
+      const filenameOnly = cleanHref &&
+        !cleanHref.startsWith('http') &&
+        !cleanHref.startsWith('/') &&
+        !cleanHref.includes('://') &&
+        /^[\w\-. ]+\.[\w]+$/.test(cleanHref.trim());
+      if (isSourceLink || filenameOnly) {
+        // If filenameOnly, build the full URL
+        let fileUrl = cleanHref;
+        if (filenameOnly) {
+          fileUrl = `${BACKEND_BASE}/pdfs/${cleanHref.trim()}`;
+        }
         // Parse filename and extension
-        const url = new URL(cleanHref, window.location.origin);
+        const url = new URL(fileUrl, window.location.origin);
         const filename = url.pathname.split('/').pop();
         const ext = filename.split('.').pop().toLowerCase();
         // PDF button logic
@@ -313,7 +333,7 @@ function renderAssistantContent(content, handleOpenSourceLink, sourceHighlights 
             <button
               type="button"
               aria-label={`Open PDF file: ${filename}`}
-              onClick={e => handleOpenSourceLink(e, cleanHref, sourceHighlights)}
+              onClick={e => handleOpenSourceLink(e, fileUrl, sourceHighlights)}
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -371,7 +391,7 @@ function renderAssistantContent(content, handleOpenSourceLink, sourceHighlights 
               e.preventDefault();
               setSourcePreview({ type, url: null, name: filename, docxHtml: null, csvRows: null, loading: true, error: null });
               try {
-                const res = await fetch(cleanHref);
+                const res = await fetch(fileUrl);
                 const blob = await res.blob();
                 if (type === 'image') {
                   setSourcePreview({ type, url: URL.createObjectURL(blob), name: filename, loading: false });
@@ -2311,15 +2331,7 @@ function getFileType(file) {
                     <span style={{ fontWeight: 500 }}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
                   </div>
                   {localStorage.getItem('userIsAdmin') === 'true' && (
-                    <div className="menu-item" onClick={() => { setCurrentView('feedback-dashboard'); setShowUserDetailsMenu(false); }} style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: 6,
-                      color: '#667eea',
-                      fontWeight: 600,
-                      fontSize: '0.9rem',
-                      cursor: 'pointer'
-                    }}>
+                    <div className="menu-item" onClick={() => { setCurrentView('feedback-dashboard'); setShowUserDetailsMenu(false); }}>
                       Feedback Dashboard
                     </div>
                   )}

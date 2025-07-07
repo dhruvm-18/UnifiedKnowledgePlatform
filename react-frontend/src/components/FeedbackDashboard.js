@@ -12,6 +12,7 @@ const FeedbackDashboard = ({ messages = [] }) => {
   const [expandedFeedbackId, setExpandedFeedbackId] = useState(null);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [fixedFeedbackIds, setFixedFeedbackIds] = useState([]);
+  const [severityFilter, setSeverityFilter] = useState('all');
 
   // Fetch real feedback data from backend
   const fetchFeedbackData = async () => {
@@ -228,6 +229,9 @@ const FeedbackDashboard = ({ messages = [] }) => {
     if (filter !== 'all') {
       filtered = filtered.filter(item => item.category === filter);
     }
+    if (severityFilter !== 'all') {
+      filtered = filtered.filter(item => (item.severity || 'medium') === severityFilter);
+    }
     
     // Filter by date range
     const now = new Date();
@@ -439,6 +443,16 @@ const FeedbackDashboard = ({ messages = [] }) => {
               <option value="accuracy">Accuracy</option>
               <option value="helpfulness">Helpfulness</option>
               <option value="speed">Speed</option>
+            </select>
+            <select 
+              value={severityFilter}
+              onChange={e => setSeverityFilter(e.target.value)}
+              className="filter-select"
+            >
+              <option value="all">All Severities</option>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
             </select>
             <select 
               value={dateRange} 
