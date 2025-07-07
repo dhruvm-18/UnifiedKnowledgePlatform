@@ -1,0 +1,31 @@
+.sources-accordion {
+  margin-top: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  background: #fafbfc;
+  padding: 8px 12px;
+  max-width: 600px;
+}
+.sources-toggle {
+  background: #f0f0f0;
+  border: none;
+  color: #333;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  transition: background 0.2s;
+}
+.sources-toggle:hover {
+  background: #e0e0e0;
+}
+.sources-list {
+  margin: 0;
+  padding: 0 0 0 20px;
+  list-style: disc;
+}
+.sources-list li {
+  margin-bottom: 4px;
+  word-break: break-all;
+} 

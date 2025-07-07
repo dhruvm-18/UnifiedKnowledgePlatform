@@ -169,13 +169,14 @@
     to   { background: rgba(255,255,0,0.35); box-shadow: 0 0 12px 2px rgba(255,255,0,0.18); }
 }
 
-.pdf-highlight,
-mark.pdf-highlight {
-  background: #6c2eb7 !important; /* Dark violet */
-  color: #fff !important;
-  border-radius: 3px;
+.pdf-highlight {
+  background: #ffd600 !important; /* Dark yellow, opaque */
+  border-radius: 2px;
   padding: 0 2px;
-  box-shadow: 0 0 6px 1px rgba(108, 46, 183, 0.18);
+  box-shadow: 0 0 2px #ffd600;
+  font-weight: bold;
+  color: #000 !important;
+  text-shadow: none;
   transition: background 0.2s;
 }
 

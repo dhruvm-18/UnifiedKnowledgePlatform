@@ -4,7 +4,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 os.environ["OMP_NUM_THREADS"] = "1"
 os.environ["PATH"] += os.pathsep + r"C:\ffmpeg\bin\bin"
 os.environ["FFMPEG_BINARY"] = r"C:\ffmpeg\bin\bin\ffmpeg.exe"
-
+import re
 import json
 from datetime import datetime
 from flask import Flask, request, jsonify, send_from_directory, g, session
@@ -46,7 +46,6 @@ from dotenv import load_dotenv
 from PyPDF2 import PdfReader
 import glob
 import uuid
-import re
 from pypdf import PdfReader
 from werkzeug.utils import secure_filename
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -444,20 +443,23 @@ def format_response_with_sources(response, sources):
             label, section, page = match.groups()
             # Try to find doc with matching page and section
             corrected_filename = None
+            highlight_text = None
             for doc in sources:
                 doc_page = str(doc.metadata.get('page', ''))
                 doc_section = str(doc.metadata.get('section', '')).replace(' ', '_')
                 if doc_page == page and (not section or section.replace(' ', '_') in doc_section):
                     corrected_filename = doc.metadata.get('source')
+                    # Use first 200 characters of the chunk as highlight
+                    highlight_text = doc.page_content[:200].replace('\n', ' ')
                     break
             if not corrected_filename and sources:
                 corrected_filename = sources[0].metadata.get('source', 'Unknown')
+                highlight_text = sources[0].page_content[:200].replace('\n', ' ')
             link = f"- (pdf://{corrected_filename}/page/{page}#section={section.replace(' ', '_')}"
-            # Add highlight param using the answer text
-            highlight = get_highlight_texts(corrected_filename, page)
-            if highlight:
+            # Add highlight param using the chunk excerpt
+            if highlight_text:
                 from urllib.parse import quote
-                link += f"&highlight={quote(highlight)}"
+                link += f"&highlight={quote(highlight_text)}"
             link += ")"
             formatted_sources.append(link)
             continue
@@ -973,12 +975,12 @@ def add_message(session_id):
     user_message = str(data.get('message', '')) if data.get('message') is not None else ''
     user_name = str(data.get('userName', 'User')) if data.get('userName') is not None else 'User'
     agent_id = data.get('agentId', None)
-    pdf_source_from_frontend = data.get('pdfSource', None)
+    source_from_frontend = data.get('source', data.get('pdfSource', None))
     original_message = data.get('original_message', user_message)  # Optionally store original message for display
     lang = data.get('lang', 'en-IN')  # Default to BCP-47 code
     model_name = data.get('model', 'gemini')
     
-    logger.info(f"Processing user message: {user_message} for agent: {agent_id}, pdfSource: {pdf_source_from_frontend}")
+    logger.info(f"Processing user message: {user_message} for agent: {agent_id}, source: {source_from_frontend}")
     
     # Use agent-specific retriever if available, else fallback to general retriever
     retriever_to_use = agent_retrievers.get(agent_id) if agent_id in agent_retrievers else general_retriever
@@ -987,7 +989,20 @@ def add_message(session_id):
         return jsonify({'error': 'No retriever available.'}), 500
     all_docs = retriever_to_use.get_relevant_documents(user_message)
     logger.info(f"Retrieved {len(all_docs)} documents for agent {agent_id if agent_id else 'general'}.")
-    docs = all_docs  # No post-retrieval filtering needed
+    # Filter by selected source if provided
+    if source_from_frontend:
+        # If the selected source is an audio file, map to its transcript txt file
+        audio_exts = ['mp3', 'wav', 'ogg', 'm4a']
+        ext = source_from_frontend.split('.')[-1].lower()
+        if ext in audio_exts:
+            transcript_name = source_from_frontend.rsplit('.', 1)[0] + '.txt'
+            docs = [doc for doc in all_docs if doc.metadata.get('source') == transcript_name]
+            logger.info(f"Filtered docs to transcript for audio source '{source_from_frontend}' (using '{transcript_name}'): {len(docs)} remaining.")
+        else:
+            docs = [doc for doc in all_docs if doc.metadata.get('source') == source_from_frontend]
+            logger.info(f"Filtered docs to selected source '{source_from_frontend}': {len(docs)} remaining.")
+    else:
+        docs = all_docs
     logger.info(f"Documents returned: {[doc.metadata.get('source') for doc in docs]}")
     
     # Build context with source metadata for each chunk
@@ -1020,15 +1035,15 @@ def add_message(session_id):
     # Get document ID from the first retrieved document's metadata (still useful for prompt metadata)
     document_id = docs[0].metadata.get('source', '') if docs else ''
     
-    # Get the structured prompt, with extra explicit instruction for PDF links
-    pdf_link_instruction = (
-        "IMPORTANT: Always cite your sources using the exact filename, page, and section as shown in the context below. "
-        "Always use the format: pdf://<filename>/page/<page_number>#section=<section_name>. Do not invent filenames or page numbers. "
-        "Do not add disclaimers, do not repeat instructions, and do not add extra commentary.\n\n"
+    # Get the structured prompt, with extra explicit instruction for source links
+    source_link_instruction = (
+        "IMPORTANT: Always cite your sources using the exact filename and any available metadata as shown in the context below. "
+        "For PDFs, use the format: pdf://<filename>/page/<page_number>#section=<section_name>. For other files, cite the filename and any available metadata. "
+        "Do not invent filenames or page numbers. Do not add disclaimers, do not repeat instructions, and do not add extra commentary.\n\n"
     )
     prompt_data = create_structured_prompt(user_message, escaped_context, doc_id=document_id, DOCUMENT_HEADING=current_doc_heading, USER_NAME=user_name, AGENT_ID=agent_id)
     if 'prompt' in prompt_data:
-        prompt_data['prompt'] = pdf_link_instruction + prompt_data['prompt']
+        prompt_data['prompt'] = source_link_instruction + prompt_data['prompt']
     
     if model_name == 'llama3':
         from prompts import CORE_INSTRUCTION, FORMAT_PROMPT, DETAILED_RESPONSE_INSTRUCTION, FILTER_PROMPT, GREETING_INSTRUCTION, SUMMARIZATION_INSTRUCTION, COMPARISON_INSTRUCTION, EXTRACTION_INSTRUCTION, ANALYSIS_INSTRUCTION, TECHNICAL_INSTRUCTION, DEFINITION_INSTRUCTION, EXAMPLE_INSTRUCTION, TRANSLATION_INSTRUCTION, CLARIFICATION_INSTRUCTION, GENERAL_INSTRUCTION
@@ -1092,97 +1107,29 @@ REMEMBER: Start your answer with \"Thank you for asking. As per the information 
         if not found_valid_markdown_link:
             logger.warning(f"[LLAMA ENFORCEMENT] No valid markdown link found in response. Valid filenames: {valid_filenames}")
             answer_text = response.strip()
-            # Ultra-flexible regex to match various citation patterns
-            source_pattern = re.compile(r"""
-                (?:
-                    (?P<filename>[\w\-]+\.pdf)[\s,;:()\n]*
-                    (?:Section[:\s]*?(?P<section1>[\w\-]+)[\s,;:()\n]*)?
-                    (?:Page[:\s]*?(?P<page1>\d+))?
-                )|
-                (?:
-                    (?:Page[:\s]*?(?P<page2>\d+)[\s,;:()\n]*)
-                    (?:Section[:\s]*?(?P<section2>[\w\-]+)[\s,;:()\n]*)?
-                    (?P<filename2>[\w\-]+\.pdf)
-                )|
-                (?:
-                    (?:Section[:\s]*?(?P<section3>[\w\-]+)[\s,;:()\n]*)
-                    (?P<filename3>[\w\-]+\.pdf)[\s,;:()\n]*
-                    (?:Page[:\s]*?(?P<page3>\d+))?
-                )|
-                (?:
-                    (?P<filename4>[\w\-]+\.pdf)[\s,;:()\n]*\(\s*Page\s*(?P<page4>\d+)\s*\)
-                )|
-                (?:
-                    Page\s*(?P<page5>\d+)\s*of\s*(?P<filename5>[\w\-]+\.pdf)
-                )
-            """, re.IGNORECASE | re.VERBOSE)
-            matches = list(source_pattern.finditer(answer_text))
-            links = []
-            spans_to_remove = []
-            for match in matches:
-                filename = (
-                    match.group('filename') or match.group('filename2') or match.group('filename3') or match.group('filename4') or match.group('filename5')
-                )
-                page = (
-                    match.group('page1') or match.group('page2') or match.group('page3') or match.group('page4') or match.group('page5')
-                )
-                section = (
-                    match.group('section1') or match.group('section2') or match.group('section3')
-                )
-                if filename:
-                    highlight = ''
-                    for doc in docs:
-                        doc_filename = doc.metadata.get('source', '')
-                        doc_page = str(doc.metadata.get('page', ''))
-                        if doc_filename.lower() == filename.lower() and (not page or doc_page == page):
-                            words = doc.page_content.split()
-                            highlight = ' '.join(words[:20]) if words else ''
-                            break
-                    if not highlight and docs:
-                        words = docs[0].page_content.split()
-                        highlight = ' '.join(words[:20]) if words else ''
-                    link = f"(pdf://{filename}"
-                    if page:
-                        link += f"/page/{page}"
-                    if section:
-                        link += f"#section={section}"
-                    if highlight:
-                        from urllib.parse import quote
-                        link += f"&highlight={quote(highlight)}"
-                    link += ")"
-                    links.append(f"- {link}")
-                    # Record the span to remove
-                    spans_to_remove.append(match.span())
-            # Remove all matched citation spans from the answer text
-            if spans_to_remove:
-                # Remove from end to start to avoid messing up indices
-                for start, end in sorted(spans_to_remove, reverse=True):
-                    answer_text = answer_text[:start] + answer_text[end:]
-            if links:
+            # Only use the top relevant chunk for the fallback link
+            if docs:
+                top_doc = docs[0]
+                filename = top_doc.metadata.get('source', 'Unknown.pdf')
+                page = top_doc.metadata.get('page', None)
+                section = top_doc.metadata.get('section', None)
+                # Use up to 200 characters of the chunk as the highlight
+                words = top_doc.page_content[:200]
+                highlight = words.replace('\n', ' ')
+                link = f"(pdf://{filename}"
+                if page:
+                    link += f"/page/{page}"
+                if section:
+                    link += f"#section={section}"
+                if highlight:
+                    from urllib.parse import quote
+                    link += f"&highlight={quote(highlight)}"
+                link += ")"
                 # Remove any line that starts with (optionally bolded) 'Sources', with or without a colon, and any text after it
                 answer_text = re.sub(r'(?im)^\s*(\*\*\s*)?Sources\*\*?\s*:?.*$', '', answer_text)
-                response = f"{answer_text.strip()}\n\n**Sources:**\n" + '\n'.join(links)
+                response = f"{answer_text.strip()}\n\n**Sources:**\n- {link}"
             else:
-                if docs:
-                    top_doc = docs[0]
-                    filename = top_doc.metadata.get('source', 'Unknown.pdf')
-                    page = top_doc.metadata.get('page', None)
-                    section = top_doc.metadata.get('section', None)
-                    words = top_doc.page_content.split()
-                    highlight = ' '.join(words[:20]) if words else ''
-                    link = f"(pdf://{filename}"
-                    if page:
-                        link += f"/page/{page}"
-                    if section:
-                        link += f"#section={section}"
-                    if highlight:
-                        from urllib.parse import quote
-                        link += f"&highlight={quote(highlight)}"
-                    link += ")"
-                    answer_text = re.sub(r'(?im)^\s*(\*\*\s*)?Sources\*\*?\s*:?.*$', '', answer_text)
-                    response = f"{answer_text.strip()}\n\n**Sources:**\n- {link}"
-                else:
-                    response = "I cannot answer based on the provided information."
+                response = "I cannot answer based on the provided information."
         # Log the final response string before returning
         logger.info(f"[FINAL LLAMA RESPONSE TO FRONTEND] {response}")
         # Remove all but the last 'Sources:' section (optionally bolded, with or without colon)
@@ -1195,44 +1142,33 @@ REMEMBER: Start your answer with \"Thank you for asking. As per the information 
             # Keep everything up to the last 'Sources:' line, then only the last 'Sources:' section
             lines = lines[:last_idx] + lines[last_idx:]
             response = '\n'.join(lines)
+        # After getting the response, parse plain text 'Sources:' block and convert to markdown links
+        sources_block_match = re.search(r'Sources?:\s*(.*)', response, re.IGNORECASE | re.DOTALL)
+        markdown_links = []
+        if sources_block_match:
+            sources_text = sources_block_match.group(1)
+            response = response[:sources_block_match.start()].strip()
+            for match in re.finditer(r'\(([^)]+)\),?\s*Page:\s*(\d+)', sources_text):
+                section = match.group(1).strip()
+                page = match.group(2).strip()
+                # Try to find the correct filename from docs
+                filename = docs[0].metadata.get('source', 'Unknown.pdf') if docs else 'Unknown.pdf'
+                link = f"- (pdf://{filename}/page/{page}#section={section.replace(' ', '_')})"
+                markdown_links.append(link)
+        # If we found markdown links, append them as the sources section
+        if markdown_links:
+            response += "\n\n**Sources:**\n" + "\n".join(markdown_links)
     elif model_name == 'mistral':
         from prompts import CORE_INSTRUCTION, FORMAT_PROMPT, DETAILED_RESPONSE_INSTRUCTION, FILTER_PROMPT, GREETING_INSTRUCTION, SUMMARIZATION_INSTRUCTION, COMPARISON_INSTRUCTION, EXTRACTION_INSTRUCTION, ANALYSIS_INSTRUCTION, TECHNICAL_INSTRUCTION, DEFINITION_INSTRUCTION, EXAMPLE_INSTRUCTION, TRANSLATION_INSTRUCTION, CLARIFICATION_INSTRUCTION, GENERAL_INSTRUCTION
         mistral_system_prompt = f"""
 You are a helpful AI assistant. Follow these instructions carefully:
 
-{CORE_INSTRUCTION}
-
-{FORMAT_PROMPT}
-
-{DETAILED_RESPONSE_INSTRUCTION}
-
-{FILTER_PROMPT}
-
-{GREETING_INSTRUCTION}
-
-{SUMMARIZATION_INSTRUCTION}
-
-{COMPARISON_INSTRUCTION}
-
-{EXTRACTION_INSTRUCTION}
-
-{ANALYSIS_INSTRUCTION}
-
-{TECHNICAL_INSTRUCTION}
-
-{DEFINITION_INSTRUCTION}
-
-{EXAMPLE_INSTRUCTION}
-
-{TRANSLATION_INSTRUCTION}
-
-{CLARIFICATION_INSTRUCTION}
-
-{GENERAL_INSTRUCTION}
-
-IMPORTANT: Only answer using the provided context. Do NOT use outside knowledge. Always cite your sources using the exact filename, page, and section as shown in the context. Use the format: pdf://<filename>/page/<page_number>#section=<section_name>. Do not invent filenames or page numbers. Do not add disclaimers, do not repeat instructions, and do not add extra commentary.
-
-If any part of your answer is especially important, always underline it using double underscores (e.g., __this is important__). You may also use bold (**like this**) for key concepts, and both (**__like this__**) for the most critical points.
+- Use **bold** for key concepts.
+- Use __underline__ for especially important parts.
+- Use both (**__like this__**) for the most critical points.
+- Only answer using the provided context. Do NOT use outside knowledge.
+- Always cite your sources using the exact filename, page, and section as shown in the context. Use the format: pdf://<filename>/page/<page_number>#section=<section_name>. Do not invent filenames or page numbers. Do not add disclaimers, do not repeat instructions, and do not add extra commentary.
+- If the answer is not found in the context, state that you cannot answer based on the provided information.
 """
         mistral_user_message = f"""{context}
 
@@ -1295,17 +1231,7 @@ REMEMBER: Start your answer with \"Thank you for asking. As per the information 
                     match.group('section1') or match.group('section2') or match.group('section3')
                 )
                 if filename:
-                    highlight = ''
-                    for doc in docs:
-                        doc_filename = doc.metadata.get('source', '')
-                        doc_page = str(doc.metadata.get('page', ''))
-                        if doc_filename.lower() == filename.lower() and (not page or doc_page == page):
-                            words = doc.page_content.split()
-                            highlight = ' '.join(words[:20]) if words else ''
-                            break
-                    if not highlight and docs:
-                        words = docs[0].page_content.split()
-                        highlight = ' '.join(words[:20]) if words else ''
+                    highlight = doc.page_content[:200].replace('\n', ' ')
                     link = f"(pdf://{filename}"
                     if page:
                         link += f"/page/{page}"
@@ -1445,6 +1371,12 @@ REMEMBER: Start your answer with \"Thank you for asking. As per the information 
     
     # After docs are retrieved, get source highlights
     source_highlights = [doc.page_content for doc in docs if doc.page_content]
+    
+    # Remove markdown source links from main answer text before sending to frontend
+    if formatted_response and '**Sources:**' in formatted_response:
+        main_answer, sources_section = formatted_response.split('**Sources:**', 1)
+        main_answer = re.sub(r'\(pdf://[^\)]+\)', '', main_answer).strip()
+        formatted_response = f"{main_answer}\n\n**Sources:**{sources_section}"
     
     return jsonify({
         'response': formatted_response,
@@ -1627,14 +1559,17 @@ def add_agent():
         if agent_id in AGENTS_DATA:
             return jsonify({'error': f'Agent with ID {agent_id} already exists', 'success': False}), 409
 
-        # Accept pdfSources (list) or pdfSource (single file, for backward compatibility)
-        pdf_sources = data.get('pdfSources')
-        if not pdf_sources:
-            pdf_source = data.get('pdfSource')
-            if pdf_source:
-                pdf_sources = [pdf_source]
-            else:
-                return jsonify({'error': 'Missing required agent pdfSources/pdfSource', 'success': False}), 400
+        # Accept sources (list) or pdfSources/pdfSource for backward compatibility
+        sources = data.get('sources')
+        if not sources:
+            pdf_sources = data.get('pdfSources')
+            if not pdf_sources:
+                pdf_source = data.get('pdfSource')
+                if pdf_source:
+                    pdf_sources = [pdf_source]
+                else:
+                    return jsonify({'error': 'Missing required agent sources/pdfSources/pdfSource', 'success': False}), 400
+            sources = pdf_sources
 
         # Ensure required fields are present
         required_fields = ['name', 'description', 'iconType']
@@ -1647,7 +1582,7 @@ def add_agent():
             'description': data['description'],
             'iconType': data['iconType'],
             'buttonText': data.get('buttonText', 'Start Chat'),
-            'pdfSources': pdf_sources,
+            'sources': sources,
             'tileLineStartColor': data.get('tileLineStartColor', ''),
             'tileLineEndColor': data.get('tileLineEndColor', ''),
         }
@@ -2090,7 +2025,10 @@ FEEDBACK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backen
 
 @app.route('/feedback', methods=['POST'])
 def submit_feedback():
+    logger.info('POST /feedback endpoint hit')
     data = request.get_json()
+    logger.info(f'Received feedback data: {data}')
+    logger.info(f'FEEDBACK_FILE path: {FEEDBACK_FILE}')
     feedback_entry = {
         'sessionId': data.get('sessionId'),
         'agentId': data.get('agentId'),
@@ -2108,22 +2046,26 @@ def submit_feedback():
         'severity': data.get('severity', 'medium'),
         'modelUsed': data.get('modelUsed', 'Gemini 2.5 Flash'),
         'responseTime': data.get('responseTime', 2.5),
-        'sessionDuration': data.get('sessionDuration', 15)
+        'sessionDuration': data.get('sessionDuration', 15),
+        'answerText': data.get('answerText', '')
     }
     try:
         if not os.path.exists(FEEDBACK_FILE):
+            logger.info('feedback.json does not exist, creating new file.')
             with open(FEEDBACK_FILE, 'w') as f:
                 json.dump([feedback_entry], f, indent=2)
         else:
             with open(FEEDBACK_FILE, 'r+') as f:
                 try:
                     feedbacks = json.load(f)
-                except Exception:
+                except Exception as e:
+                    logger.error(f'Error loading existing feedbacks: {e}')
                     feedbacks = []
                 feedbacks.append(feedback_entry)
                 f.seek(0)
                 json.dump(feedbacks, f, indent=2)
                 f.truncate()
+        logger.info('Feedback saved successfully.')
         return jsonify({'success': True}), 200
     except Exception as e:
         logger.error(f"Error saving feedback: {e}")
@@ -2186,7 +2128,8 @@ def get_feedback():
                 'feedback_type': feedback.get('feedbackType', feedback_type),
                 'message_id': feedback.get('answerId'),
                 'model_used': feedback.get('modelUsed', 'Gemini 2.5 Flash'),
-                'model_icon': '🤖'
+                'model_icon': '🤖',
+                'answer_text': feedback.get('answerText', '')  # <-- Add this line
             }
             transformed_feedbacks.append(transformed_feedback)
         
@@ -2313,6 +2256,211 @@ def whisper_stt():
     except Exception as e:
         logger.error(f"Whisper STT error: {e}")
         return jsonify({'error': str(e)}), 500
+
+def extract_meaningful_highlight(chunk, question, window=3):
+    import re
+    sentences = re.split(r'(?<=[.!?]) +', chunk)
+    question_words = set(re.findall(r'\w+', question.lower()))
+    scores = []
+    for i, sent in enumerate(sentences):
+        sent_words = set(re.findall(r'\w+', sent.lower()))
+        overlap = len(question_words & sent_words)
+        scores.append((overlap, i))
+    best_score, best_idx = max(scores) if scores else (0, 0)
+    start = max(0, best_idx - window//2)
+    end = min(len(sentences), best_idx + window//2 + 1)
+    highlight = ' '.join(sentences[start:end]).strip()
+    # Filter: skip highlights that are only a single character or match (a), (b), (c), etc.
+    if re.fullmatch(r'\([a-zA-Z]\)', highlight) or len(highlight.split()) < 2:
+        # Try to expand window if possible
+        start = max(0, best_idx - window)
+        end = min(len(sentences), best_idx + window + 1)
+        highlight = ' '.join(sentences[start:end]).strip()
+        # If still not meaningful, fallback to first 200 chars
+        if re.fullmatch(r'\([a-zA-Z]\)', highlight) or len(highlight.split()) < 2:
+            return chunk[:200]
+    return highlight if highlight else chunk[:200]
+
+def load_documents_from_directory(directory_path: str) -> list[Document]:
+    """Load all supported documents from a directory and convert them to LangChain Documents"""
+    from langchain_core.documents import Document
+    import docx
+    import csv
+    import mimetypes
+    supported_docs = []
+    for filename in os.listdir(directory_path):
+        file_path = os.path.join(directory_path, filename)
+        if filename.lower().endswith('.pdf'):
+            try:
+                reader = PdfReader(file_path)
+                text = ""
+                for page in reader.pages:
+                    text += page.extract_text() + "\n"
+                doc = Document(page_content=text, metadata={"source": filename})
+                supported_docs.append(doc)
+            except Exception as e:
+                logger.error(f"Error loading PDF {filename}: {str(e)}")
+        elif filename.lower().endswith('.txt'):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    text = f.read()
+                doc = Document(page_content=text, metadata={"source": filename})
+                supported_docs.append(doc)
+            except Exception as e:
+                logger.error(f"Error loading TXT {filename}: {str(e)}")
+        elif filename.lower().endswith('.docx'):
+            try:
+                docx_file = docx.Document(file_path)
+                text = "\n".join([p.text for p in docx_file.paragraphs])
+                doc = Document(page_content=text, metadata={"source": filename})
+                supported_docs.append(doc)
+            except Exception as e:
+                logger.error(f"Error loading DOCX {filename}: {str(e)}")
+        elif filename.lower().endswith('.csv'):
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    reader = csv.reader(f)
+                    text = "\n".join([", ".join(row) for row in reader])
+                doc = Document(page_content=text, metadata={"source": filename})
+                supported_docs.append(doc)
+            except Exception as e:
+                logger.error(f"Error loading CSV {filename}: {str(e)}")
+        elif filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            try:
+                from backend.pdf_utils import convert_image_to_text
+                with open(file_path, 'rb') as imgf:
+                    image_data = imgf.read()
+                text = convert_image_to_text(image_data)
+                doc = Document(page_content=text, metadata={"source": filename})
+                supported_docs.append(doc)
+            except Exception as e:
+                logger.error(f"Error loading image {filename}: {str(e)}")
+        elif filename.lower().endswith('.mp3'):
+            try:
+                # Placeholder: add your audio transcription logic here
+                text = f"[Audio file: {filename}]"
+                doc = Document(page_content=text, metadata={"source": filename})
+                supported_docs.append(doc)
+            except Exception as e:
+                logger.error(f"Error loading audio {filename}: {str(e)}")
+        else:
+            logger.info(f"Skipping unsupported file type: {filename}")
+    return supported_docs
+
+def load_txt_as_documents(txt_filename):
+    txt_dir = app.config['UPLOAD_FOLDER']
+    txt_path = os.path.join(txt_dir, txt_filename)
+    docs = []
+    try:
+        with open(txt_path, 'r', encoding='utf-8') as f:
+            text = f.read()
+        from langchain.text_splitter import RecursiveCharacterTextSplitter
+        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+        chunks = splitter.split_text(text)
+        docs = [Document(page_content=chunk, metadata={"source": txt_filename, "file_type": "txt"}) for chunk in chunks]
+        logger.info(f"Loaded {len(docs)} chunks from TXT {txt_filename}")
+    except Exception as e:
+        logger.warning(f"Failed to load TXT {txt_filename}: {e}")
+    return docs
+
+def load_docx_as_documents(docx_filename):
+    import docx2txt
+    docx_dir = app.config['UPLOAD_FOLDER']
+    docx_path = os.path.join(docx_dir, docx_filename)
+    docs = []
+    try:
+        text = docx2txt.process(docx_path)
+        from langchain.text_splitter import RecursiveCharacterTextSplitter
+        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+        chunks = splitter.split_text(text)
+        docs = [Document(page_content=chunk, metadata={"source": docx_filename, "file_type": "docx"}) for chunk in chunks]
+        logger.info(f"Loaded {len(docs)} chunks from DOCX {docx_filename}")
+    except Exception as e:
+        logger.warning(f"Failed to load DOCX {docx_filename}: {e}")
+    return docs
+
+def load_csv_as_documents(csv_filename):
+    import csv
+    csv_dir = app.config['UPLOAD_FOLDER']
+    csv_path = os.path.join(csv_dir, csv_filename)
+    docs = []
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            reader = csv.reader(f)
+            rows = list(reader)
+        from langchain.text_splitter import RecursiveCharacterTextSplitter
+        for i, row in enumerate(rows):
+            row_text = ', '.join(row)
+            splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+            chunks = splitter.split_text(row_text)
+            docs.extend([Document(page_content=chunk, metadata={"source": csv_filename, "file_type": "csv", "row": i}) for chunk in chunks])
+        logger.info(f"Loaded {len(docs)} chunks from CSV {csv_filename}")
+    except Exception as e:
+        logger.warning(f"Failed to load CSV {csv_filename}: {e}")
+    return docs
+
+def load_image_as_documents(image_filename):
+    from backend.pdf_utils import convert_image_to_text
+    img_dir = app.config['UPLOAD_FOLDER']
+    img_path = os.path.join(img_dir, image_filename)
+    docs = []
+    try:
+        with open(img_path, 'rb') as imgf:
+            image_data = imgf.read()
+        text = convert_image_to_text(image_data)
+        from langchain.text_splitter import RecursiveCharacterTextSplitter
+        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+        chunks = splitter.split_text(text)
+        docs = [Document(page_content=chunk, metadata={"source": image_filename, "file_type": "image"}) for chunk in chunks]
+        logger.info(f"Loaded {len(docs)} chunks from image {image_filename}")
+    except Exception as e:
+        logger.warning(f"Failed to load image {image_filename}: {e}")
+    return docs
+
+def load_audio_as_documents(audio_filename):
+    audio_dir = app.config['UPLOAD_FOLDER']
+    audio_path = os.path.join(audio_dir, audio_filename)
+    docs = []
+    try:
+        transcript_path = os.path.splitext(audio_path)[0] + '.txt'
+        if os.path.exists(transcript_path):
+            with open(transcript_path, 'r', encoding='utf-8') as tf:
+                text = tf.read()
+        else:
+            text = extract_audio_transcript(audio_path)
+            if text:
+                with open(transcript_path, 'w', encoding='utf-8') as tf:
+                    tf.write(text)
+        from langchain.text_splitter import RecursiveCharacterTextSplitter
+        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+        chunks = splitter.split_text(text)
+        docs = [Document(page_content=chunk, metadata={"source": audio_filename, "file_type": "audio"}) for chunk in chunks]
+        logger.info(f"Loaded {len(docs)} chunks from audio {audio_filename}")
+    except Exception as e:
+        logger.warning(f"Failed to load audio {audio_filename}: {e}")
+    return docs
+
+# Update load_documents_from_directory to use these loaders for each file type
+
+def load_documents_from_directory(directory_path: str) -> list[Document]:
+    """Load all supported documents from a directory and convert them to LangChain Documents"""
+    supported_docs = []
+    for filename in os.listdir(directory_path):
+        if filename.lower().endswith('.pdf'):
+            supported_docs.extend(load_pdf_as_documents(filename))
+        elif filename.lower().endswith('.txt'):
+            supported_docs.extend(load_txt_as_documents(filename))
+        elif filename.lower().endswith('.docx'):
+            supported_docs.extend(load_docx_as_documents(filename))
+        elif filename.lower().endswith('.csv'):
+            supported_docs.extend(load_csv_as_documents(filename))
+        elif filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+            supported_docs.extend(load_image_as_documents(filename))
+        elif filename.lower().endswith('.mp3'):
+            supported_docs.extend(load_audio_as_documents(filename))
+        else:
+            logger.info(f"Skipping unsupported file type: {filename}")
+    return supported_docs
 
 if __name__ == '__main__':
     print("Starting Flask app...")

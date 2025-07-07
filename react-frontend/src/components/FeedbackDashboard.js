@@ -2,13 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { FaChartBar, FaStar, FaThumbsUp, FaThumbsDown, FaComments, FaCalendarAlt, FaFilter, FaUsers, FaChartLine, FaTrendingDown, FaExclamationTriangle, FaCheckCircle, FaClock, FaEye } from 'react-icons/fa';
 import '../styles/FeedbackDashboard.css';
 
-const FeedbackDashboard = () => {
+const FeedbackDashboard = ({ messages = [] }) => {
   const [feedbackData, setFeedbackData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [dateRange, setDateRange] = useState('7d');
   const [selectedTimeframe, setSelectedTimeframe] = useState('7d');
   const [error, setError] = useState(null);
+  const [expandedFeedbackId, setExpandedFeedbackId] = useState(null);
+  const [selectedFeedback, setSelectedFeedback] = useState(null);
+  const [fixedFeedbackIds, setFixedFeedbackIds] = useState([]);
 
   // Fetch real feedback data from backend
   const fetchFeedbackData = async () => {
@@ -32,7 +35,7 @@ const FeedbackDashboard = () => {
         id: item.id || Math.random().toString(36).substr(2, 9),
         sessionId: item.session_id || `session_${item.id}`,
         agentId: item.agent_id || 'default_agent',
-        agentName: item.agent_name || 'AI Assistant',
+        agentName: item.agent_name || 'Unknown Agent',
         rating: item.rating || (item.feedback_type === 'positive' ? 4 : 2),
         category: item.category || 'helpfulness',
         severity: item.severity || 'medium',
@@ -392,6 +395,10 @@ const FeedbackDashboard = () => {
     return icons[type] || <FaComments />;
   };
 
+  const handleMarkAsFixed = (id) => {
+    setFixedFeedbackIds(prev => [...prev, id]);
+  };
+
   if (loading) {
     return (
       <div className="feedback-dashboard">
@@ -512,27 +519,10 @@ const FeedbackDashboard = () => {
             {Object.entries(ratingDistribution).map(([rating, count]) => (
               <div key={rating} className="chart-item">
                 <div className="chart-item-icon">
-                  {renderStars(parseInt(rating))}
+                  {renderStars(Number(rating))}
                 </div>
                 <div className="chart-item-content">
                   <span className="chart-item-label">{rating} Stars</span>
-                  <span className="chart-item-value">{count}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="chart-section">
-          <h3>Feedback by Category</h3>
-          <div className="chart-content">
-            {Object.entries(categoryStats).map(([category, count]) => (
-              <div key={category} className="chart-item">
-                <div className="chart-item-icon">
-                  {getCategoryIcon(category)}
-                </div>
-                <div className="chart-item-content">
-                  <span className="chart-item-label">{category}</span>
                   <span className="chart-item-value">{count}</span>
                 </div>
               </div>
@@ -643,7 +633,32 @@ const FeedbackDashboard = () => {
         <h3>Recent Feedback</h3>
         <div className="feedback-items">
           {filteredData.map(feedback => (
-            <div key={feedback.id} className="feedback-item">
+            <div key={feedback.id} className="feedback-item" onClick={() => {
+              const sessionMsgs = messages.filter(m => m.sessionId === feedback.sessionId);
+              setSelectedFeedback({ ...feedback, sessionMessages: sessionMsgs });
+            }} style={{
+              cursor:'pointer',
+              position: 'relative',
+              background: fixedFeedbackIds.includes(feedback.id) && feedback.rating <= 3 ? '#eaffea' : undefined,
+              border: fixedFeedbackIds.includes(feedback.id) && feedback.rating <= 3 ? '1.5px solid #52c41a' : undefined
+            }}>
+              {fixedFeedbackIds.includes(feedback.id) && feedback.rating <= 3 && (
+                <div style={{
+                  position: 'absolute',
+                  top: 10,
+                  right: 18,
+                  background: '#52c41a',
+                  color: 'white',
+                  borderRadius: 6,
+                  padding: '2px 12px',
+                  fontWeight: 700,
+                  fontSize: '0.98rem',
+                  boxShadow: '0 1px 4px #0001',
+                  zIndex: 2,
+                }}>
+                  Issue Fixed
+                </div>
+              )}
               <div className="feedback-header">
                 <div className="feedback-agent">
                   <strong>{feedback.agentName}</strong>
@@ -657,9 +672,6 @@ const FeedbackDashboard = () => {
                 <p>{feedback.feedback}</p>
               </div>
               <div className="feedback-meta">
-                <span className="feedback-category">
-                  {getCategoryIcon(feedback.category)} {feedback.category}
-                </span>
                 <span 
                   className="feedback-severity"
                   style={{ color: getSeverityColor(feedback.severity) }}
@@ -690,6 +702,104 @@ const FeedbackDashboard = () => {
           ))}
         </div>
       </div>
+      {selectedFeedback && (
+        <>
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.32)',
+            zIndex: 3999,
+          }} onClick={() => setSelectedFeedback(null)} />
+          <div
+            style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 4000,
+              background:'#f8f9fa',
+              border:'1px solid #e0e0e0',
+              borderRadius:12,
+              padding:'32px 28px',
+              boxShadow:'0 4px 32px #0004',
+              width: 700,
+              maxWidth: '99vw',
+              minWidth: 340,
+              maxHeight: '88vh',
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'stretch',
+            }}
+          >
+            <button
+              onClick={() => setSelectedFeedback(null)}
+              style={{
+                position: 'absolute',
+                top: 14,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                fontSize: 24,
+                color: '#888',
+                cursor: 'pointer',
+                zIndex: 4100,
+              }}
+              title="Close"
+            >
+              ×
+            </button>
+            <h4 style={{marginBottom:8}}>Developer Debug Info</h4>
+            <div style={{fontSize:'0.97rem',lineHeight:1.7,background:'#f4f6f8',padding:14,borderRadius:6,border:'1px solid #e0e0e0',marginBottom:12}}>
+              <strong>Raw Feedback Object:</strong>
+              <pre style={{fontSize:'0.95rem',background:'none',border:'none',margin:0}}>{JSON.stringify(selectedFeedback, null, 2)}</pre>
+            </div>
+            <ul style={{fontSize:'0.98rem',lineHeight:1.7}}>
+              <li><strong>Session ID:</strong> {selectedFeedback.sessionId}</li>
+              <li><strong>Agent ID:</strong> {selectedFeedback.agentId}</li>
+              <li><strong>User Email:</strong> {selectedFeedback.userEmail}</li>
+              <li><strong>Timestamp:</strong> {selectedFeedback.timestamp}</li>
+              <li><strong>Model Used:</strong> {selectedFeedback.modelUsed}</li>
+              <li><strong>Model Icon:</strong> {selectedFeedback.modelIcon}</li>
+              <li><strong>Category:</strong> {selectedFeedback.category}</li>
+              <li><strong>Severity:</strong> {selectedFeedback.severity}</li>
+              <li><strong>Feedback Type:</strong> {selectedFeedback.feedbackType}</li>
+              <li><strong>Rating:</strong> {selectedFeedback.rating}</li>
+              <li><strong>Stars:</strong> {selectedFeedback.stars}</li>
+              <li><strong>Suggestion:</strong> {selectedFeedback.suggestion}</li>
+              <li><strong>Response Time:</strong> {selectedFeedback.responseTime}s</li>
+              <li><strong>Session Duration:</strong> {selectedFeedback.sessionDuration} min</li>
+              <li><strong>Document Chunk IDs:</strong> {Array.isArray(selectedFeedback.documentChunkIds) ? selectedFeedback.documentChunkIds.join(', ') : selectedFeedback.documentChunkIds}</li>
+              <li><strong>Message ID:</strong> {selectedFeedback.message_id}</li>
+            </ul>
+            {selectedFeedback.rating <= 3 && (
+              <div style={{marginTop:24,display:'flex',alignItems:'center',gap:16}}>
+                <button
+                  onClick={() => handleMarkAsFixed(selectedFeedback.id)}
+                  disabled={fixedFeedbackIds.includes(selectedFeedback.id)}
+                  style={{
+                    background: fixedFeedbackIds.includes(selectedFeedback.id) ? '#b7eb8f' : 'var(--accent-color)',
+                    color: fixedFeedbackIds.includes(selectedFeedback.id) ? '#389e0d' : 'white',
+                    border: 'none',
+                    borderRadius: 6,
+                    padding: '10px 28px',
+                    fontWeight: 600,
+                    fontSize: '1.1rem',
+                    cursor: fixedFeedbackIds.includes(selectedFeedback.id) ? 'not-allowed' : 'pointer',
+                    boxShadow: '0 1px 4px #0001',
+                    transition: 'background 0.2s',
+                  }}
+                >
+                  {fixedFeedbackIds.includes(selectedFeedback.id) ? 'Issue Fixed' : 'Mark as Fixed'}
+                </button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 };

@@ -274,12 +274,13 @@ function renderAssistantContent(content, handleOpenSourceLink, sourceHighlights 
           const ext = filename.split('.').pop().toLowerCase();
           let hash = '';
           if (ext === 'pdf') {
-          if (page) hash += `#page=${page}`;
-          if (section) hash += `${hash ? '&' : '#'}section=${encodeURIComponent(section)}`;
-          if (highlight) hash += `${hash ? '&' : '#'}highlight=${encodeURIComponent(highlight)}`;
+            if (page) hash += `#page=${page}`;
+            if (section) hash += `${hash ? '&' : '#'}section=${encodeURIComponent(section)}`;
+            if (highlight) hash += `${hash ? '&' : '#'}highlight=${encodeURIComponent(highlight)}`;
           }
+          // For non-PDFs, do not add section or highlight
           linkUrl += hash;
-          // Return a markdown link with a zero-width space as text, our 'a' renderer will populate the text
+          // Always use pdf://filename for the button/link, no section/highlight for non-PDFs
           return `[](\u200B)(${linkUrl})`;
         }
         return fullMatch; // Fallback if regex doesn't parse for some reason
@@ -825,9 +826,15 @@ function getFileType(file) {
     setChatStarted(false);
     setShowWelcome(true);
     setCurrentView('chat');
-    setActiveAgentDetails(null); // Explicitly clear for new general chats
-    localStorage.removeItem('isDedicatedChat'); // Ensure General Chat does not have the flag
-    return session.id; // Return the session ID
+    // Persist the last selected agent unless a new one is chosen
+    if (agentIdToActivate) {
+      const agent = currentAgents.find(a => a.id === agentIdToActivate);
+      if (agent) setActiveAgentDetails(agent);
+    } else if (activeAgentDetails) {
+      setActiveAgentDetails(activeAgentDetails); // Re-apply the last agent
+    }
+    localStorage.removeItem('isDedicatedChat');
+    return session.id;
   };
 
   // When switching sessions/tabs, reset welcome state if no messages
@@ -1924,14 +1931,8 @@ function getFileType(file) {
         submitted: false 
       }
     }));
-    
-    if (rating === 'down') {
-      // Open modal for detailed feedback
-      setFeedbackModal({ open: true, msg });
-    } else {
-      // Submit positive feedback immediately
-      handleSubmitFeedback(msg, 'up');
-    }
+    // Always open modal for feedback, regardless of upvote or downvote
+    setFeedbackModal({ open: true, msg });
   };
   const handleFeedbackTextChange = (msg, text) => {
     setFeedbackState(prev => ({
@@ -1941,9 +1942,28 @@ function getFileType(file) {
   };
   const handleSubmitFeedback = async (msg, ratingOverride = null, modalData = null) => {
     const feedback = feedbackState[msg.id] || {};
-    const rating = ratingOverride || feedback.rating;
+    // If user downvotes but selects 5 stars, treat as upvote
+    let rating = modalData?.stars || feedback.stars || (ratingOverride === 'up' ? 5 : ratingOverride === 'down' ? 2 : 0);
     const feedbackText = modalData?.reason || feedback.text;
     const stars = modalData?.stars || feedback.stars;
+    
+    // Debug: Ensure msg.content is present
+    console.log('Submitting feedback for msg:', msg);
+    if (!msg.content) {
+      console.warn('msg.content is missing! Attempting to fallback to last assistant message.');
+      // Fallback: find the last assistant message in the current session
+      const lastAssistantMsg = messages.slice().reverse().find(m => m.sender === 'assistant' && m.id === msg.id);
+      if (lastAssistantMsg && lastAssistantMsg.content) {
+        msg.content = lastAssistantMsg.content;
+      } else {
+        // As a last resort, find any assistant message
+        const anyAssistantMsg = messages.slice().reverse().find(m => m.sender === 'assistant');
+        if (anyAssistantMsg && anyAssistantMsg.content) {
+          msg.content = anyAssistantMsg.content;
+        }
+      }
+      console.log('After fallback, msg.content:', msg.content);
+    }
     
     // If rating is null, this means feedback is being removed
     if (rating === null) {
@@ -1971,7 +1991,7 @@ function getFileType(file) {
       return;
     }
     
-    // Determine feedback type based on rating
+    // Only now declare feedbackType ONCE:
     let feedbackType = 'neutral';
     if (rating === 'up' || (typeof rating === 'number' && rating >= 4)) {
       feedbackType = 'positive';
@@ -2002,12 +2022,14 @@ function getFileType(file) {
       severity = 'low';
     }
     
+    // Attach session transcript (all messages in the session)
+    const sessionTranscript = messages.filter(m => m.sessionId === msg.sessionId);
     const feedbackData = {
       sessionId: msg.sessionId,
       agentId: msg.agentId,
       answerId: msg.id,
       documentChunkIds: msg.chunkIds,
-      rating: typeof rating === 'number' ? rating : (rating === 'up' ? 5 : 2),
+      rating,
       feedbackText,
       stars,
       suggestion: modalData?.suggestion || '',
@@ -2019,11 +2041,13 @@ function getFileType(file) {
       severity,
       modelUsed: 'Gemini 2.5 Flash', // Default model
       responseTime: Math.random() * 3 + 1, // Simulated response time
-      sessionDuration: Math.floor(Math.random() * 30) + 5 // Simulated session duration
+      sessionDuration: Math.floor(Math.random() * 30) + 5, // Simulated session duration
+      answerText: msg.content,
+      sessionTranscript // <-- all messages in the session
     };
     
     try {
-      const response = await fetch('/feedback', {
+      const response = await fetch('http://localhost:5000/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(feedbackData)
@@ -2427,6 +2451,7 @@ function getFileType(file) {
                                 }
                                 return renderAssistantContent(content, (e, href) => handleOpenPdfLink(e, href, msg), msg.source_highlights);
                               })()}
+                              {/* Add retractable sources section here */}
                               {/* Feedback UI */}
                               <div className="answer-feedback-row">
                                 <span style={{ marginRight: 8 }}>Was this helpful?</span>
@@ -3124,7 +3149,7 @@ function getFileType(file) {
         />}
         {currentView === 'supported-languages' && <SupportedLanguages />}
         {currentView === 'my-projects' && <MyProjectsView refreshKey={currentView} />}
-        {currentView === 'feedback-dashboard' && <FeedbackDashboard />}
+        {currentView === 'feedback-dashboard' && <FeedbackDashboard messages={messages} />}
         {currentView === 'pdf-viewer' && viewedPdfUrl && (
           <div className="pdf-viewer-container">
             <PDFViewer
