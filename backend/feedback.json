@@ -1,1 +1,122 @@
-[] 
+[
+  {
+    "sessionId": "session_001",
+    "agentId": "agent_001",
+    "answerId": "msg_001",
+    "documentChunkIds": ["chunk_1", "chunk_2"],
+    "rating": 5,
+    "feedbackText": "Very accurate responses to legal questions. The agent provided detailed citations and proper references to relevant statutes.",
+    "stars": 5,
+    "suggestion": "Could add more examples for complex legal scenarios",
+    "userId": "user1@example.com",
+    "timestamp": "2024-01-15T10:30:00Z"
+  },
+  {
+    "sessionId": "session_002",
+    "agentId": "agent_002",
+    "answerId": "msg_002",
+    "documentChunkIds": ["chunk_3"],
+    "rating": 4,
+    "feedbackText": "Good analysis but could provide more detailed explanations for complex financial terms. Response was helpful overall.",
+    "stars": 4,
+    "suggestion": "Include more financial calculations in responses",
+    "userId": "user2@example.com",
+    "timestamp": "2024-01-15T11:45:00Z"
+  },
+  {
+    "sessionId": "session_003",
+    "agentId": "agent_003",
+    "answerId": "msg_003",
+    "documentChunkIds": ["chunk_4", "chunk_5"],
+    "rating": 3,
+    "feedbackText": "Response was a bit slow but the information was relevant. Could improve speed for simple queries.",
+    "stars": 3,
+    "suggestion": "Optimize response time for basic questions",
+    "userId": "user3@example.com",
+    "timestamp": "2024-01-15T12:15:00Z"
+  },
+  {
+    "sessionId": "session_004",
+    "agentId": "agent_001",
+    "answerId": "msg_004",
+    "documentChunkIds": ["chunk_6"],
+    "rating": 5,
+    "feedbackText": "Excellent legal advice with proper references to relevant statutes. Very comprehensive analysis.",
+    "stars": 5,
+    "suggestion": "Perfect response, no improvements needed",
+    "userId": "user4@example.com",
+    "timestamp": "2024-01-15T13:20:00Z"
+  },
+  {
+    "sessionId": "session_005",
+    "agentId": "agent_002",
+    "answerId": "msg_005",
+    "documentChunkIds": ["chunk_7"],
+    "rating": 2,
+    "feedbackText": "The response was not helpful and lacked specific financial calculations. Information was inaccurate.",
+    "stars": 2,
+    "suggestion": "Improve accuracy of financial data and calculations",
+    "userId": "user5@example.com",
+    "timestamp": "2024-01-15T14:10:00Z"
+  },
+  {
+    "sessionId": "session_006",
+    "agentId": "agent_003",
+    "answerId": "msg_006",
+    "documentChunkIds": ["chunk_8", "chunk_9"],
+    "rating": 4,
+    "feedbackText": "Good research capabilities but could improve citation accuracy. Overall helpful response.",
+    "stars": 4,
+    "suggestion": "Double-check citations and references",
+    "userId": "user6@example.com",
+    "timestamp": "2024-01-15T15:30:00Z"
+  },
+  {
+    "sessionId": "session_007",
+    "agentId": "agent_001",
+    "answerId": "msg_007",
+    "documentChunkIds": ["chunk_10"],
+    "rating": 5,
+    "feedbackText": "Outstanding legal analysis with comprehensive case law references. Very detailed and accurate.",
+    "stars": 5,
+    "suggestion": "Excellent work, continue with this level of detail",
+    "userId": "user7@example.com",
+    "timestamp": "2024-01-15T16:45:00Z"
+  },
+  {
+    "sessionId": "session_008",
+    "agentId": "agent_002",
+    "answerId": "msg_008",
+    "documentChunkIds": ["chunk_11"],
+    "rating": 3,
+    "feedbackText": "Response time was acceptable but could be faster for simple queries. Information was correct.",
+    "stars": 3,
+    "suggestion": "Optimize response speed for basic questions",
+    "userId": "user8@example.com",
+    "timestamp": "2024-01-15T17:20:00Z"
+  },
+  {
+    "sessionId": "session_009",
+    "agentId": "agent_003",
+    "answerId": "msg_009",
+    "documentChunkIds": ["chunk_12"],
+    "rating": 5,
+    "feedbackText": "Perfect response time and very accurate information. Great research capabilities.",
+    "stars": 5,
+    "suggestion": "Maintain this high level of performance",
+    "userId": "user9@example.com",
+    "timestamp": "2024-01-15T18:00:00Z"
+  },
+  {
+    "sessionId": "session_010",
+    "agentId": "agent_001",
+    "answerId": "msg_010",
+    "documentChunkIds": ["chunk_13", "chunk_14"],
+    "rating": 1,
+    "feedbackText": "Completely wrong information provided. The legal advice was incorrect and could be misleading.",
+    "stars": 1,
+    "suggestion": "Improve accuracy and fact-checking before responding",
+    "userId": "user10@example.com",
+    "timestamp": "2024-01-15T19:15:00Z"
+  }
+] 

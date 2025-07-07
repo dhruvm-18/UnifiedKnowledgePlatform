@@ -137,7 +137,24 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme }) {
             </div>
             <div style={{ width: '100%' }}>
               <div style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 2 }}>{name}</div>
-              <div style={{ color: '#888', fontSize: '1.01rem', marginBottom: 8 }}>{user.email}</div>
+              <div style={{ color: '#888', fontSize: '1.01rem', marginBottom: 4 }}>{user.email}</div>
+              {user.isAdmin && (
+                <div style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+                  color: 'white', 
+                  padding: '3px 10px', 
+                  borderRadius: 20, 
+                  fontSize: '0.75rem', 
+                  fontWeight: 600,
+                  marginBottom: 8,
+                  boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+                  letterSpacing: '0.5px'
+                }}>
+                  {user.role || 'Administrator'}
+                </div>
+              )}
             </div>
             <div style={{ display: 'flex', gap: 10, width: '100%', marginTop: 10 }}>
               <button className="login-btn" style={{ width: '50%' }} onClick={() => setEditMode(true)}>Edit</button>

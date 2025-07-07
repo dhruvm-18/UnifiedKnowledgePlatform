@@ -41,10 +41,25 @@ function LoginView({ onLogin }) {
       setLoading(false);
       const users = getUsers();
       const user = users.find(u => u.email === email && u.password === password);
+      
+      // Check for admin account
+      if (email === 'dhruv.mendiratta4@gmail.com' && password === 'Dhruv@9013669130') {
+        const adminData = { 
+          name: 'Dhruv Mendiratta', 
+          email: 'dhruv.mendiratta4@gmail.com', 
+          avatar: null, 
+          isAdmin: true,
+          role: 'Administrator'
+        };
+        localStorage.setItem('ukpUser', JSON.stringify(adminData));
+        onLogin && onLogin({ email, name: adminData.name, avatar: adminData.avatar, isAdmin: true, role: adminData.role });
+        return;
+      }
+      
       if ((email === 'demo@ukp.com' && password === 'password') || user) {
-        const userData = user || { name: 'Demo User', email: 'demo@ukp.com', avatar: null };
+        const userData = user || { name: 'Demo User', email: 'demo@ukp.com', avatar: null, isAdmin: false, role: 'User' };
         localStorage.setItem('ukpUser', JSON.stringify(userData));
-        onLogin && onLogin({ email, name: userData.name, avatar: userData.avatar });
+        onLogin && onLogin({ email, name: userData.name, avatar: userData.avatar, isAdmin: false, role: userData.role });
       } else {
         setError('Invalid email or password.');
       }
@@ -63,11 +78,11 @@ function LoginView({ onLogin }) {
       setRegError('An account with this email already exists.');
       return;
     }
-    const userData = { name: regName, email: regEmail, password: regPassword, avatar: regAvatar };
+    const userData = { name: regName, email: regEmail, password: regPassword, avatar: regAvatar, isAdmin: false, role: 'User' };
     users.push(userData);
     saveUsers(users);
     localStorage.setItem('ukpUser', JSON.stringify(userData));
-    onLogin && onLogin({ email: regEmail, name: regName, avatar: regAvatar });
+    onLogin && onLogin({ email: regEmail, name: regName, avatar: regAvatar, isAdmin: false, role: 'User' });
   };
 
   const handleAvatarChange = (e) => {
@@ -134,7 +149,7 @@ function LoginView({ onLogin }) {
         {showForgot ? (
           <>
             <div className="login-back-top">
-              <a href="#" className="forgot-link" onClick={e => { e.preventDefault(); setShowForgot(false); }}>← Back to login</a>
+              <button type="button" className="forgot-link" onClick={() => setShowForgot(false)}>← Back to login</button>
             </div>
             <img src="/unified-knowledge-platform.png" alt="App Logo" className="login-logo" />
             <h1 className="login-title">{APP_NAME}</h1>
@@ -225,18 +240,18 @@ function LoginView({ onLogin }) {
                   </button>
                 </form>
                 <div className="login-footer">
-                  <a href="#" className="forgot-link" onClick={e => { e.preventDefault(); setShowForgot(true); }}>Forgot password?</a>
+                  <button type="button" className="forgot-link" onClick={() => setShowForgot(true)}>Forgot password?</button>
                 </div>
                 <div className="login-divider"><span>or</span></div>
                 <div className="login-register-row">
                   <span>Don't have an account?</span>
-                  <a href="#" className="forgot-link" style={{ marginLeft: 6 }} onClick={e => { e.preventDefault(); setShowRegister(true); }}>Create one</a>
+                  <button type="button" className="forgot-link" style={{ marginLeft: 6 }} onClick={() => setShowRegister(true)}>Create one</button>
                 </div>
               </>
             ) : (
               <>
                 <div className="login-back-top">
-                  <a href="#" className="forgot-link" onClick={e => { e.preventDefault(); setShowRegister(false); }}>← Back to login</a>
+                  <button type="button" className="forgot-link" onClick={() => setShowRegister(false)}>← Back to login</button>
                 </div>
                 <img src="/unified-knowledge-platform.png" alt="App Logo" className="login-logo" />
                 <h1 className="login-title">{APP_NAME}</h1>

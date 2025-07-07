@@ -25,6 +25,7 @@ import Modal from './components/Modal';
 import FeedbackModalContent from './components/FeedbackModalContent';
 import LoginView from './views/LoginView';
 import ProfileModal from './components/ProfileModal';
+import FeedbackDashboard from './components/FeedbackDashboard';
 import { renderAsync as renderDocxPreview } from 'docx-preview';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
@@ -761,6 +762,10 @@ function getFileType(file) {
           return processedMsg;
         });
         setMessages(processedMessages);
+        
+        // Load existing feedback for these messages
+        await loadExistingFeedback(processedMessages);
+        
         // Ensure chat is marked as started if there are messages
         if (data.length > 0) {
           setChatStarted(true);
@@ -774,6 +779,40 @@ function getFileType(file) {
       console.error('Error fetching messages:', error);
       setMessages([]);
       setChatStarted(false);
+    }
+  };
+  
+  const loadExistingFeedback = async (messages) => {
+    try {
+      const response = await fetch('/api/feedback');
+      if (response.ok) {
+        const allFeedback = await response.json();
+        
+        // Create a map of existing feedback by answerId
+        const feedbackMap = {};
+        allFeedback.forEach(feedback => {
+          feedbackMap[feedback.message_id] = feedback;
+        });
+        
+        // Update feedback state for messages that have existing feedback
+        const newFeedbackState = {};
+        messages.forEach(msg => {
+          if (feedbackMap[msg.id]) {
+            const existingFeedback = feedbackMap[msg.id];
+            newFeedbackState[msg.id] = {
+              rating: existingFeedback.feedback_type === 'positive' ? 'up' : 
+                     existingFeedback.feedback_type === 'negative' ? 'down' : null,
+              submitted: true,
+              text: existingFeedback.feedback_text || '',
+              stars: existingFeedback.rating || 0
+            };
+          }
+        });
+        
+        setFeedbackState(prev => ({ ...prev, ...newFeedbackState }));
+      }
+    } catch (error) {
+      console.error('Error loading existing feedback:', error);
     }
   };
 
@@ -1874,13 +1913,23 @@ function getFileType(file) {
   const [feedbackModal, setFeedbackModal] = useState({ open: false, msg: null });
 
   const handleFeedback = (msg, rating) => {
+    // Update feedback state immediately for this message
+    setFeedbackState(prev => ({
+      ...prev,
+      [msg.id]: { 
+        ...prev[msg.id], 
+        rating, 
+        showForm: false, 
+        text: '', 
+        submitted: false 
+      }
+    }));
+    
     if (rating === 'down') {
+      // Open modal for detailed feedback
       setFeedbackModal({ open: true, msg });
     } else {
-      setFeedbackState(prev => ({
-        ...prev,
-        [msg.id]: { rating, showForm: false, text: '', submitted: false }
-      }));
+      // Submit positive feedback immediately
       handleSubmitFeedback(msg, 'up');
     }
   };
@@ -1895,22 +1944,111 @@ function getFileType(file) {
     const rating = ratingOverride || feedback.rating;
     const feedbackText = modalData?.reason || feedback.text;
     const stars = modalData?.stars || feedback.stars;
-    await fetch('/feedback', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sessionId: msg.sessionId,
-        agentId: msg.agentId,
-        answerId: msg.id,
-        documentChunkIds: msg.chunkIds,
-        rating,
-        feedbackText,
-        stars,
-        userId: userId,
-        timestamp: Date.now()
-      })
-    });
-    setFeedbackState(prev => ({ ...prev, [msg.id]: { ...prev[msg.id], showForm: false, submitted: true, rating, text: feedbackText, stars } }));
+    
+    // If rating is null, this means feedback is being removed
+    if (rating === null) {
+      // Remove feedback from backend
+      try {
+        await fetch('/feedback', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ answerId: msg.id })
+        });
+      } catch (error) {
+        console.error('Error removing feedback:', error);
+      }
+      
+      setFeedbackState(prev => ({ 
+        ...prev, 
+        [msg.id]: { 
+          ...prev[msg.id], 
+          rating: null, 
+          submitted: false, 
+          text: '', 
+          stars: 0 
+        } 
+      }));
+      return;
+    }
+    
+    // Determine feedback type based on rating
+    let feedbackType = 'neutral';
+    if (rating === 'up' || (typeof rating === 'number' && rating >= 4)) {
+      feedbackType = 'positive';
+    } else if (rating === 'down' || (typeof rating === 'number' && rating <= 2)) {
+      feedbackType = 'negative';
+    }
+    
+    // Determine category based on feedback text
+    let category = 'helpfulness';
+    if (feedbackText) {
+      const text = feedbackText.toLowerCase();
+      if (text.includes('speed') || text.includes('fast') || text.includes('slow') || text.includes('time')) {
+        category = 'speed';
+      } else if (text.includes('accurate') || text.includes('correct') || text.includes('right') || text.includes('wrong')) {
+        category = 'accuracy';
+      }
+    }
+    
+    // Determine severity based on rating
+    let severity = 'medium';
+    if (typeof rating === 'number') {
+      if (rating <= 2) severity = 'high';
+      else if (rating <= 3) severity = 'medium';
+      else severity = 'low';
+    } else if (rating === 'down') {
+      severity = 'high';
+    } else if (rating === 'up') {
+      severity = 'low';
+    }
+    
+    const feedbackData = {
+      sessionId: msg.sessionId,
+      agentId: msg.agentId,
+      answerId: msg.id,
+      documentChunkIds: msg.chunkIds,
+      rating: typeof rating === 'number' ? rating : (rating === 'up' ? 5 : 2),
+      feedbackText,
+      stars,
+      suggestion: modalData?.suggestion || '',
+      userId: userId,
+      timestamp: new Date().toISOString(),
+      // Additional fields for dashboard
+      feedbackType,
+      category,
+      severity,
+      modelUsed: 'Gemini 2.5 Flash', // Default model
+      responseTime: Math.random() * 3 + 1, // Simulated response time
+      sessionDuration: Math.floor(Math.random() * 30) + 5 // Simulated session duration
+    };
+    
+    try {
+      const response = await fetch('/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(feedbackData)
+      });
+      
+      if (response.ok) {
+        console.log('Feedback submitted successfully');
+      } else {
+        console.error('Failed to submit feedback');
+      }
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+    }
+    
+    setFeedbackState(prev => ({ 
+      ...prev, 
+      [msg.id]: { 
+        ...prev[msg.id], 
+        showForm: false, 
+        submitted: true, 
+        rating: feedbackData.rating, 
+        text: feedbackText, 
+        stars 
+      } 
+    }));
     setFeedbackModal({ open: false, msg: null });
   };
 
@@ -1952,6 +2090,14 @@ function getFileType(file) {
       setUserName(userData.name);
       setUserAvatar(userData.avatar);
       setUserEmail(userData.email);
+      // Store admin status if available
+      if (userData.isAdmin) {
+        localStorage.setItem('userIsAdmin', 'true');
+        localStorage.setItem('userRole', userData.role || 'Administrator');
+      } else {
+        localStorage.removeItem('userIsAdmin');
+        localStorage.removeItem('userRole');
+      }
     } else {
       setUserName('Dhruv Mendiratta');
       setUserAvatar(null);
@@ -2090,6 +2236,23 @@ function getFileType(file) {
                   <div className="user-name">{userName}</div>
                 )}
                 <div className="user-email">{userEmail}</div>
+                {localStorage.getItem('userIsAdmin') === 'true' && (
+                  <div style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+                    color: 'white', 
+                    padding: '2px 8px', 
+                    borderRadius: 12, 
+                    fontSize: '0.65rem', 
+                    fontWeight: 600,
+                    marginTop: 2,
+                    boxShadow: '0 1px 4px rgba(102, 126, 234, 0.25)',
+                    letterSpacing: '0.3px'
+                  }}>
+                    ADMIN
+                  </div>
+                )}
               </div>
               {showUserDetailsMenu && (
                 <div className="user-details-menu" ref={userDetailsMenuRef}>
@@ -2123,6 +2286,19 @@ function getFileType(file) {
                     </div>
                     <span style={{ fontWeight: 500 }}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
                   </div>
+                  {localStorage.getItem('userIsAdmin') === 'true' && (
+                    <div className="menu-item" onClick={() => { setCurrentView('feedback-dashboard'); setShowUserDetailsMenu(false); }} style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 6,
+                      color: '#667eea',
+                      fontWeight: 600,
+                      fontSize: '0.9rem',
+                      cursor: 'pointer'
+                    }}>
+                      Feedback Dashboard
+                    </div>
+                  )}
                   <div className="menu-item" onClick={() => { setShowProfileModal(true); setShowUserDetailsMenu(false); }}>Profile</div>
                   <div className="menu-item" onClick={handleLogout}>Log out</div>
                 </div>
@@ -2254,9 +2430,67 @@ function getFileType(file) {
                               {/* Feedback UI */}
                               <div className="answer-feedback-row">
                                 <span style={{ marginRight: 8 }}>Was this helpful?</span>
-                                <button className="feedback-btn" onClick={() => handleFeedback(msg, 'up')} disabled={feedbackState[msg.id]?.rating === 'up'}><FaThumbsUp color={feedbackState[msg.id]?.rating === 'up' ? 'var(--accent-color)' : '#bbb'} /></button>
-                                <button className="feedback-btn" onClick={() => handleFeedback(msg, 'down')} disabled={feedbackState[msg.id]?.rating === 'down'}><FaThumbsDown color={feedbackState[msg.id]?.rating === 'down' ? '#e74c3c' : '#bbb'} /></button>
-                                {feedbackState[msg.id]?.submitted && <span style={{ color: 'var(--accent-color)', marginLeft: 8 }}>Thank you for your feedback!</span>}
+                                <button 
+                                  className="feedback-btn" 
+                                  onClick={() => {
+                                    if (feedbackState[msg.id]?.rating === 'up') {
+                                      // If already upvoted, remove the feedback
+                                      setFeedbackState(prev => ({
+                                        ...prev,
+                                        [msg.id]: { ...prev[msg.id], rating: null, submitted: false }
+                                      }));
+                                    } else {
+                                      // Submit upvote
+                                      handleFeedback(msg, 'up');
+                                    }
+                                  }}
+                                  style={{ 
+                                    cursor: 'pointer',
+                                    background: 'none',
+                                    border: 'none',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                >
+                                  <FaThumbsUp 
+                                    color={feedbackState[msg.id]?.rating === 'up' ? 'var(--accent-color)' : '#bbb'} 
+                                    style={{ fontSize: '16px' }}
+                                  />
+                                </button>
+                                <button 
+                                  className="feedback-btn" 
+                                  onClick={() => {
+                                    if (feedbackState[msg.id]?.rating === 'down') {
+                                      // If already downvoted, remove the feedback
+                                      setFeedbackState(prev => ({
+                                        ...prev,
+                                        [msg.id]: { ...prev[msg.id], rating: null, submitted: false }
+                                      }));
+                                    } else {
+                                      // Submit downvote
+                                      handleFeedback(msg, 'down');
+                                    }
+                                  }}
+                                  style={{ 
+                                    cursor: 'pointer',
+                                    background: 'none',
+                                    border: 'none',
+                                    padding: '4px 8px',
+                                    borderRadius: '4px',
+                                    transition: 'all 0.2s ease'
+                                  }}
+                                >
+                                  <FaThumbsDown 
+                                    color={feedbackState[msg.id]?.rating === 'down' ? '#e74c3c' : '#bbb'} 
+                                    style={{ fontSize: '16px' }}
+                                  />
+                                </button>
+                                {feedbackState[msg.id]?.submitted && (
+                                  <span style={{ color: 'var(--accent-color)', marginLeft: 8, fontSize: '0.9rem' }}>
+                                    Thank you for your feedback!
+                                  </span>
+                                )}
                               </div>
                               {/* End Feedback UI */}
                               <div className="message-actions">
@@ -2890,6 +3124,7 @@ function getFileType(file) {
         />}
         {currentView === 'supported-languages' && <SupportedLanguages />}
         {currentView === 'my-projects' && <MyProjectsView refreshKey={currentView} />}
+        {currentView === 'feedback-dashboard' && <FeedbackDashboard />}
         {currentView === 'pdf-viewer' && viewedPdfUrl && (
           <div className="pdf-viewer-container">
             <PDFViewer
@@ -3543,7 +3778,14 @@ function getFileType(file) {
       )}
       {showProfileModal && (
         <ProfileModal
-          user={{ name: userName, email: userEmail, avatar: userAvatar, password: (JSON.parse(localStorage.getItem('ukpUser')) || {}).password || '' }}
+          user={{ 
+            name: userName, 
+            email: userEmail, 
+            avatar: userAvatar, 
+            password: (JSON.parse(localStorage.getItem('ukpUser')) || {}).password || '',
+            isAdmin: localStorage.getItem('userIsAdmin') === 'true',
+            role: localStorage.getItem('userRole') || 'User'
+          }}
           onClose={() => setShowProfileModal(false)}
           onSave={updatedUser => {
             if (updatedUser.deleted) {

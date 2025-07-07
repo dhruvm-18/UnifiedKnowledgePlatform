@@ -2101,7 +2101,14 @@ def submit_feedback():
         'stars': data.get('stars'),
         'suggestion': data.get('suggestion'),
         'userId': data.get('userId'),
-        'timestamp': data.get('timestamp', datetime.utcnow().isoformat())
+        'timestamp': data.get('timestamp', datetime.utcnow().isoformat()),
+        # Additional fields for dashboard
+        'feedbackType': data.get('feedbackType', 'neutral'),
+        'category': data.get('category', 'helpfulness'),
+        'severity': data.get('severity', 'medium'),
+        'modelUsed': data.get('modelUsed', 'Gemini 2.5 Flash'),
+        'responseTime': data.get('responseTime', 2.5),
+        'sessionDuration': data.get('sessionDuration', 15)
     }
     try:
         if not os.path.exists(FEEDBACK_FILE):
@@ -2121,6 +2128,108 @@ def submit_feedback():
     except Exception as e:
         logger.error(f"Error saving feedback: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/feedback', methods=['GET'])
+def get_feedback():
+    """Get all feedback data for the dashboard"""
+    try:
+        if not os.path.exists(FEEDBACK_FILE):
+            return jsonify([])
+        
+        with open(FEEDBACK_FILE, 'r') as f:
+            try:
+                feedbacks = json.load(f)
+            except Exception:
+                feedbacks = []
+        
+        # Transform feedback data to match dashboard format
+        transformed_feedbacks = []
+        for feedback in feedbacks:
+            # Determine feedback type based on rating
+            if feedback.get('rating', 0) >= 4:
+                feedback_type = 'positive'
+            elif feedback.get('rating', 0) <= 2:
+                feedback_type = 'negative'
+            else:
+                feedback_type = 'neutral'
+            
+            # Determine category based on feedback text or default
+            category = 'helpfulness'  # default
+            if feedback.get('feedbackText'):
+                text = feedback.get('feedbackText').lower()
+                if any(word in text for word in ['speed', 'fast', 'slow', 'time']):
+                    category = 'speed'
+                elif any(word in text for word in ['accurate', 'correct', 'right', 'wrong']):
+                    category = 'accuracy'
+            
+            # Determine severity based on rating
+            if feedback.get('rating', 0) <= 2:
+                severity = 'high'
+            elif feedback.get('rating', 0) <= 3:
+                severity = 'medium'
+            else:
+                severity = 'low'
+            
+            transformed_feedback = {
+                'id': feedback.get('answerId') or str(uuid.uuid4()),
+                'session_id': feedback.get('sessionId'),
+                'agent_id': feedback.get('agentId'),
+                'agent_name': 'AI Assistant',  # Default name
+                'rating': feedback.get('rating', 3),
+                'category': feedback.get('category', category),
+                'severity': feedback.get('severity', severity),
+                'feedback_text': feedback.get('feedbackText', ''),
+                'timestamp': feedback.get('timestamp'),
+                'user_email': feedback.get('userId', 'anonymous@user.com'),
+                'response_time': feedback.get('responseTime', 2.5),
+                'session_duration': feedback.get('sessionDuration', 15),
+                'feedback_type': feedback.get('feedbackType', feedback_type),
+                'message_id': feedback.get('answerId'),
+                'model_used': feedback.get('modelUsed', 'Gemini 2.5 Flash'),
+                'model_icon': '🤖'
+            }
+            transformed_feedbacks.append(transformed_feedback)
+        
+        return jsonify(transformed_feedbacks)
+    except Exception as e:
+        logger.error(f"Error loading feedback data: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/feedback', methods=['DELETE'])
+def delete_feedback():
+    """Delete feedback by answerId"""
+    try:
+        data = request.get_json()
+        answer_id = data.get('answerId')
+        
+        if not answer_id:
+            return jsonify({'error': 'answerId is required'}), 400
+        
+        if not os.path.exists(FEEDBACK_FILE):
+            return jsonify({'error': 'No feedback file found'}), 404
+        
+        with open(FEEDBACK_FILE, 'r') as f:
+            try:
+                feedbacks = json.load(f)
+            except Exception:
+                feedbacks = []
+        
+        # Remove feedback with matching answerId
+        original_length = len(feedbacks)
+        feedbacks = [f for f in feedbacks if f.get('answerId') != answer_id]
+        
+        if len(feedbacks) == original_length:
+            return jsonify({'error': 'Feedback not found'}), 404
+        
+        # Save updated feedback list
+        with open(FEEDBACK_FILE, 'w') as f:
+            json.dump(feedbacks, f, indent=2)
+        
+        return jsonify({'success': True, 'message': 'Feedback deleted successfully'}), 200
+        
+    except Exception as e:
+        logger.error(f"Error deleting feedback: {e}")
+        return jsonify({'error': str(e)}), 500
 
 @app.errorhandler(404)
 def not_found_error(error):

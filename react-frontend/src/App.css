@@ -2994,3 +2994,38 @@ html, body, #root, .home-view-container {
   left: 26px;
   background: #9c27b0;
 }
+
+/* Feedback button styles */
+.feedback-btn {
+  transition: all 0.2s ease;
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 0 2px;
+}
+
+.feedback-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: scale(1.1);
+}
+
+.feedback-btn:active {
+  transform: scale(0.95);
+}
+
+.answer-feedback-row {
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
+  padding: 8px 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Dark mode adjustments for feedback buttons */
+.dark-mode .feedback-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .answer-feedback-row {
+  color: #aaa;
+}

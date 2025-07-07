@@ -417,34 +417,10 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
                         ref={el => aboutBtnRefs.current[agent.agentId] = el}
                         onClick={e => {
                           e.stopPropagation();
-                          const rect = aboutBtnRefs.current[agent.agentId]?.getBoundingClientRect();
                           setAgentToEdit(null);
                           setAboutAgent(agent);
                           setShowAboutModal(true);
                           setOpenKebabMenu(null);
-                          if (rect) {
-                            // Calculate overlay position
-                            const overlayHeight = 220; // estimated overlay height in px
-                            const margin = 12; // px from edge
-                            let top = rect.bottom + window.scrollY + 6;
-                            let left = rect.left + window.scrollX;
-                            // If overlay would go off bottom, show above button
-                            if (top + overlayHeight > window.scrollY + window.innerHeight - margin) {
-                              top = rect.top + window.scrollY - overlayHeight - 6;
-                              if (top < window.scrollY + margin) top = window.scrollY + margin;
-                            }
-                            // If overlay would go off right, adjust
-                            if (left + 400 > window.scrollX + window.innerWidth - margin) {
-                              left = window.scrollX + window.innerWidth - 400 - margin;
-                            }
-                            setAboutOverlayPos({
-                              top,
-                              left,
-                              width: rect.width
-                            });
-                          } else {
-                            setAboutOverlayPos(null);
-                          }
                         }}
                         style={{ background: 'none', border: 'none', color: 'var(--text-primary)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
                       >
@@ -570,47 +546,51 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
         </div>
       )}
       {/* About Overlay */}
-      {showAboutModal && aboutAgent && aboutOverlayPos && (
+      {showAboutModal && aboutAgent && (
         <div className="modal-overlay" style={{ zIndex: 4000 }} onClick={() => setShowAboutModal(false)}>
           <div className="modal-content-small" onClick={e => e.stopPropagation()} style={{
-            maxWidth: 400,
-            minHeight: 120,
-            position: 'absolute',
-            left: aboutOverlayPos.left,
-            top: aboutOverlayPos.top + 6, // small offset below button
-            background: 'white',
+            maxWidth: 500,
+            minHeight: 200,
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)',
             borderRadius: 16,
-            boxShadow: '0 4px 32px rgba(0,0,0,0.18)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.25)',
             padding: '2rem 2.5rem',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
             overflow: 'hidden',
+            border: '1px solid var(--border-color)',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: '50%', background: '#3498db', color: 'white', fontWeight: 700, fontSize: 15 }}>i</span>
-              <h2 style={{ margin: 0, fontSize: '1.2rem' }}>About: {aboutAgent.name}</h2>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: '50%', background: 'var(--accent-color)', color: 'white', fontWeight: 700, fontSize: 16 }}>i</span>
+              <h2 style={{ margin: 0, fontSize: '1.4rem', color: 'var(--text-primary)' }}>About: {aboutAgent.name}</h2>
             </div>
-            <div style={{ marginBottom: 12, textAlign: 'center' }}>
-              <strong>Capabilities:</strong>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8, justifyContent: 'center' }}>
+            <div style={{ marginBottom: 16, textAlign: 'center', width: '100%' }}>
+              <strong style={{ color: 'var(--text-primary)' }}>Capabilities:</strong>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12, justifyContent: 'center' }}>
                 {getCapabilitiesFromSources(aboutAgent.pdfSources).map((cap, idx) => (
-                  <span key={idx} style={{ background: '#f4f4f4', color: '#333', borderRadius: 16, padding: '4px 12px', fontSize: 13, fontWeight: 500, display: 'inline-block' }}>{cap}</span>
+                  <span key={idx} style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', borderRadius: 16, padding: '6px 14px', fontSize: 13, fontWeight: 500, display: 'inline-block', border: '1px solid var(--border-color)' }}>{cap}</span>
                 ))}
               </div>
             </div>
-            <div style={{ marginBottom: 8, textAlign: 'center' }}><strong>Files Used:</strong></div>
-            <ul style={{ paddingLeft: 0, margin: 0, listStyle: 'none', textAlign: 'center' }}>
+            <div style={{ marginBottom: 12, textAlign: 'center', width: '100%' }}>
+              <strong style={{ color: 'var(--text-primary)' }}>Files Used:</strong>
+            </div>
+            <ul style={{ margin: 0, padding: 0, listStyle: 'none', textAlign: 'center', width: '100%', maxHeight: 150, overflowY: 'auto' }}>
               {(aboutAgent.pdfSources || []).map((source, idx) => (
-                <li key={idx} style={{ marginBottom: 6, display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center' }}>
+                <li key={idx} style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', color: 'var(--text-secondary)' }}>
                   {source}
-                  {/* Preview button logic here */}
                 </li>
               ))}
             </ul>
-            <div style={{ marginTop: 18, textAlign: 'center' }}>
-              <button onClick={() => setShowAboutModal(false)} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '8px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}>Close</button>
+            <div style={{ marginTop: 24, textAlign: 'center' }}>
+              <button onClick={() => setShowAboutModal(false)} style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '10px 24px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer', transition: 'all 0.2s ease' }}>Close</button>
             </div>
           </div>
         </div>
