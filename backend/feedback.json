@@ -17,5 +17,24 @@
     "responseTime": 2.458381470949646,
     "sessionDuration": 9,
     "answerText": "Thanks for asking.\n\nThe hosts envision using Perplexity AI for tasks related to **online side hustles** and **business growth**. Specifically, they discussed using it to:\n\n*   Help people make money online with side hustles.\n*   Grow and scale their businesses and careers using AI tools.\n*   Delve into topics like the **Amazon influencer program**, including strategies for getting free products and earning commissions by creating product videos.\n\n**Sources**\n*   **[Gen_AI.mp3]** (Gen_AI.mp3)\n\nFeel free to ask if you have more questions."
+  },
+  {
+    "sessionId": null,
+    "agentId": "DPDP",
+    "answerId": null,
+    "documentChunkIds": null,
+    "rating": 4,
+    "feedbackText": "Working great",
+    "stars": 4,
+    "suggestion": "",
+    "userId": "user_pyl8ybysd",
+    "timestamp": "2025-07-22T07:14:12.371Z",
+    "feedbackType": "positive",
+    "category": "helpfulness",
+    "severity": "low",
+    "modelUsed": "Gemini 2.5 Flash",
+    "responseTime": 1.756216987648805,
+    "sessionDuration": 20,
+    "answerText": "Thanks for asking.\n\nThe primary objective of the Digital Personal Data Protection Act, 2023, is to provide a framework for the **__processing of digital personal data__**. This framework aims to balance the **right of individuals to protect their personal data** with the necessary processing of such data for **lawful purposes**.\n\n**Sources**\n*   **[Preamble]** (pdf://DPDP_act.pdf/page/1)"
   }
 ]

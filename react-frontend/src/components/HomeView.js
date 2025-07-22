@@ -242,23 +242,18 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
       <div className="instruction-video-section beautiful-card" style={{ margin: '2.5rem auto', maxWidth: 900, borderRadius: 24, padding: '2.5rem 2rem' }}>
         <h2 className="accent-color" style={{ marginBottom: 18, fontWeight: 700, fontSize: '1.5rem', letterSpacing: 0.5 }}><FaVideo style={{ marginRight: 8, color: 'var(--accent-color)' }} /> Watch How It Works</h2>
         <div className="video-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 320, borderRadius: 16 }}>
-          {/* Placeholder for future video */}
-          {/* eslint-disable-next-line jsx-a11y/iframe-has-title */}
           <iframe
             width="560"
             height="315"
-            src=""
-            style={{ display: 'none' }}
+            src="https://www.youtube.com/embed/3BW8rfzsiTI"
+            title="How it works"
             frameBorder="0"
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowFullScreen
+            style={{ borderRadius: 16, width: '100%', maxWidth: 700, minHeight: 320 }}
           ></iframe>
-          <div style={{ textAlign: 'center', color: '#888', fontSize: '1.15rem', width: '100%' }}>
-            <img src="/Homepage.png" alt="Instructional Video Coming Soon" style={{ maxWidth: 320, margin: '0 auto 18px auto', opacity: 0.7, borderRadius: 12 }} />
-            <div>Instructional video coming soon!</div>
-          </div>
         </div>
-        <p className="video-caption" style={{ color: '#888', marginTop: 16, fontSize: '1.05rem' }}>See a step-by-step walkthrough of all features and best practices (coming soon).</p>
+        <p className="video-caption" style={{ color: '#888', marginTop: 16, fontSize: '1.05rem' }}>See a step-by-step walkthrough of all features and best practices in the video above.</p>
       </div>
 
       {/* --- Footer --- */}

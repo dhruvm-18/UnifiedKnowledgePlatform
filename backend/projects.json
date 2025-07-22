@@ -4,7 +4,13 @@
     "name": "GST Related",
     "description": "Insights of my GST Project",
     "date": "2025-06-27",
-    "notes": [],
+    "notes": [
+      {
+        "id": "b30a1834-e87f-486b-bad4-5189debed390",
+        "text": "important notes",
+        "createdAt": "2025-07-22T12:43:02.783804"
+      }
+    ],
     "chats": [
       {
         "id": "d911810e-baa3-40e6-a422-42d533ca612e",
@@ -120,6 +126,50 @@
           }
         ],
         "createdAt": "2025-06-27T17:55:13.330955"
+      }
+    ]
+  },
+  {
+    "id": "07ebc8ee-1baa-48a1-ab56-f5dc74079498",
+    "name": "School project",
+    "description": "",
+    "date": "2025-07-22",
+    "notes": [],
+    "chats": [
+      {
+        "id": "30fcaa16-1683-43d2-8738-8d5edb2dc0d3",
+        "title": "DPDP meaning",
+        "messages": [
+          {
+            "agentId": "DPDP",
+            "content": "What is the primary objective of the Digital Personal Data Protection Act, 2023?",
+            "lang": "en",
+            "sender": "user",
+            "agentName": "DPDP Knowledge Agent",
+            "agentIcon": {
+              "key": null,
+              "ref": null,
+              "props": {},
+              "_owner": null,
+              "_store": {}
+            }
+          },
+          {
+            "agentId": "DPDP",
+            "content": "Thanks for asking.\n\nThe primary objective of the Digital Personal Data Protection Act, 2023, is to provide a framework for the **__processing of digital personal data__**. This framework aims to balance the **right of individuals to protect their personal data** with the necessary processing of such data for **lawful purposes**.\n\n**Sources**\n*   **[Preamble]** (pdf://DPDP_act.pdf/page/1)",
+            "lang": "en",
+            "sender": "assistant",
+            "agentName": "DPDP Knowledge Agent",
+            "agentIcon": {
+              "key": null,
+              "ref": null,
+              "props": {},
+              "_owner": null,
+              "_store": {}
+            }
+          }
+        ],
+        "createdAt": "2025-07-22T12:43:57.515870"
       }
     ]
   }

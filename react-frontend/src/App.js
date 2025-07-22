@@ -2147,6 +2147,7 @@ function getFileType(file) {
       setUserAvatar(null);
       setUserEmail('dhruv.mendiratta4@gmail.com');
     }
+    setCurrentView('chat'); // Open to chats tab after login
   };
 
   // Handle logout (optional, for future use)
