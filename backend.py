@@ -126,16 +126,16 @@ app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 load_dotenv()
 
 # Configure Gemini API
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "AIzaSyD_Jg6V292kWpS64YxzFIJ2UKzXxqd5PYk") # Using the provided API key
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=GOOGLE_API_KEY)
 
 # Configure ElevenLabs API
-ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY", "sk_3308db3a66a549976266cbdeb9387297390112d4d18158a6")
+ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 # Initialize ElevenLabs client
 elevenlabs_client = ElevenLabs(api_key=ELEVENLABS_API_KEY)
 
 # Configure Sarvam API
-SARVAM_API_KEY = os.getenv("SARVAM_API_KEY", "560098fc-7d8b-4ede-bf46-ffebae088e30") # Using the provided API key
+SARVAM_API_KEY = os.getenv("SARVAM_API_KEY")
 
 # Initialize the LLM
 llm = ChatGoogleGenerativeAI(
