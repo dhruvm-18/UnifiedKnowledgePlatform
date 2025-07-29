@@ -11,6 +11,7 @@ import KnowledgeSourcesView from './components/KnowledgeSourcesView';
 import PDFViewer from './components/PDFViewer';
 import remarkGfm from 'remark-gfm';
 import DigitalBrainLoader from './components/AnimatedLogo';
+import GlowingSphere from './components/cursorfollow';
 import DOMPurify from 'dompurify';
 import { getIconComponent } from './utils/iconUtils';
 import { useSpeechRecognition } from './hooks/useSpeechRecognition';
@@ -199,6 +200,8 @@ function App() {
 
   // Add at the top, with other refs
   const userDetailsMenuRef = useRef(null);
+
+  const [inputValue, setInputValue] = useState('');
 
 // 1. Generalize the handler (move inside App)
 const handleOpenSourceLink = (e, href, msg = null) => {
@@ -2364,11 +2367,20 @@ function getFileType(file) {
             <div className="chat-window chatbot-full-window">
               <div className="chat-wave-bg top" />
               {messages.length === 0 && !chatStarted && !loading && (
-                <div className="welcome-center-outer">
-                  <div className="welcome-center-area">
-                    <div className="welcome-logo">
-                      <img src="/unified-knowledge-platform.png" alt="Logo" className="welcome-logo-img" />
-                    </div>
+                <div className="welcome-center-outer" style={{ position: "relative", display: "block", alignItems: "flex-start", justifyContent: "flex-start" }}>
+                  <div className="welcome-center-area" style={{ paddingTop: "140px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "flex-start" }}>
+                   <div style={{position: "absolute", top: "130px", left: "57%", transform: "translateX(-50%)", zIndex: 1000}}>
+                       <GlowingSphere 
+                         position={{ 
+                           x: 0, 
+                           y: 0
+                         }} 
+                         visible={true} 
+                         leftCollapsed={leftCollapsed}
+                         rightCollapsed={rightCollapsed}
+                         isThinking={inputValue.length > 0}
+                       /> 
+                </div>
                     <div className="welcome-greeting-area">
                       <div className="welcome-hi-user">Hi {userName || 'User'},</div>
                       <div className="welcome-headline">Welcome to <span className="welcome-app-name">{APP_NAME}</span></div>
@@ -2421,7 +2433,8 @@ function getFileType(file) {
               )}
 
               {(messages.length > 0 || chatStarted || loading) && (
-                <div id="middle-chatbox-container">
+                                  <div id="middle-chatbox-container" style={{position: "relative"}}>
+                    {/* Removed sphere from chat area - it should only appear in welcome screen */}
                   
                   {messages.map((msg, idx) => (
                     <div key={msg.id || idx} className={`chat-message ${msg.sender}`}>
@@ -2777,7 +2790,7 @@ function getFileType(file) {
                       let plainText = div.innerText; // Get plain text content
 
                       // Update the input state for send button and other logic that might depend on it
-                      setInput(plainText);
+                      setInputValue(plainText);
 
                       // Only allow agent mention highlighting and dropdown in General Chat (when isDedicatedChat is false)
                       const isDedicatedChat = localStorage.getItem('isDedicatedChat') === 'true';
