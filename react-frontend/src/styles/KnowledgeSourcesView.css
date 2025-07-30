@@ -1426,6 +1426,12 @@
   height: auto;
   z-index: 1;
 }
+
+/* When left sidebar is collapsed, make header span full viewport */
+.app-layout.left-collapsed .knowledge-header-bg {
+  width: 100vw;
+  margin-left: calc(-50vw + 50%);
+}
 .knowledge-header-bg .header-bg-svg {
   position: absolute;
   inset: 0;

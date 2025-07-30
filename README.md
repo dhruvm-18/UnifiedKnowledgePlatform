@@ -21,6 +21,10 @@ The Unified Knowledge Platform (UKP) is an AI-powered web application for queryi
 ```
 - **Frontend:** React SPA (chat, PDF, voice, agents)
 - **Backend:** Flask API (session, message, PDF, agent management, LLM orchestration)
+![alt text](UsedTech.png)
+![alt text](Techstack.png)
+
+
 
 ---
 
@@ -84,7 +88,7 @@ cd react-frontend
 npm start
 ```
 - Open [http://localhost:3000](http://localhost:3000)
-
+![alt text](Loginpage.png)
 ---
 
 ## Key Features
@@ -95,6 +99,7 @@ npm start
 - **Voice Support:** ElevenLabs TTS/STT integration.
 
 ---
+![alt text](Chatinterface.png)
 
 ## Directory Structure
 ```
