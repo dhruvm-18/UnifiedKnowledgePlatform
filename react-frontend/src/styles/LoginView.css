@@ -384,4 +384,33 @@ html, body {
   align-items: center;
   justify-content: center;
   width: 100%;
+}
+
+/* Avatar hover effects */
+.avatar-hover:hover {
+  transform: scale(1.05);
+}
+
+.avatar-hover:hover .upload-overlay {
+  opacity: 1 !important;
+}
+
+.avatar-hover:hover .user-avatar-initial {
+  filter: brightness(0.8);
+}
+
+.avatar-hover:hover img {
+  filter: brightness(0.8);
+}
+
+/* Developer Options Overlay Animation */
+@keyframes fadeInScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
 } 

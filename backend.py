@@ -287,10 +287,36 @@ def create_session():
         'title': f'New Chat {len(sessions) + 1}',
         'createdAt': datetime.now().isoformat(),
         'messages': [],
-        'agentId': None  # Initialize agentId as None for new sessions
+        'agentId': None,  # Initialize agentId as None for new sessions
+        'agentName': None  # Initialize agentName as None for new sessions
     }
     sessions[session_id] = session
     save_sessions() # Save sessions after creating a new one
+    
+    # Log monitoring data
+    try:
+        data = request.json or {}
+        user_email = data.get('userEmail', 'anonymous@user.com')
+        agent_id = data.get('agentId')
+        
+        # Update session with agent information if provided
+        if agent_id:
+            sessions[session_id]['agentId'] = agent_id
+            if agent_id in AGENTS_DATA:
+                sessions[session_id]['agentName'] = AGENTS_DATA[agent_id].get('name', 'Unknown Agent')
+            else:
+                sessions[session_id]['agentName'] = 'Unknown Agent'
+            save_sessions()  # Save the updated session
+        
+        log_user_activity(
+            user_email=user_email,
+            action='create_session',
+            session_id=session_id,
+            agent_id=agent_id
+        )
+    except Exception as e:
+        logger.error(f"Error logging session creation: {e}")
+    
     return jsonify(session)
 
 @app.route('/sessions/<session_id>', methods=['DELETE', 'OPTIONS'])
@@ -300,6 +326,35 @@ def delete_session(session_id):
         return '', 200
         
     if session_id in sessions:
+        # Log monitoring data before deletion
+        try:
+            data = request.json or {}
+            user_email = data.get('userEmail', 'anonymous@user.com')
+            session_data = sessions[session_id]
+            
+            # Log session metrics
+            message_count = len(session_data.get('messages', []))
+            created_at = datetime.fromisoformat(session_data.get('createdAt', datetime.now().isoformat()))
+            session_duration = (datetime.now() - created_at).total_seconds()
+            
+            log_session_metrics(
+                session_id=session_id,
+                user_email=user_email,
+                agent_id=session_data.get('agentId'),
+                message_count=message_count,
+                session_duration=session_duration,
+                model_used='unknown'  # Could be extracted from messages if needed
+            )
+            
+            log_user_activity(
+                user_email=user_email,
+                action='delete_session',
+                session_id=session_id,
+                agent_id=session_data.get('agentId')
+            )
+        except Exception as e:
+            logger.error(f"Error logging session deletion: {e}")
+        
         del sessions[session_id]
         save_sessions() # Save sessions after deleting one
         return '', 204
@@ -1231,7 +1286,8 @@ REMEMBER: Start your answer with \"Thank you for asking. As per the information 
                     match.group('section1') or match.group('section2') or match.group('section3')
                 )
                 if filename:
-                    highlight = doc.page_content[:200].replace('\n', ' ')
+                    # Use a placeholder highlight since doc is not available in this context
+                    highlight = "Document content preview"
                     link = f"(pdf://{filename}"
                     if page:
                         link += f"/page/{page}"
@@ -1345,6 +1401,52 @@ REMEMBER: Start your answer with \"Thank you for asking. As per the information 
         'lang': lang,  # Store BCP-47 code
         'model_used': model_used  # Store the model used for this response
     })
+    
+    # Log monitoring data
+    try:
+        # Get user email from request or use a default
+        user_email = data.get('userEmail', 'anonymous@user.com')
+        
+        # Log model usage
+        log_model_usage(
+            user_email=user_email,
+            model_name=model_used,
+            session_id=session_id,
+            agent_id=agent_id,
+            response_time=None,  # Could be calculated if we track timing
+            tokens_used=None,    # Could be extracted from response if available
+            success=True
+        )
+        
+        # Log user activity
+        log_user_activity(
+            user_email=user_email,
+            action='send_message',
+            session_id=session_id,
+            agent_id=agent_id,
+            details={'message_length': len(user_message)}
+        )
+        
+        # Log agent usage if agent is specified
+        if agent_id:
+            agent_name = "Unknown Agent"
+            # Try to get agent name from agent data
+            try:
+                # Use the global AGENTS_DATA instead of calling load_agent_data()
+                if agent_id in AGENTS_DATA:
+                    agent_name = AGENTS_DATA[agent_id].get('name', 'Unknown Agent')
+            except Exception as e:
+                logger.error(f"Error getting agent name for {agent_id}: {e}")
+            
+            log_agent_usage(
+                agent_id=agent_id,
+                agent_name=agent_name,
+                user_email=user_email,
+                session_id=session_id,
+                usage_type='interaction'
+            )
+    except Exception as e:
+        logger.error(f"Error logging monitoring data: {e}")
     
     # Update session title if it's the first message
     if len(sessions[session_id]['messages']) == 2:
@@ -2026,68 +2128,101 @@ FEEDBACK_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'backen
 
 @app.route('/feedback', methods=['POST'])
 def submit_feedback():
-    logger.info('POST /feedback endpoint hit')
+    logger.info('POST /feedback endpoint hit (from /feedback route)')
+    logger.info('POST /api/feedback endpoint hit (from /api/feedback route)')
     data = request.get_json()
     logger.info(f'Received feedback data: {data}')
     logger.info(f'FEEDBACK_FILE path: {FEEDBACK_FILE}')
+    
+    # Ensure all required fields are present with proper defaults
     feedback_entry = {
         'sessionId': data.get('sessionId'),
         'agentId': data.get('agentId'),
-        'answerId': data.get('answerId'),
+        'agentName': data.get('agentName', 'AI Assistant'),
+        'answerId': data.get('answerId') or data.get('id'),
         'documentChunkIds': data.get('documentChunkIds'),
         'rating': data.get('rating'),
-        'feedbackText': data.get('feedbackText'),
-        'stars': data.get('stars'),
-        'suggestion': data.get('suggestion'),
+        'feedbackText': data.get('feedbackText') or data.get('reason', ''),
+        'stars': data.get('stars') or data.get('rating'),
+        'suggestion': data.get('suggestion', ''),
         'userId': data.get('userId'),
+        'userEmail': data.get('userEmail', 'anonymous@user.com'),
         'timestamp': data.get('timestamp', datetime.utcnow().isoformat()),
         # Additional fields for dashboard
         'feedbackType': data.get('feedbackType', 'neutral'),
         'category': data.get('category', 'helpfulness'),
         'severity': data.get('severity', 'medium'),
         'modelUsed': data.get('modelUsed', 'Gemini 2.5 Flash'),
+        'modelIcon': data.get('modelIcon', '🤖'),
         'responseTime': data.get('responseTime', 2.5),
         'sessionDuration': data.get('sessionDuration', 15),
-        'answerText': data.get('answerText', '')
+        'answerText': data.get('answerText') or data.get('content', ''),
+        'sessionTranscript': data.get('sessionTranscript', [])
     }
+    
+    # Log the complete feedback entry for debugging
+    logger.info(f'Processed feedback entry: {feedback_entry}')
     try:
+        # Ensure the backend directory exists
+        os.makedirs(os.path.dirname(FEEDBACK_FILE), exist_ok=True)
+        
         if not os.path.exists(FEEDBACK_FILE):
             logger.info('feedback.json does not exist, creating new file.')
-            with open(FEEDBACK_FILE, 'w') as f:
-                json.dump([feedback_entry], f, indent=2)
+            with open(FEEDBACK_FILE, 'w', encoding='utf-8') as f:
+                json.dump([feedback_entry], f, indent=2, ensure_ascii=False)
         else:
-            with open(FEEDBACK_FILE, 'r+') as f:
+            with open(FEEDBACK_FILE, 'r+', encoding='utf-8') as f:
                 try:
                     feedbacks = json.load(f)
+                    if not isinstance(feedbacks, list):
+                        logger.warning('feedback.json does not contain a list, resetting to empty list')
+                        feedbacks = []
                 except Exception as e:
                     logger.error(f'Error loading existing feedbacks: {e}')
                     feedbacks = []
+                
                 feedbacks.append(feedback_entry)
                 f.seek(0)
-                json.dump(feedbacks, f, indent=2)
+                json.dump(feedbacks, f, indent=2, ensure_ascii=False)
                 f.truncate()
-        logger.info('Feedback saved successfully.')
-        return jsonify({'success': True}), 200
+        
+        logger.info(f'Feedback saved successfully. Total feedbacks: {len(feedbacks) if 'feedbacks' in locals() else 1}')
+        return jsonify({'success': True, 'message': 'Feedback saved successfully'}), 200
     except Exception as e:
         logger.error(f"Error saving feedback: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
-@app.route('/api/feedback', methods=['GET'])
+@app.route('/api/feedback', methods=['GET', 'POST'])
 def get_feedback():
+    if request.method == 'POST':
+        return submit_feedback()
+    
     """Get all feedback data for the dashboard"""
+    logger.info(f'GET /api/feedback endpoint hit')
+    logger.info(f'FEEDBACK_FILE path: {FEEDBACK_FILE}')
+    
     try:
         if not os.path.exists(FEEDBACK_FILE):
+            logger.info('feedback.json does not exist, returning empty list')
             return jsonify([])
         
-        with open(FEEDBACK_FILE, 'r') as f:
+        logger.info(f'Reading feedback file: {FEEDBACK_FILE}')
+        with open(FEEDBACK_FILE, 'r', encoding='utf-8') as f:
             try:
                 feedbacks = json.load(f)
-            except Exception:
+                logger.info(f'Loaded {len(feedbacks) if isinstance(feedbacks, list) else 0} feedback entries')
+                if not isinstance(feedbacks, list):
+                    logger.warning('feedback.json does not contain a list, returning empty list')
+                    feedbacks = []
+            except Exception as e:
+                logger.error(f'Error loading feedback data: {e}')
                 feedbacks = []
         
         # Transform feedback data to match dashboard format
         transformed_feedbacks = []
-        for feedback in feedbacks:
+        logger.info(f'Transforming {len(feedbacks)} feedback entries')
+        for i, feedback in enumerate(feedbacks):
+            logger.info(f'Processing feedback {i+1}: {feedback.get("feedbackText", "No text")[:50]}...')
             # Determine feedback type based on rating
             if feedback.get('rating', 0) >= 4:
                 feedback_type = 'positive'
@@ -2114,66 +2249,37 @@ def get_feedback():
                 severity = 'low'
             
             transformed_feedback = {
-                'id': feedback.get('answerId') or str(uuid.uuid4()),
+                'id': feedback.get('answerId') or feedback.get('id') or str(uuid.uuid4()),
                 'session_id': feedback.get('sessionId'),
                 'agent_id': feedback.get('agentId'),
-                'agent_name': 'AI Assistant',  # Default name
+                'agent_name': feedback.get('agentName', 'AI Assistant'),
                 'rating': feedback.get('rating', 3),
                 'category': feedback.get('category', category),
                 'severity': feedback.get('severity', severity),
-                'feedback_text': feedback.get('feedbackText', ''),
+                'feedback_text': feedback.get('feedbackText') or feedback.get('reason', ''),
                 'timestamp': feedback.get('timestamp'),
-                'user_email': feedback.get('userId', 'anonymous@user.com'),
+                'user_email': feedback.get('userEmail', feedback.get('userId', 'anonymous@user.com')),
                 'response_time': feedback.get('responseTime', 2.5),
                 'session_duration': feedback.get('sessionDuration', 15),
                 'feedback_type': feedback.get('feedbackType', feedback_type),
-                'message_id': feedback.get('answerId'),
+                'message_id': feedback.get('answerId') or feedback.get('id'),
                 'model_used': feedback.get('modelUsed', 'Gemini 2.5 Flash'),
-                'model_icon': '🤖',
-                'answer_text': feedback.get('answerText', '')  # <-- Add this line
+                'model_icon': feedback.get('modelIcon', '🤖'),
+                'answer_text': feedback.get('answerText') or feedback.get('content', '')
             }
             transformed_feedbacks.append(transformed_feedback)
         
+        logger.info(f'Returning {len(transformed_feedbacks)} transformed feedback entries')
         return jsonify(transformed_feedbacks)
     except Exception as e:
         logger.error(f"Error loading feedback data: {e}")
         return jsonify({'error': str(e)}), 500
 
-@app.route('/feedback', methods=['DELETE'])
-def delete_feedback():
-    """Delete feedback by answerId"""
-    try:
-        data = request.get_json()
-        answer_id = data.get('answerId')
-        
-        if not answer_id:
-            return jsonify({'error': 'answerId is required'}), 400
-        
-        if not os.path.exists(FEEDBACK_FILE):
-            return jsonify({'error': 'No feedback file found'}), 404
-        
-        with open(FEEDBACK_FILE, 'r') as f:
-            try:
-                feedbacks = json.load(f)
-            except Exception:
-                feedbacks = []
-        
-        # Remove feedback with matching answerId
-        original_length = len(feedbacks)
-        feedbacks = [f for f in feedbacks if f.get('answerId') != answer_id]
-        
-        if len(feedbacks) == original_length:
-            return jsonify({'error': 'Feedback not found'}), 404
-        
-        # Save updated feedback list
-        with open(FEEDBACK_FILE, 'w') as f:
-            json.dump(feedbacks, f, indent=2)
-        
-        return jsonify({'success': True, 'message': 'Feedback deleted successfully'}), 200
-        
-    except Exception as e:
-        logger.error(f"Error deleting feedback: {e}")
-        return jsonify({'error': str(e)}), 500
+# Feedback deletion is disabled to ensure data persistence
+# @app.route('/feedback', methods=['DELETE'])
+# def delete_feedback():
+#     """Delete feedback by answerId - DISABLED for data persistence"""
+#     return jsonify({'error': 'Feedback deletion is disabled to ensure data persistence'}), 403
 
 @app.errorhandler(404)
 def not_found_error(error):
@@ -2182,6 +2288,259 @@ def not_found_error(error):
 @app.errorhandler(500)
 def internal_error(error):
     return jsonify({'error': 'Internal server error', 'success': False}), 500
+
+# Monitoring Dashboard API Endpoints
+@app.route('/api/monitoring', methods=['GET', 'POST'])
+def get_monitoring_data():
+    if request.method == 'POST':
+        """Log monitoring data from frontend"""
+        try:
+            data = request.json
+            user_email = data.get('userEmail', 'anonymous@user.com')
+            action = data.get('action', 'unknown')
+            details = data.get('details', {})
+            
+            log_user_activity(
+                user_email=user_email,
+                action=action,
+                details=details
+            )
+            
+            return jsonify({'message': 'Activity logged successfully'}), 200
+        except Exception as e:
+            logger.error(f"Error logging activity: {e}")
+            return jsonify({'error': 'Failed to log activity'}), 500
+    
+    """Get monitoring data for dashboard"""
+    try:
+        # Get query parameters for filtering
+        date_from = request.args.get('date_from')
+        date_to = request.args.get('date_to')
+        user_email = request.args.get('user_email')
+        model_name = request.args.get('model_name')
+        agent_id = request.args.get('agent_id')
+        
+        # Filter data based on parameters
+        filtered_data = {
+            'model_usage': monitoring_data['model_usage'].copy(),
+            'user_activity': monitoring_data['user_activity'].copy(),
+            'session_metrics': monitoring_data['session_metrics'].copy(),
+            'agent_usage': monitoring_data['agent_usage'].copy(),
+            'system_metrics': monitoring_data['system_metrics'].copy()
+        }
+        
+        # Apply filters
+        if date_from:
+            filtered_data['model_usage'] = [entry for entry in filtered_data['model_usage'] if entry['timestamp'] >= date_from]
+            filtered_data['user_activity'] = [entry for entry in filtered_data['user_activity'] if entry['timestamp'] >= date_from]
+            filtered_data['session_metrics'] = [entry for entry in filtered_data['session_metrics'] if entry['timestamp'] >= date_from]
+            filtered_data['agent_usage'] = [entry for entry in filtered_data['agent_usage'] if entry['timestamp'] >= date_from]
+            filtered_data['system_metrics'] = [entry for entry in filtered_data['system_metrics'] if entry['timestamp'] >= date_from]
+        
+        if date_to:
+            filtered_data['model_usage'] = [entry for entry in filtered_data['model_usage'] if entry['timestamp'] <= date_to]
+            filtered_data['user_activity'] = [entry for entry in filtered_data['user_activity'] if entry['timestamp'] <= date_to]
+            filtered_data['session_metrics'] = [entry for entry in filtered_data['session_metrics'] if entry['timestamp'] <= date_to]
+            filtered_data['agent_usage'] = [entry for entry in filtered_data['agent_usage'] if entry['timestamp'] <= date_to]
+            filtered_data['system_metrics'] = [entry for entry in filtered_data['system_metrics'] if entry['timestamp'] <= date_to]
+        
+        if user_email:
+            filtered_data['model_usage'] = [entry for entry in filtered_data['model_usage'] if entry['user_email'] == user_email]
+            filtered_data['user_activity'] = [entry for entry in filtered_data['user_activity'] if entry['user_email'] == user_email]
+            filtered_data['session_metrics'] = [entry for entry in filtered_data['session_metrics'] if entry['user_email'] == user_email]
+            filtered_data['agent_usage'] = [entry for entry in filtered_data['agent_usage'] if entry['user_email'] == user_email]
+        
+        if model_name:
+            filtered_data['model_usage'] = [entry for entry in filtered_data['model_usage'] if entry['model_name'] == model_name]
+            filtered_data['session_metrics'] = [entry for entry in filtered_data['session_metrics'] if entry['model_used'] == model_name]
+        
+        if agent_id:
+            filtered_data['model_usage'] = [entry for entry in filtered_data['model_usage'] if entry['agent_id'] == agent_id]
+            filtered_data['user_activity'] = [entry for entry in filtered_data['user_activity'] if entry['agent_id'] == agent_id]
+            filtered_data['session_metrics'] = [entry for entry in filtered_data['session_metrics'] if entry['agent_id'] == agent_id]
+            filtered_data['agent_usage'] = [entry for entry in filtered_data['agent_usage'] if entry['agent_id'] == agent_id]
+        
+        # Debug: Print session IDs in monitoring data
+        session_ids_in_monitoring = [entry['session_id'] for entry in filtered_data['session_metrics'] if 'session_id' in entry]
+        print(f"DEBUG: Session IDs in monitoring data: {session_ids_in_monitoring}")
+        print(f"DEBUG: Available sessions: {list(sessions.keys())}")
+        
+        return jsonify(filtered_data)
+        
+    except Exception as e:
+        logger.error(f"Error getting monitoring data: {e}")
+        return jsonify({'error': 'Failed to get monitoring data'}), 500
+
+@app.route('/api/monitoring/summary', methods=['GET'])
+def get_monitoring_summary():
+    """Get monitoring summary statistics"""
+    try:
+        # Calculate summary statistics
+        total_model_usage = len(monitoring_data['model_usage'])
+        total_user_activity = len(monitoring_data['user_activity'])
+        total_sessions = len(monitoring_data['session_metrics'])
+        total_agent_usage = len(monitoring_data['agent_usage'])
+        
+        # Model usage statistics
+        model_counts = {}
+        for entry in monitoring_data['model_usage']:
+            model = entry['model_name']
+            model_counts[model] = model_counts.get(model, 0) + 1
+        
+        # User activity statistics
+        user_counts = {}
+        for entry in monitoring_data['user_activity']:
+            user = entry['user_email']
+            user_counts[user] = user_counts.get(user, 0) + 1
+        
+        # Agent usage statistics
+        agent_counts = {}
+        for entry in monitoring_data['agent_usage']:
+            agent = entry['agent_name']
+            agent_counts[agent] = agent_counts.get(agent, 0) + 1
+        
+        # Response time statistics
+        response_times = [entry['response_time'] for entry in monitoring_data['model_usage'] if entry.get('response_time')]
+        avg_response_time = sum(response_times) / len(response_times) if response_times else 0
+        
+        # Success rate
+        successful_requests = len([entry for entry in monitoring_data['model_usage'] if entry.get('success', True)])
+        success_rate = (successful_requests / total_model_usage * 100) if total_model_usage > 0 else 0
+        
+        summary = {
+            'total_model_usage': total_model_usage,
+            'total_user_activity': total_user_activity,
+            'total_sessions': total_sessions,
+            'total_agent_usage': total_agent_usage,
+            'model_counts': model_counts,
+            'user_counts': user_counts,
+            'agent_counts': agent_counts,
+            'avg_response_time': round(avg_response_time, 2),
+            'success_rate': round(success_rate, 2)
+        }
+        
+        return jsonify(summary)
+        
+    except Exception as e:
+        logger.error(f"Error getting monitoring summary: {e}")
+        return jsonify({'error': 'Failed to get monitoring summary'}), 500
+
+@app.route('/api/monitoring/clear', methods=['POST'])
+def clear_monitoring_data():
+    """Clear all monitoring data (admin only)"""
+    try:
+        global monitoring_data
+        monitoring_data = {
+            'model_usage': [],
+            'user_activity': [],
+            'session_metrics': [],
+            'agent_usage': [],
+            'system_metrics': []
+        }
+        save_monitoring_data()
+        return jsonify({'message': 'Monitoring data cleared successfully'}), 200
+    except Exception as e:
+        logger.error(f"Error clearing monitoring data: {e}")
+        return jsonify({'error': 'Failed to clear monitoring data'}), 500
+
+@app.route('/api/monitoring/agent/<agent_id>', methods=['GET'])
+def get_agent_details(agent_id):
+    """Get detailed information about a specific agent"""
+    try:
+        if agent_id in AGENTS_DATA:
+            agent_info = AGENTS_DATA[agent_id].copy()
+            
+            # Get usage statistics for this agent
+            agent_usage = [entry for entry in monitoring_data['agent_usage'] if entry['agent_id'] == agent_id]
+            model_usage = [entry for entry in monitoring_data['model_usage'] if entry['agent_id'] == agent_id]
+            user_activity = [entry for entry in monitoring_data['user_activity'] if entry['agent_id'] == agent_id]
+            
+            # Calculate statistics
+            total_interactions = len(agent_usage)
+            unique_users = len(set(entry['user_email'] for entry in agent_usage))
+            total_sessions = len(set(entry['session_id'] for entry in agent_usage))
+            
+            # Get recent sessions
+            recent_sessions = []
+            for entry in agent_usage[:10]:  # Last 10 interactions
+                session_id = entry['session_id']
+                if session_id in sessions:
+                    session_info = sessions[session_id]
+                    recent_sessions.append({
+                        'session_id': session_id,
+                        'title': session_info.get('title', 'Untitled'),
+                        'created_at': session_info.get('createdAt'),
+                        'message_count': len(session_info.get('messages', [])),
+                        'user_email': entry['user_email']
+                    })
+            
+            return jsonify({
+                'agent_info': agent_info,
+                'statistics': {
+                    'total_interactions': total_interactions,
+                    'unique_users': unique_users,
+                    'total_sessions': total_sessions,
+                    'model_usage_count': len(model_usage),
+                    'user_activity_count': len(user_activity)
+                },
+                'recent_sessions': recent_sessions
+            })
+        else:
+            return jsonify({'error': 'Agent not found'}), 404
+    except Exception as e:
+        logger.error(f"Error getting agent details: {e}")
+        return jsonify({'error': 'Failed to get agent details'}), 500
+
+@app.route('/api/monitoring/session/<session_id>', methods=['GET'])
+def get_session_details(session_id):
+    """Get detailed information about a specific session"""
+    try:
+        print(f"DEBUG: Looking for session_id: {session_id}")
+        print(f"DEBUG: Available session IDs: {list(sessions.keys())}")
+        print(f"DEBUG: Session ID in sessions: {session_id in sessions}")
+        
+        if session_id in sessions:
+            session_info = sessions[session_id]
+            
+            # Get monitoring data for this session
+            session_metrics = [entry for entry in monitoring_data['session_metrics'] if entry['session_id'] == session_id]
+            model_usage = [entry for entry in monitoring_data['model_usage'] if entry['session_id'] == session_id]
+            user_activity = [entry for entry in monitoring_data['user_activity'] if entry['session_id'] == session_id]
+            agent_usage = [entry for entry in monitoring_data['agent_usage'] if entry['session_id'] == session_id]
+            
+            # Calculate session statistics
+            total_messages = len(session_info.get('messages', []))
+            created_at = datetime.fromisoformat(session_info.get('createdAt', datetime.now().isoformat()))
+            session_duration = (datetime.now() - created_at).total_seconds()
+            
+            # Get message statistics
+            user_messages = [msg for msg in session_info.get('messages', []) if msg.get('role') == 'user']
+            assistant_messages = [msg for msg in session_info.get('messages', []) if msg.get('role') == 'assistant']
+            
+            return jsonify({
+                'session_info': session_info,
+                'statistics': {
+                    'total_messages': total_messages,
+                    'user_messages': len(user_messages),
+                    'assistant_messages': len(assistant_messages),
+                    'session_duration_seconds': session_duration,
+                    'created_at': session_info.get('createdAt'),
+                    'model_usage_count': len(model_usage),
+                    'user_activity_count': len(user_activity),
+                    'agent_usage_count': len(agent_usage)
+                },
+                'monitoring_data': {
+                    'session_metrics': session_metrics,
+                    'model_usage': model_usage,
+                    'user_activity': user_activity,
+                    'agent_usage': agent_usage
+                }
+            })
+        else:
+            return jsonify({'error': 'Session not found'}), 404
+    except Exception as e:
+        logger.error(f"Error getting session details: {e}")
+        return jsonify({'error': 'Failed to get session details'}), 500
 
 @app.route('/upload', methods=['POST'])
 def upload_any():
@@ -2462,6 +2821,119 @@ def load_documents_from_directory(directory_path: str) -> list[Document]:
         else:
             logger.info(f"Skipping unsupported file type: {filename}")
     return supported_docs
+
+# Monitoring and Analytics
+MONITORING_FILE = 'monitoring_data.json'
+
+# Initialize monitoring data structure
+monitoring_data = {
+    'model_usage': [],
+    'user_activity': [],
+    'session_metrics': [],
+    'agent_usage': [],
+    'system_metrics': []
+}
+
+def save_monitoring_data():
+    """Save monitoring data to JSON file."""
+    try:
+        with open(MONITORING_FILE, 'w') as f:
+            json.dump(monitoring_data, f, indent=4)
+        logger.info("Monitoring data saved to file.")
+    except Exception as e:
+        logger.error(f"Error saving monitoring data: {e}")
+
+def load_monitoring_data():
+    """Load monitoring data from JSON file."""
+    global monitoring_data
+    if os.path.exists(MONITORING_FILE):
+        try:
+            with open(MONITORING_FILE, 'r') as f:
+                monitoring_data = json.load(f)
+            logger.info("Monitoring data loaded from file.")
+        except Exception as e:
+            logger.error(f"Error loading monitoring data: {e}")
+
+def log_model_usage(user_email, model_name, session_id, agent_id=None, response_time=None, tokens_used=None, success=True, error_message=None):
+    """Log model usage for monitoring."""
+    usage_entry = {
+        'id': str(uuid.uuid4()),
+        'user_email': user_email,
+        'model_name': model_name,
+        'session_id': session_id,
+        'agent_id': agent_id,
+        'response_time': response_time,
+        'tokens_used': tokens_used,
+        'success': success,
+        'error_message': error_message,
+        'timestamp': datetime.now().isoformat()
+    }
+    monitoring_data['model_usage'].append(usage_entry)
+    save_monitoring_data()
+
+def log_user_activity(user_email, action, session_id=None, agent_id=None, details=None):
+    """Log user activity for monitoring."""
+    activity_entry = {
+        'id': str(uuid.uuid4()),
+        'user_email': user_email,
+        'action': action,  # 'login', 'logout', 'send_message', 'create_session', 'delete_session', etc.
+        'session_id': session_id,
+        'agent_id': agent_id,
+        'details': details,
+        'timestamp': datetime.now().isoformat()
+    }
+    monitoring_data['user_activity'].append(activity_entry)
+    save_monitoring_data()
+
+def log_session_metrics(session_id, user_email, agent_id, message_count, session_duration, model_used):
+    """Log session metrics for monitoring."""
+    # Get agent name if agent_id is provided
+    agent_name = None
+    if agent_id and agent_id in AGENTS_DATA:
+        agent_name = AGENTS_DATA[agent_id].get('name', 'Unknown Agent')
+    
+    metrics_entry = {
+        'id': str(uuid.uuid4()),
+        'session_id': session_id,
+        'user_email': user_email,
+        'agent_id': agent_id,
+        'agent_name': agent_name,
+        'message_count': message_count,
+        'session_duration': session_duration,  # in seconds
+        'model_used': model_used,
+        'timestamp': datetime.now().isoformat()
+    }
+    monitoring_data['session_metrics'].append(metrics_entry)
+    save_monitoring_data()
+
+def log_agent_usage(agent_id, agent_name, user_email, session_id, usage_type='interaction'):
+    """Log agent usage for monitoring."""
+    usage_entry = {
+        'id': str(uuid.uuid4()),
+        'agent_id': agent_id,
+        'agent_name': agent_name,
+        'user_email': user_email,
+        'session_id': session_id,
+        'usage_type': usage_type,  # 'interaction', 'creation', 'modification'
+        'timestamp': datetime.now().isoformat()
+    }
+    monitoring_data['agent_usage'].append(usage_entry)
+    save_monitoring_data()
+
+def log_system_metrics(metric_type, value, details=None):
+    """Log system metrics for monitoring."""
+    metrics_entry = {
+        'id': str(uuid.uuid4()),
+        'metric_type': metric_type,  # 'memory_usage', 'cpu_usage', 'disk_usage', 'api_calls', etc.
+        'value': value,
+        'details': details,
+        'timestamp': datetime.now().isoformat()
+    }
+    monitoring_data['system_metrics'].append(metrics_entry)
+    save_monitoring_data()
+
+# Load monitoring data on startup
+load_monitoring_data()
 
 if __name__ == '__main__':
     print("Starting Flask app...")

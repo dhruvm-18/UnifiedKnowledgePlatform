@@ -2,12 +2,19 @@
 .modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 3000;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(0,0,0,0.35);
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
   cursor: pointer;
+}
+
+/* Dark mode specific overlay adjustments */
+.dark-mode .modal-overlay {
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
 }
 
 /* Modal Content: card, strong shadow, border, light/dark mode */

@@ -4,15 +4,16 @@ export default function Modal({ children, onClose, size }) {
   let modalStyle = {
     width: 480,
     maxWidth: '95vw',
-    minWidth: 280,
-    background: '#fff',
-    borderRadius: 10,
-    boxShadow: '0 2px 12px #0002',
+    minWidth: 580,
+    background: 'var(--bg-primary)',
+    borderRadius: 16,
+    boxShadow: '0 8px 32px var(--shadow-color)',
     padding: 0,
     position: 'relative',
+    border: '1px solid var(--border-color)',
   };
   if (size === 'large') {
-    modalStyle.width = 600;
+    modalStyle.width = 1000;
     modalStyle.maxWidth = '98vw';
   }
   if (size === 'preview') {
@@ -26,18 +27,6 @@ export default function Modal({ children, onClose, size }) {
     <div
       className="modal-overlay"
       onClick={onClose}
-      style={{
-        zIndex: 3000,
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        background: 'rgba(0,0,0,0.18)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
     >
       <div
         className={size === 'large' ? 'modal-content-large' : 'modal-content'}

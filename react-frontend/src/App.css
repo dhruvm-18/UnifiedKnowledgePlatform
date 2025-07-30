@@ -11,6 +11,8 @@
   position: relative;
   border: 1px solid var(--border-color);
   box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  overflow: hidden;
 }
 
 .left-sidebar::before,
@@ -353,7 +355,6 @@ html, body, #root {
 }
 .chat-history-item .chat-icon svg {
   font-size: 1.2em;
-  vertical-align: middle;
   display: block;
   margin: 0 auto;
 }
@@ -891,7 +892,7 @@ html, body, #root {
   left: unset;
   background: var(--bg-secondary);
   color: var(--text-tertiary);
-  border: none;
+  border: 1px solid var(--border-color);
   border-radius: 0.5rem;
   width: 1.75rem;
   height: 1.75rem;
@@ -900,16 +901,42 @@ html, body, #root {
   justify-content: center;
   cursor: pointer;
   z-index: 20;
-  transition: background 0.2s, color 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
 }
+
 .sidebar-toggle-btn.right {
   left: 8px;
   right: unset;
 }
+
+.sidebar-toggle-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(156, 39, 176, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.sidebar-toggle-btn:hover::before {
+  left: 100%;
+}
+
 .sidebar-toggle-btn:hover {
   background: var(--bg-primary);
   color: var(--text-tertiary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(156, 39, 176, 0.2);
 }
+
+.sidebar-toggle-btn:active {
+  transform: translateY(0px);
+  transition: all 0.1s ease;
+}
+
 .left-sidebar.collapsed {
   width: 32px !important;
   min-width: 32px !important;
@@ -917,12 +944,35 @@ html, body, #root {
   padding: 0 !important;
   align-items: flex-start;
   position: relative;
+  animation: sidebar-collapse 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
+
+.left-sidebar.collapsed > * {
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 0.3s ease-out 0.1s, transform 0.3s ease-out 0.1s;
+}
+
+.left-sidebar.collapsed .sidebar-toggle-btn {
+  opacity: 1 !important;
+  transform: none !important;
+  position: absolute;
+  top: 0.8rem;
+  right: 0.5rem;
+  z-index: 30;
+  background: var(--accent-color) !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(156, 39, 176, 0.3) !important;
+  animation: toggle-pulse 2s ease-in-out infinite;
+  transition: all 0.3s ease-out !important;
+}
+
 .left-sidebar.collapsed .sidebar-logo,
 .left-sidebar.collapsed .sidebar-title,
 .left-sidebar.collapsed .other-models-btn {
   display: none !important;
 }
+
 .right-sidebar.collapsed {
   width: 32px !important;
   min-width: 32px !important;
@@ -930,35 +980,75 @@ html, body, #root {
   padding: 0 !important;
   align-items: flex-end;
   position: relative;
+  animation: sidebar-collapse 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
+
+.right-sidebar.collapsed > * {
+  opacity: 0;
+  transform: translateX(20px);
+  transition: opacity 0.3s ease-out 0.1s, transform 0.3s ease-out 0.1s;
+}
+
+.right-sidebar.collapsed .sidebar-toggle-btn {
+  opacity: 1 !important;
+  transform: none !important;
+  position: absolute;
+  top: 0.8rem;
+  left: 8px;
+  z-index: 30;
+  background: var(--accent-color) !important;
+  color: white !important;
+  box-shadow: 0 2px 8px rgba(156, 39, 176, 0.3) !important;
+  animation: toggle-pulse 2s ease-in-out infinite;
+  transition: all 0.3s ease-out !important;
+}
+
 .right-sidebar.collapsed .chat-history-list,
 .right-sidebar.collapsed .sidebar-title,
 .right-sidebar.collapsed .other-models-btn {
   display: none !important;
 }
-.app-layout.left-collapsed .main-content,
-.app-layout.right-collapsed .main-content {
-  max-width: none !important;
-  width: 100% !important;
-  margin: 0 !important;
+
+.app-layout.left-collapsed .main-content .home-view-container {
+  max-width: none;
+  padding: 2rem; /* Adjust padding if necessary */
 }
+
 .app-layout.left-collapsed .center-row,
 .app-layout.right-collapsed .center-row {
   max-width: none !important;
   width: 100% !important;
   margin: 0 !important;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .app-layout.left-collapsed .floating-input-inner,
 .app-layout.right-collapsed .floating-input-inner {
   max-width: none !important;
   width: 100% !important;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
+
 .left-sidebar, .right-sidebar {
-  transition: width 0.2s, min-width 0.2s, max-width 0.2s, padding 0.2s;
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   position: relative;
+  overflow: hidden;
 }
+
+/* Add smooth fade effect for sidebar content */
+.left-sidebar > *, .right-sidebar > * {
+  transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+
+/* Ensure toggle buttons transition smoothly */
+.left-sidebar .sidebar-toggle-btn, .right-sidebar .sidebar-toggle-btn {
+  transition: all 0.4s ease-out;
+}
+
 .main-content {
-  transition: margin 0.2s, width 0.2s;
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  background: var(--bg-primary);
 }
 
 .quick-options-row {
@@ -1498,8 +1588,11 @@ html, body, #root {
 .user-details {
   display: flex;
   align-items: center;
-  width: 100%;
+  justify-content: center;
+  width: 90%;
+  max-width: 280px;
   padding: 0.6rem 0.8rem; /* Reduced padding */
+  margin: 0 auto;
   margin-top: auto; /* Push to the bottom */
   /* Remove default background, border-radius, and box-shadow */
   background: none;
@@ -1509,16 +1602,43 @@ html, body, #root {
   cursor: pointer; /* Indicate it might be clickable */
   /* Add border for hover state transition */
   border: 1px solid transparent;
-  transition: background 0.2s, box-shadow 0.2s, transform 0.2s ease-in-out, border-radius 0.2s;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative; /* Needed for absolute positioning of the menu */
   overflow: visible; /* Ensure menu is not clipped */
+}
+
+/* Add a subtle glow effect on hover */
+.user-details::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(45deg, transparent, rgba(156, 39, 176, 0.1), transparent);
+  border-radius: 0.6rem;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: -1;
 }
 
 .user-details:hover {
   background: var(--bg-secondary); /* Apply background on hover */
   border-radius: 0.6rem; /* Apply border-radius on hover */
-  box-shadow: 0 4px 12px var(--shadow-color); /* Apply shadow on hover */
-  transform: translateY(-1px); /* Subtle lift on hover */
+  box-shadow: 0 8px 25px rgba(156, 39, 176, 0.15), 0 4px 12px var(--shadow-color); /* Enhanced shadow with accent color */
+  transform: translateY(-2px) scale(1.02); /* Enhanced lift and slight scale */
+  border-color: rgba(156, 39, 176, 0.3); /* Subtle accent border */
+}
+
+.user-details:hover::before {
+  opacity: 1;
+}
+
+/* Add click animation */
+.user-details:active {
+  transform: translateY(0px) scale(0.98);
+  transition: all 0.1s ease;
 }
 
 .user-avatar {
@@ -1535,12 +1655,99 @@ html, body, #root {
   margin-right: 10px; /* Adjusted space */
   flex-shrink: 0; /* Prevent shrinking */
   overflow: hidden; /* Hide overflow for image */
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+/* Add a pulsing ring effect on hover */
+.user-avatar::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  background: linear-gradient(45deg, var(--accent-color), transparent, var(--accent-color));
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  animation: pulse-ring 2s infinite;
+  z-index: -1;
+}
+
+/* Add floating particles effect */
+.user-avatar::before {
+  content: '';
+  position: absolute;
+  top: -4px;
+  left: -4px;
+  right: -4px;
+  bottom: -4px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(156, 39, 176, 0.3) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  animation: float-particles 3s ease-in-out infinite;
+  z-index: -2;
 }
 
 .user-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover; /* Cover the area without distorting aspect ratio */
+  transition: all 0.4s ease;
+  animation: avatar-appear 0.8s ease-out;
+}
+
+/* Animation for when profile photo is loaded/changed */
+@keyframes avatar-appear {
+  0% { 
+    transform: scale(0) rotate(-180deg);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  50% { 
+    transform: scale(1.2) rotate(-90deg);
+    opacity: 0.7;
+    filter: blur(5px);
+  }
+  100% { 
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+/* Avatar hover effects */
+.user-details:hover .user-avatar {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 4px 15px rgba(156, 39, 176, 0.3);
+  animation: avatar-bounce 0.6s ease-in-out;
+}
+
+.user-details:hover .user-avatar::after {
+  opacity: 1;
+  animation: pulse-ring 1.5s ease-in-out infinite;
+}
+
+.user-details:hover .user-avatar::before {
+  opacity: 1;
+  animation: float-particles 2s ease-in-out infinite;
+}
+
+.user-details:hover .user-avatar img {
+  filter: brightness(1.1) contrast(1.1) saturate(1.2);
+  animation: image-glow 2s ease-in-out infinite alternate;
+}
+
+/* Add sparkle effect on click */
+.user-details:active .user-avatar {
+  animation: avatar-sparkle 0.3s ease-in-out;
+}
+
+.user-details:active .user-avatar::after {
+  animation: sparkle-ring 0.3s ease-in-out;
 }
 
 .user-info {
@@ -1555,6 +1762,20 @@ html, body, #root {
   font-size: 1rem;
   color: var(--text-primary);
   margin-bottom: 4px;
+  transition: all 0.4s ease;
+  transform-origin: left center;
+}
+
+/* Text hover effects */
+.user-details:hover .user-name {
+  transform: translateX(4px) scale(1.05);
+  color: var(--accent-color);
+  text-shadow: 0 0 10px rgba(156, 39, 176, 0.3);
+}
+
+.user-details:hover .user-email {
+  transform: translateX(4px);
+  color: var(--text-tertiary);
 }
 
 .user-name-input {
@@ -1575,6 +1796,8 @@ html, body, #root {
   white-space: nowrap; /* Prevent email from wrapping */
   overflow: hidden;
   text-overflow: ellipsis; /* Add ellipsis if email is too long */
+  transition: all 0.4s ease;
+  transform-origin: left center;
 }
 
 /* User Details Menu */
@@ -1597,12 +1820,17 @@ html, body, #root {
   color: var(--text-primary);
   font-size: 0.95rem; /* Slightly smaller menu items */
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: all 0.3s ease;
+  border-left: 3px solid transparent;
+  position: relative;
 }
 
 .user-details-menu .menu-item:hover {
   background: var(--bg-tertiary); /* Highlight on hover */
   color: var(--text-tertiary);
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-left: 3px solid var(--accent-color);
 }
 
 .user-avatar-initial {
@@ -2958,14 +3186,14 @@ html, body, #root {
 .dark-mode .roadmap-step-title,
 .dark-mode .super-quick-content h3,
 .dark-mode .super-selling-content h3 {
-  color: #fff;
+  color: var(--text-tertiary);
 }
 .dark-mode .crazy-feature-card p,
 .dark-mode .feature-item p,
 .dark-mode .roadmap-step-desc,
 .dark-mode .super-quick-content p,
 .dark-mode .super-selling-content p {
-  color: #cbd5e1;
+  color: var(--text-secondary);
 }
 
 .theme-slider-row:hover .theme-slider,
@@ -3034,7 +3262,60 @@ html, body, #root {
 }
 
 .dark-mode .answer-feedback-row {
-  color: #aaa;
+  color: var(--text-secondary);
+}
+
+/* Dark mode styles for left sidebar user details hover and dropdown */
+.dark-mode .user-details:hover {
+  background: var(--bg-primary-dark, #18181b) !important;
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 8px 25px rgba(156, 39, 176, 0.25), 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  transform: translateY(-2px) scale(1.02) !important;
+}
+
+.dark-mode .user-details:hover::before {
+  opacity: 1 !important;
+  background: linear-gradient(45deg, transparent, rgba(156, 39, 176, 0.2), transparent) !important;
+}
+
+.dark-mode .user-details:hover .user-avatar {
+  transform: scale(1.1) rotate(5deg) !important;
+  box-shadow: 0 4px 15px rgba(156, 39, 176, 0.4) !important;
+  animation: avatar-bounce 0.6s ease-in-out !important;
+}
+
+.dark-mode .user-details:hover .user-avatar::before {
+  opacity: 1 !important;
+  background: radial-gradient(circle, rgba(156, 39, 176, 0.4) 0%, transparent 70%) !important;
+  animation: float-particles 2s ease-in-out infinite !important;
+}
+
+.dark-mode .user-details:hover .user-avatar img {
+  filter: brightness(1.2) contrast(1.15) saturate(1.3) !important;
+  animation: image-glow 2s ease-in-out infinite alternate !important;
+}
+
+.dark-mode .user-details:active .user-avatar {
+  animation: avatar-sparkle 0.3s ease-in-out !important;
+}
+
+.dark-mode .user-details:hover .user-name {
+  color: var(--accent-color) !important;
+  text-shadow: 0 0 15px rgba(156, 39, 176, 0.5) !important;
+}
+
+.dark-mode .user-details-menu {
+  background: var(--bg-primary-dark, #18181b) !important;
+  border: 1px solid var(--accent-color) !important;
+  box-shadow: 0 -4px 12px rgba(156, 39, 176, 0.3) !important;
+}
+
+.dark-mode .user-details-menu .menu-item:hover {
+  background: var(--bg-secondary) !important;
+  color: var(--text-tertiary) !important;
+  transform: translateX(4px) !important;
+  box-shadow: 0 2px 8px rgba(156, 39, 176, 0.2) !important;
+  border-left: 3px solid var(--accent-color) !important;
 }
 
 .dark-mode .main-content,
@@ -3051,6 +3332,73 @@ html, body, #root {
   0% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.2); opacity: 0.7; }
   100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes pulse-ring {
+  0% { 
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% { 
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+@keyframes float-particles {
+  0%, 100% { 
+    transform: scale(1) rotate(0deg);
+    opacity: 0.7;
+  }
+  50% { 
+    transform: scale(1.1) rotate(180deg);
+    opacity: 1;
+  }
+}
+
+@keyframes avatar-bounce {
+  0%, 100% { 
+    transform: scale(1.1) rotate(5deg);
+  }
+  50% { 
+    transform: scale(1.15) rotate(8deg);
+  }
+}
+
+@keyframes image-glow {
+  0% { 
+    filter: brightness(1.1) contrast(1.1) saturate(1.2);
+  }
+  100% { 
+    filter: brightness(1.2) contrast(1.15) saturate(1.3);
+  }
+}
+
+@keyframes avatar-sparkle {
+  0% { 
+    transform: scale(1.1) rotate(5deg);
+  }
+  50% { 
+    transform: scale(0.95) rotate(-2deg);
+  }
+  100% { 
+    transform: scale(1.1) rotate(5deg);
+  }
+}
+
+@keyframes sparkle-ring {
+  0% { 
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  50% { 
+    transform: scale(1.5);
+    opacity: 0.8;
+  }
+  100% { 
+    transform: scale(0.8);
+    opacity: 1;
+  }
 }
 
 @keyframes genieEffect {
@@ -3089,4 +3437,100 @@ html, body, #root {
 .genie-modal {
   animation: genieEffect 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
   transform-origin: bottom left !important;
+}
+
+@keyframes sidebar-collapse {
+  0% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+  20% {
+    transform: scaleX(0.98);
+    opacity: 0.95;
+  }
+  80% {
+    transform: scaleX(0.99);
+    opacity: 0.98;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes sidebar-expand {
+  0% {
+    transform: scaleX(0.98);
+    opacity: 0.95;
+  }
+  20% {
+    transform: scaleX(1.01);
+    opacity: 0.98;
+  }
+  80% {
+    transform: scaleX(1.005);
+    opacity: 0.99;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes main-content-expand {
+  0% {
+    transform: scaleX(0.99);
+    opacity: 0.98;
+  }
+  20% {
+    transform: scaleX(1.005);
+    opacity: 0.99;
+  }
+  80% {
+    transform: scaleX(1.002);
+    opacity: 0.995;
+  }
+  100% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes toggle-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(156, 39, 176, 0.3);
+  }
+  50% {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(156, 39, 176, 0.5);
+  }
+}
+
+.app-layout.left-collapsed .main-content,
+.app-layout.right-collapsed .main-content {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  animation: main-content-expand 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.app-layout.left-collapsed .center-row,
+.app-layout.right-collapsed .center-row {
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 !important;
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.app-layout.left-collapsed .floating-input-inner,
+.app-layout.right-collapsed .floating-input-inner {
+  max-width: none !important;
+  width: 100% !important;
+  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.app-layout.left-collapsed .main-content .home-view-container {
+  max-width: none;
+  padding: 2rem; /* Adjust padding if necessary */
 }

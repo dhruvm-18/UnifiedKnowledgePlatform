@@ -1,40 +1,75 @@
 [
   {
     "sessionId": null,
-    "agentId": "agent_1751610432887",
+    "agentId": "DPDP",
+    "agentName": "Unknown Agent",
     "answerId": null,
     "documentChunkIds": null,
-    "rating": 4,
-    "feedbackText": "can be a lot better",
-    "stars": 4,
+    "rating": 5,
+    "feedbackText": "doing good",
+    "stars": 5,
     "suggestion": "",
     "userId": "user_pyl8ybysd",
-    "timestamp": "2025-07-07T15:26:49.406Z",
+    "userEmail": "dhruv.mendiratta4@gmail.com",
+    "timestamp": "2025-07-30T11:39:22.910Z",
     "feedbackType": "positive",
     "category": "helpfulness",
     "severity": "low",
     "modelUsed": "Gemini 2.5 Flash",
-    "responseTime": 2.458381470949646,
-    "sessionDuration": 9,
-    "answerText": "Thanks for asking.\n\nThe hosts envision using Perplexity AI for tasks related to **online side hustles** and **business growth**. Specifically, they discussed using it to:\n\n*   Help people make money online with side hustles.\n*   Grow and scale their businesses and careers using AI tools.\n*   Delve into topics like the **Amazon influencer program**, including strategies for getting free products and earning commissions by creating product videos.\n\n**Sources**\n*   **[Gen_AI.mp3]** (Gen_AI.mp3)\n\nFeel free to ask if you have more questions."
+    "modelIcon": "🤖",
+    "responseTime": 1.4604052407067,
+    "sessionDuration": 32,
+    "answerText": "Thanks for asking.\nThe **Digital Personal Data Protection Act, 2023** is an Act that provides for the processing of **digital personal data**. It aims to balance the **right of individuals to protect their personal data** with the **need to process such personal data for lawful purposes**.\n\n**Sources**\n* **[Page 1]** (pdf://DPDP_act.pdf/page/1)\n\nPlease let me know if you have any more questions.",
+    "sessionTranscript": [
+      {
+        "sender": "user",
+        "content": "what is data protection act?"
+      },
+      {
+        "sender": "assistant",
+        "content": "Thanks for asking.\nThe **Digital Personal Data Protection Act, 2023** is an Act that provides for the processing of **digital personal data**. It aims to balance the **right of individuals to protect their personal data** with the **need to process such personal data for lawful purposes**.\n\n**Sources**\n* **[Page 1]** (pdf://DPDP_act.pdf/page/1)\n\nPlease let me know if you have any more questions."
+      }
+    ]
   },
   {
     "sessionId": null,
     "agentId": "DPDP",
+    "agentName": "DPDP Knowledge Agent",
     "answerId": null,
     "documentChunkIds": null,
-    "rating": 4,
-    "feedbackText": "Working great",
-    "stars": 4,
+    "rating": 2,
+    "feedbackText": "No PDF Link coming",
+    "stars": 2,
     "suggestion": "",
     "userId": "user_pyl8ybysd",
-    "timestamp": "2025-07-22T07:14:12.371Z",
-    "feedbackType": "positive",
+    "userEmail": "dhruv.mendiratta4@gmail.com",
+    "timestamp": "2025-07-30T12:09:06.015Z",
+    "feedbackType": "negative",
     "category": "helpfulness",
-    "severity": "low",
-    "modelUsed": "Gemini 2.5 Flash",
-    "responseTime": 1.756216987648805,
-    "sessionDuration": 20,
-    "answerText": "Thanks for asking.\n\nThe primary objective of the Digital Personal Data Protection Act, 2023, is to provide a framework for the **__processing of digital personal data__**. This framework aims to balance the **right of individuals to protect their personal data** with the necessary processing of such data for **lawful purposes**.\n\n**Sources**\n*   **[Preamble]** (pdf://DPDP_act.pdf/page/1)"
+    "severity": "high",
+    "modelUsed": "Meta LlaMa 3",
+    "modelIcon": "🤖",
+    "responseTime": 2.188677669222222,
+    "sessionDuration": 6,
+    "answerText": "Thank you for asking. As per the information available to me, the **Data Protection Act** is a legislation that aims to protect the personal data of individuals by setting out rules and guidelines for its collection, processing, storage, and sharing. The act provides individuals with various rights, including the right to access their personal data, the right to correction and erasure of their personal data, the right to have their grievances redressed, and the right to nominate another individual to exercise their rights on their behalf.\n\nAccording to **DPDP_act.pdf**, Page: 1, the act defines a Data Principal as an individual who provides her personal data for a specified purpose, and a Data Fiduciary as a person or entity that processes the personal data of such individuals. The act also sets out various obligations and responsibilities for Data Principals and Data Fiduciaries, including the requirement to obtain consent before processing personal data, to ensure the accuracy and completeness of personal data, and to implement appropriate security measures to prevent unauthorized access to personal data.\n\n**",
+    "sessionTranscript": [
+      {
+        "sender": "user",
+        "content": "what is data protection act?"
+      },
+      {
+        "sender": "assistant",
+        "content": "Thanks for asking.\nThe **Digital Personal Data Protection Act, 2023** is an Act that provides for the processing of **digital personal data**. It aims to balance the **right of individuals to protect their personal data** with the **need to process such personal data for lawful purposes**.\n\n**Sources**\n* **[Page 1]** (pdf://DPDP_act.pdf/page/1)\n\nPlease let me know if you have any more questions."
+      },
+      {
+        "id": 1753877195940,
+        "sender": "user",
+        "content": "what is data protection act?"
+      },
+      {
+        "sender": "assistant",
+        "content": "Thank you for asking. As per the information available to me, the **Data Protection Act** is a legislation that aims to protect the personal data of individuals by setting out rules and guidelines for its collection, processing, storage, and sharing. The act provides individuals with various rights, including the right to access their personal data, the right to correction and erasure of their personal data, the right to have their grievances redressed, and the right to nominate another individual to exercise their rights on their behalf.\n\nAccording to **DPDP_act.pdf**, Page: 1, the act defines a Data Principal as an individual who provides her personal data for a specified purpose, and a Data Fiduciary as a person or entity that processes the personal data of such individuals. The act also sets out various obligations and responsibilities for Data Principals and Data Fiduciaries, including the requirement to obtain consent before processing personal data, to ensure the accuracy and completeness of personal data, and to implement appropriate security measures to prevent unauthorized access to personal data.\n\n**"
+      }
+    ]
   }
 ]

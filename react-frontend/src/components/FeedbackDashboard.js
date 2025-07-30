@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaChartBar, FaStar, FaThumbsUp, FaThumbsDown, FaComments, FaCalendarAlt, FaFilter, FaUsers, FaChartLine, FaTrendingDown, FaExclamationTriangle, FaCheckCircle, FaClock, FaEye } from 'react-icons/fa';
+import { FaChartBar, FaStar, FaThumbsUp, FaThumbsDown, FaComments, FaCalendarAlt, FaFilter, FaUsers, FaChartLine, FaTrendingDown, FaExclamationTriangle, FaCheckCircle, FaClock, FaEye, FaUser, FaRobot, FaLightbulb } from 'react-icons/fa';
 import '../styles/FeedbackDashboard.css';
 
 const FeedbackDashboard = ({ messages = [] }) => {
@@ -7,17 +7,16 @@ const FeedbackDashboard = ({ messages = [] }) => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [dateRange, setDateRange] = useState('7d');
-  const [selectedTimeframe, setSelectedTimeframe] = useState('7d');
+  const [severityFilter, setSeverityFilter] = useState('all');
   const [error, setError] = useState(null);
-  const [expandedFeedbackId, setExpandedFeedbackId] = useState(null);
   const [selectedFeedback, setSelectedFeedback] = useState(null);
   const [fixedFeedbackIds, setFixedFeedbackIds] = useState([]);
-  const [severityFilter, setSeverityFilter] = useState('all');
 
   // Fetch real feedback data from backend
   const fetchFeedbackData = async () => {
     try {
       setLoading(true);
+      console.log('Fetching feedback data from backend...');
       const response = await fetch('http://localhost:5000/api/feedback', {
         method: 'GET',
         headers: {
@@ -25,202 +24,58 @@ const FeedbackDashboard = ({ messages = [] }) => {
         },
       });
 
+      console.log('Response status:', response.status);
       if (!response.ok) {
-        throw new Error('Failed to fetch feedback data');
+        throw new Error(`Failed to fetch feedback data: ${response.status}`);
       }
 
       const data = await response.json();
+      console.log('Received feedback data:', data);
       
       // Transform the data to match our dashboard format
-      const transformedData = data.map(item => ({
+      console.log('Transforming feedback data...');
+      const transformedData = data.map(item => {
+        // Ensure all numeric values are valid
+        const rating = Number(item.rating) || 0;
+        const responseTime = Number(item.response_time) || 0;
+        const sessionDuration = Number(item.session_duration) || 0;
+        
+                return {
         id: item.id || Math.random().toString(36).substr(2, 9),
         sessionId: item.session_id || `session_${item.id}`,
         agentId: item.agent_id || 'default_agent',
         agentName: item.agent_name || 'Unknown Agent',
-        rating: item.rating || (item.feedback_type === 'positive' ? 4 : 2),
+          rating: rating,
         category: item.category || 'helpfulness',
         severity: item.severity || 'medium',
         feedback: item.feedback_text || item.comment || 'User feedback provided',
         timestamp: item.timestamp || item.created_at || new Date().toISOString(),
         userEmail: item.user_email || item.user_id || 'anonymous@user.com',
-        responseTime: item.response_time || Math.random() * 5 + 1,
-        sessionDuration: item.session_duration || Math.floor(Math.random() * 30) + 5,
-        feedbackType: item.feedback_type || 'rating', // positive, negative, neutral
+          responseTime: responseTime,
+          sessionDuration: sessionDuration,
+          feedbackType: item.feedback_type || 'rating',
         messageId: item.message_id,
         modelUsed: item.model_used || 'Gemini 2.5 Flash',
         modelIcon: item.model_icon || '🤖'
-      }));
+        };
+      });
 
+      console.log('Transformed data:', transformedData);
       setFeedbackData(transformedData);
       setError(null);
     } catch (err) {
       console.error('Error fetching feedback data:', err);
-      setError('Failed to load feedback data. Using demo data instead.');
-      // Fallback to demo data if API fails
-      setFeedbackData(getDemoData());
+      setError('Failed to load feedback data. Please try again later.');
+      setFeedbackData([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Demo data as fallback
-  const getDemoData = () => {
-    const now = new Date();
-    return [
-      {
-        id: 1,
-        sessionId: 'session_001',
-        agentId: 'agent_001',
-        agentName: 'Legal Assistant',
-        rating: 5,
-        category: 'accuracy',
-        severity: 'high',
-        feedback: 'Very accurate responses to legal questions. The agent provided detailed citations.',
-        timestamp: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-        userEmail: 'user1@example.com',
-        responseTime: 2.3,
-        sessionDuration: 15,
-        feedbackType: 'positive',
-        messageId: 'msg_001',
-        modelUsed: 'Gemini 2.5 Flash',
-        modelIcon: '🤖'
-      },
-      {
-        id: 2,
-        sessionId: 'session_002',
-        agentId: 'agent_002',
-        agentName: 'Financial Analyst',
-        rating: 4,
-        category: 'helpfulness',
-        severity: 'medium',
-        feedback: 'Good analysis but could provide more detailed explanations for complex financial terms.',
-        timestamp: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-        userEmail: 'user2@example.com',
-        responseTime: 3.1,
-        sessionDuration: 22,
-        feedbackType: 'positive',
-        messageId: 'msg_002',
-        modelUsed: 'Meta LlaMa 3',
-        modelIcon: '🦙'
-      },
-      {
-        id: 3,
-        sessionId: 'session_003',
-        agentId: 'agent_003',
-        agentName: 'Research Assistant',
-        rating: 3,
-        category: 'speed',
-        severity: 'low',
-        feedback: 'Response was a bit slow but the information was relevant.',
-        timestamp: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-        userEmail: 'user3@example.com',
-        responseTime: 5.2,
-        sessionDuration: 8,
-        feedbackType: 'neutral',
-        messageId: 'msg_003',
-        modelUsed: 'Mistral AI',
-        modelIcon: '🌪️'
-      },
-      {
-        id: 4,
-        sessionId: 'session_004',
-        agentId: 'agent_001',
-        agentName: 'Legal Assistant',
-        rating: 5,
-        category: 'accuracy',
-        severity: 'high',
-        feedback: 'Excellent legal advice with proper references to relevant statutes.',
-        timestamp: new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000).toISOString(),
-        userEmail: 'user4@example.com',
-        responseTime: 1.8,
-        sessionDuration: 18,
-        feedbackType: 'positive',
-        messageId: 'msg_004',
-        modelUsed: 'Gemini 2.5 Flash',
-        modelIcon: '🤖'
-      },
-      {
-        id: 5,
-        sessionId: 'session_005',
-        agentId: 'agent_002',
-        agentName: 'Financial Analyst',
-        rating: 2,
-        category: 'helpfulness',
-        severity: 'high',
-        feedback: 'The response was not helpful and lacked specific financial calculations.',
-        timestamp: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-        userEmail: 'user5@example.com',
-        responseTime: 4.5,
-        sessionDuration: 12,
-        feedbackType: 'negative',
-        messageId: 'msg_005',
-        modelUsed: 'Meta LlaMa 3',
-        modelIcon: '🦙'
-      },
-      {
-        id: 6,
-        sessionId: 'session_006',
-        agentId: 'agent_003',
-        agentName: 'Research Assistant',
-        rating: 4,
-        category: 'accuracy',
-        severity: 'medium',
-        feedback: 'Good research capabilities but could improve citation accuracy.',
-        timestamp: new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-        userEmail: 'user6@example.com',
-        responseTime: 2.9,
-        sessionDuration: 25,
-        feedbackType: 'positive',
-        messageId: 'msg_006',
-        modelUsed: 'Mistral AI',
-        modelIcon: '🌪️'
-      },
-      {
-        id: 7,
-        sessionId: 'session_007',
-        agentId: 'agent_001',
-        agentName: 'Legal Assistant',
-        rating: 5,
-        category: 'helpfulness',
-        severity: 'high',
-        feedback: 'Outstanding legal analysis with comprehensive case law references.',
-        timestamp: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        userEmail: 'user7@example.com',
-        responseTime: 2.1,
-        sessionDuration: 30,
-        feedbackType: 'positive',
-        messageId: 'msg_007',
-        modelUsed: 'Gemini 2.5 Flash',
-        modelIcon: '🤖'
-      },
-      {
-        id: 8,
-        sessionId: 'session_008',
-        agentId: 'agent_002',
-        agentName: 'Financial Analyst',
-        rating: 3,
-        category: 'speed',
-        severity: 'medium',
-        feedback: 'Response time was acceptable but could be faster for simple queries.',
-        timestamp: new Date(now.getTime() - 8 * 24 * 60 * 60 * 1000).toISOString(),
-        userEmail: 'user8@example.com',
-        responseTime: 3.8,
-        sessionDuration: 14,
-        feedbackType: 'neutral',
-        messageId: 'msg_008',
-        modelUsed: 'Meta LlaMa 3',
-        modelIcon: '🦙'
-      }
-    ];
-  };
+
 
   useEffect(() => {
     fetchFeedbackData();
-    
-    // Set up polling to refresh data every 30 seconds
-    const interval = setInterval(fetchFeedbackData, 30000);
-    
-    return () => clearInterval(interval);
   }, []);
 
   const getFilteredData = () => {
@@ -233,14 +88,8 @@ const FeedbackDashboard = ({ messages = [] }) => {
       filtered = filtered.filter(item => (item.severity || 'medium') === severityFilter);
     }
     
-    // Filter by date range
     const now = new Date();
-    const daysAgo = {
-      '1d': 1,
-      '7d': 7,
-      '30d': 30,
-      '90d': 90
-    };
+    const daysAgo = { '1d': 1, '7d': 7, '30d': 30, '90d': 90 };
     
     if (dateRange !== 'all') {
       const cutoffDate = new Date(now.getTime() - daysAgo[dateRange] * 24 * 60 * 60 * 1000);
@@ -256,24 +105,6 @@ const FeedbackDashboard = ({ messages = [] }) => {
     return (filtered.reduce((sum, item) => sum + item.rating, 0) / filtered.length).toFixed(1);
   };
 
-  const getCategoryStats = () => {
-    const filtered = getFilteredData();
-    const stats = {};
-    filtered.forEach(item => {
-      stats[item.category] = (stats[item.category] || 0) + 1;
-    });
-    return stats;
-  };
-
-  const getSeverityStats = () => {
-    const filtered = getFilteredData();
-    const stats = {};
-    filtered.forEach(item => {
-      stats[item.severity] = (stats[item.severity] || 0) + 1;
-    });
-    return stats;
-  };
-
   const getFeedbackTypeStats = () => {
     const filtered = getFilteredData();
     const stats = { positive: 0, negative: 0, neutral: 0 };
@@ -281,6 +112,15 @@ const FeedbackDashboard = ({ messages = [] }) => {
       stats[item.feedbackType] = (stats[item.feedbackType] || 0) + 1;
     });
     return stats;
+  };
+
+  const getRatingDistribution = () => {
+    const filtered = getFilteredData();
+    const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+    filtered.forEach(item => {
+      distribution[item.rating]++;
+    });
+    return distribution;
   };
 
   const getAgentPerformance = () => {
@@ -303,15 +143,6 @@ const FeedbackDashboard = ({ messages = [] }) => {
     });
     
     return agentStats;
-  };
-
-  const getRatingDistribution = () => {
-    const filtered = getFilteredData();
-    const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
-    filtered.forEach(item => {
-      distribution[item.rating]++;
-    });
-    return distribution;
   };
 
   const getModelPerformance = () => {
@@ -381,34 +212,452 @@ const FeedbackDashboard = ({ messages = [] }) => {
     return colors[type] || '#6c757d';
   };
 
-  const getCategoryIcon = (category) => {
-    const icons = {
-      accuracy: <FaCheckCircle />,
-      helpfulness: <FaComments />,
-      speed: <FaClock />
-    };
-    return icons[category] || <FaComments />;
-  };
-
-  const getFeedbackTypeIcon = (type) => {
-    const icons = {
-      positive: <FaThumbsUp />,
-      negative: <FaThumbsDown />,
-      neutral: <FaComments />
-    };
-    return icons[type] || <FaComments />;
-  };
-
   const handleMarkAsFixed = (id) => {
     setFixedFeedbackIds(prev => [...prev, id]);
+  };
+
+  // Chart Components
+  const LineChart = ({ data, width = 400, height = 200 }) => {
+    if (!data || data.length === 0) return <div>No data available</div>;
+    
+    const margin = { top: 30, right: 20, bottom: 40, left: 40 };
+    const chartWidth = width - margin.left - margin.right;
+    const chartHeight = height - margin.top - margin.bottom;
+    
+    // Find min and max values for proper scaling
+    const ratings = data.map(d => Number(d.avgRating));
+    const minRating = Math.min(...ratings);
+    const maxRating = Math.max(...ratings);
+    const ratingRange = maxRating - minRating || 4; // Default to 4 if all same value
+    
+    const xScale = data.length > 1 ? chartWidth / (data.length - 1) : chartWidth;
+    const yScale = chartHeight / ratingRange;
+    
+    const points = data.map((d, i) => ({
+      x: margin.left + i * xScale,
+      y: margin.top + chartHeight - (Number(d.avgRating) - minRating) * yScale
+    }));
+    
+    const pathData = points.map((point, i) => 
+      `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`
+    ).join(' ');
+    
+    // Generate Y-axis labels based on actual data range
+    const yLabels = [];
+    const steps = Math.min(5, Math.ceil(ratingRange) + 1);
+    for (let i = 0; i < steps; i++) {
+      const value = minRating + (i * ratingRange / (steps - 1));
+      yLabels.push(Number(value.toFixed(1)));
+    }
+    
+    return (
+      <svg width={width} height={height} className="chart-svg" style={{ display: 'block', maxWidth: '100%' }}>
+        {/* Background */}
+        <rect
+          x={margin.left}
+          y={margin.top}
+          width={chartWidth}
+          height={chartHeight}
+          fill="var(--bg-tertiary)"
+          opacity="0.3"
+          rx="4"
+        />
+        
+        {/* Grid lines */}
+        {yLabels.map(rating => (
+          <line
+            key={rating}
+            x1={margin.left}
+            y1={margin.top + chartHeight - (rating - minRating) * yScale}
+            x2={margin.left + chartWidth}
+            y2={margin.top + chartHeight - (rating - minRating) * yScale}
+            stroke="var(--border-color)"
+            strokeWidth="1"
+            opacity="0.3"
+          />
+        ))}
+        
+        {/* Y-axis labels */}
+        {yLabels.map(rating => (
+          <text
+            key={rating}
+            x={margin.left - 8}
+            y={margin.top + chartHeight - (rating - minRating) * yScale + 4}
+            textAnchor="end"
+            fontSize="11"
+            fill="var(--text-secondary)"
+            fontWeight="500"
+          >
+            {rating}
+          </text>
+          ))}
+        
+        {/* X-axis labels */}
+        {data.map((point, i) => (
+          <text
+            key={i}
+            x={margin.left + i * xScale}
+            y={margin.top + chartHeight + 15}
+            textAnchor="middle"
+            fontSize="10"
+            fill="var(--text-secondary)"
+            fontWeight="500"
+          >
+            {new Date(point.date).toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: 'numeric' 
+            })}
+          </text>
+        ))}
+        
+        {/* Gradient for line */}
+        <defs>
+          <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="var(--accent-color)" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="var(--accent-color)" stopOpacity="1" />
+          </linearGradient>
+        </defs>
+        
+        {/* Line with gradient */}
+        <path
+          d={pathData}
+          stroke="url(#lineGradient)"
+          strokeWidth="3"
+          fill="none"
+          opacity="0.9"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        
+        {/* Data points with hover effect */}
+        {points.map((point, i) => (
+          <g key={i}>
+            {/* Hover area */}
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r="8"
+              fill="transparent"
+              style={{ cursor: 'pointer' }}
+            />
+            {/* Data point */}
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r="5"
+              fill="var(--accent-color)"
+              stroke="white"
+              strokeWidth="2"
+              opacity="0.9"
+            />
+            {/* Inner highlight */}
+            <circle
+              cx={point.x}
+              cy={point.y}
+              r="2"
+              fill="white"
+              opacity="0.8"
+            />
+          </g>
+        ))}
+        
+        {/* Chart title */}
+        <text
+          x={margin.left}
+          y={margin.top - 5}
+          fontSize="14"
+          fill="var(--text-primary)"
+          fontWeight="600"
+        >
+          Rating Trend Over Time
+        </text>
+      </svg>
+    );
+  };
+
+  const BarChart = ({ data, width = 400, height = 200 }) => {
+    if (!data || data.length === 0) return <div>No data available</div>;
+    
+    const margin = { top: 20, right: 20, bottom: 40, left: 40 };
+    const chartWidth = width - margin.left - margin.right;
+    const chartHeight = height - margin.top - margin.bottom;
+    
+    const maxValue = Math.max(...Object.values(data));
+    const barWidth = Math.min(30, chartWidth / Object.keys(data).length);
+    const barSpacing = (chartWidth - (barWidth * Object.keys(data).length)) / (Object.keys(data).length + 1);
+    
+    // Generate proper Y-axis labels
+    const generateYAxisLabels = () => {
+      if (maxValue === 0) return [0];
+      if (maxValue <= 1) return [0, 1];
+      if (maxValue <= 2) return [0, 1, 2];
+      if (maxValue <= 3) return [0, 1, 2, 3];
+      if (maxValue <= 5) return [0, 1, 2, 3, 4, 5];
+      if (maxValue <= 10) return [0, 2, 4, 6, 8, 10];
+      return [0, Math.ceil(maxValue * 0.25), Math.ceil(maxValue * 0.5), Math.ceil(maxValue * 0.75), maxValue];
+    };
+    
+    const yAxisLabels = generateYAxisLabels();
+    
+    return (
+      <svg width={width} height={height} className="chart-svg" style={{ display: 'block', maxWidth: '100%' }}>
+        <defs>
+          <linearGradient id="barGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="var(--accent-color)" stopOpacity="0.8"/>
+            <stop offset="100%" stopColor="var(--accent-color)" stopOpacity="0.4"/>
+          </linearGradient>
+        </defs>
+        
+        {/* Grid lines */}
+        {yAxisLabels.map((label, index) => {
+          const y = margin.top + chartHeight - (label / maxValue) * chartHeight;
+          return (
+            <line
+              key={label}
+              x1={margin.left}
+              y1={y}
+              x2={margin.left + chartWidth}
+              y2={y}
+              stroke="var(--border-color)"
+              strokeWidth="0.5"
+              opacity="0.3"
+            />
+          );
+        })}
+        
+        {/* Bars */}
+        {Object.entries(data).map(([key, value], i) => {
+          const barHeight = (value / maxValue) * chartHeight;
+          const x = margin.left + barSpacing + i * (barWidth + barSpacing);
+          const y = margin.top + chartHeight - barHeight;
+          
+          return (
+            <g key={key}>
+              <rect
+                x={x}
+                y={y}
+                width={barWidth}
+                height={barHeight}
+                fill="url(#barGradient)"
+                rx="2"
+                stroke="var(--accent-color)"
+                strokeWidth="1"
+              />
+              <text
+                x={x + barWidth / 2}
+                y={y - 5}
+                textAnchor="middle"
+                fontSize="12"
+                fill="var(--text-primary)"
+                fontWeight="600"
+              >
+                {value}
+              </text>
+              <text
+                x={x + barWidth / 2}
+                y={margin.top + chartHeight + 15}
+                textAnchor="middle"
+                fontSize="11"
+                fill="var(--text-secondary)"
+              >
+                {key}
+              </text>
+            </g>
+          );
+        })}
+        
+        {/* Y-axis labels */}
+        {yAxisLabels.map(label => {
+          const y = margin.top + chartHeight - (label / maxValue) * chartHeight;
+          return (
+            <text
+              key={label}
+              x={margin.left - 10}
+              y={y + 4}
+              textAnchor="end"
+              fontSize="12"
+              fill="var(--text-secondary)"
+            >
+              {label}
+            </text>
+          );
+        })}
+      </svg>
+    );
+  };
+
+  const PieChart = ({ data, width = 200, height = 200 }) => {
+    if (!data || Object.keys(data).length === 0) return <div>No data available</div>;
+    
+    const radius = Math.min(width, height) / 2 - 60;
+    const centerX = width / 2 - 60; // Move chart to the left to make room for legend
+    const centerY = height / 2;
+    
+    const total = Object.values(data).reduce((sum, value) => sum + value, 0);
+    let currentAngle = -Math.PI / 2; // Start from top
+    
+    // Bright, vibrant color palette
+    const colors = {
+      positive: '#10b981', // Bright Green
+      negative: '#ef4444', // Bright Red
+      neutral: '#f59e0b'   // Bright Orange
+    };
+    
+    // Filter out zero values and create proper data
+    const validData = Object.entries(data).filter(([key, value]) => value > 0);
+    
+    if (validData.length === 0) {
+      return (
+        <svg width={width} height={height} className="chart-svg" style={{ display: 'block', maxWidth: '100%' }}>
+          <circle
+            cx={centerX}
+            cy={centerY}
+            r={radius}
+            fill="var(--bg-tertiary)"
+            stroke="var(--border-color)"
+            strokeWidth="2"
+          />
+          <text
+            x={centerX}
+            y={centerY}
+            textAnchor="middle"
+            fontSize="14"
+            fill="var(--text-secondary)"
+            fontWeight="500"
+          >
+            No Data
+          </text>
+        </svg>
+      );
+    }
+    
+    return (
+      <svg width={width} height={height} className="chart-svg" style={{ display: 'block', maxWidth: '100%' }}>
+        {/* Background circle */}
+        <circle
+          cx={centerX}
+          cy={centerY}
+          r={radius + 2}
+          fill="var(--bg-tertiary)"
+          stroke="var(--border-color)"
+          strokeWidth="1"
+        />
+        
+        {validData.map(([key, value], i) => {
+          const sliceAngle = (value / total) * 2 * Math.PI;
+          const endAngle = currentAngle + sliceAngle;
+          
+          const x1 = centerX + radius * Math.cos(currentAngle);
+          const y1 = centerY + radius * Math.sin(currentAngle);
+          const x2 = centerX + radius * Math.cos(endAngle);
+          const y2 = centerY + radius * Math.sin(endAngle);
+          
+          const largeArcFlag = sliceAngle > Math.PI ? 1 : 0;
+          
+          const pathData = [
+            `M ${centerX} ${centerY}`,
+            `L ${x1} ${y1}`,
+            `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+            'Z'
+          ].join(' ');
+          
+          currentAngle = endAngle;
+          
+          return (
+            <g key={key}>
+              <path
+                d={pathData}
+                fill={colors[key] || '#6b7280'}
+                stroke="white"
+                strokeWidth="2"
+                opacity="0.9"
+              />
+              {/* Percentage labels for larger slices */}
+              {sliceAngle > 0.3 && (
+                <text
+                  x={centerX + (radius * 0.6) * Math.cos(currentAngle - sliceAngle / 2)}
+                  y={centerY + (radius * 0.6) * Math.sin(currentAngle - sliceAngle / 2)}
+                  textAnchor="middle"
+                  fontSize="14"
+                  fill="white"
+                  fontWeight="700"
+                  textShadow="1px 1px 2px rgba(0,0,0,0.5)"
+                >
+                  {Math.round((value / total) * 100)}%
+                </text>
+              )}
+            </g>
+          );
+        })}
+        
+        {/* Center label */}
+        <text
+          x={centerX}
+          y={centerY - 5}
+          textAnchor="middle"
+          fontSize="18"
+          fill="var(--text-primary)"
+          fontWeight="600"
+        >
+          {total}
+        </text>
+        <text
+          x={centerX}
+          y={centerY + 15}
+          textAnchor="middle"
+          fontSize="12"
+          fill="var(--text-secondary)"
+        >
+          Total
+        </text>
+        
+        {/* Legend - positioned on the right side */}
+        <g transform={`translate(${width - 140}, 40)`}>
+          {Object.entries(data).map(([key, value], i) => (
+            <g key={key} transform={`translate(0, ${i * 28})`}>
+              <rect
+                x="0"
+                y="0"
+                width="16"
+                height="16"
+                fill={colors[key] || '#6b7280'}
+                rx="3"
+                stroke="var(--border-color)"
+                strokeWidth="1"
+              />
+              <text
+                x="24"
+                y="12"
+                fontSize="13"
+                fill="var(--text-primary)"
+                fontWeight="600"
+              >
+                {key.charAt(0).toUpperCase() + key.slice(1)}: {value}
+              </text>
+              <text
+                x="24"
+                y="28"
+                fontSize="11"
+                fill="var(--text-secondary)"
+                fontWeight="400"
+              >
+                ({Math.round((value / total) * 100)}%)
+              </text>
+            </g>
+          ))}
+        </g>
+      </svg>
+    );
   };
 
   if (loading) {
     return (
       <div className="feedback-dashboard">
         <div className="dashboard-header">
+          <div className="header-content">
           <h1>Feedback Analytics Dashboard</h1>
           <p>Loading real-time feedback data...</p>
+          </div>
         </div>
       </div>
     );
@@ -416,13 +665,13 @@ const FeedbackDashboard = ({ messages = [] }) => {
 
   const filteredData = getFilteredData();
   const averageRating = getAverageRating();
-  const categoryStats = getCategoryStats();
-  const severityStats = getSeverityStats();
   const feedbackTypeStats = getFeedbackTypeStats();
-  const agentPerformance = getAgentPerformance();
   const ratingDistribution = getRatingDistribution();
+  const agentPerformance = getAgentPerformance();
   const modelPerformance = getModelPerformance();
   const trendData = getTrendData();
+
+  const hasData = filteredData.length > 0;
 
   return (
     <div className="feedback-dashboard">
@@ -430,7 +679,6 @@ const FeedbackDashboard = ({ messages = [] }) => {
         <div className="header-content">
           <h1>Feedback Analytics Dashboard</h1>
           <p>Real-time user feedback from chat interactions</p>
-          {error && <p style={{ color: '#dc3545', fontSize: '0.9rem', marginTop: '0.5rem' }}>{error}</p>}
         </div>
         <div className="header-actions">
           <div className="filter-controls">
@@ -465,10 +713,23 @@ const FeedbackDashboard = ({ messages = [] }) => {
               <option value="30d">Last 30 Days</option>
               <option value="90d">Last 90 Days</option>
             </select>
+
           </div>
         </div>
       </div>
 
+      {!hasData && (
+        <div className="no-data-message">
+          <div className="icon">
+            <FaLightbulb />
+          </div>
+          <h3>No Feedback Data Available</h3>
+          <p>Start collecting user feedback through chat interactions to see comprehensive analytics and insights here. The dashboard will display real-time feedback metrics once data is available.</p>
+        </div>
+      )}
+
+      {hasData && (
+        <>
       <div className="dashboard-stats">
         <div className="stat-card">
           <div className="stat-icon">
@@ -530,17 +791,19 @@ const FeedbackDashboard = ({ messages = [] }) => {
         <div className="chart-section">
           <h3>Rating Distribution</h3>
           <div className="chart-content">
-            {Object.entries(ratingDistribution).map(([rating, count]) => (
-              <div key={rating} className="chart-item">
-                <div className="chart-item-icon">
-                  {renderStars(Number(rating))}
+                <BarChart data={ratingDistribution} width={450} height={300} />
                 </div>
-                <div className="chart-item-content">
-                  <span className="chart-item-label">{rating} Stars</span>
-                  <span className="chart-item-value">{count}</span>
                 </div>
+            <div className="chart-section">
+              <h3>Feedback Type Distribution</h3>
+              <div className="chart-content">
+                <PieChart data={feedbackTypeStats} width={400} height={280} />
               </div>
-            ))}
+            </div>
+            <div className="chart-section">
+              <h3>Rating Trend Over Time</h3>
+              <div className="chart-content">
+                <LineChart data={trendData} width={550} height={300} />
           </div>
         </div>
       </div>
@@ -548,264 +811,182 @@ const FeedbackDashboard = ({ messages = [] }) => {
       <div className="dashboard-grid">
         <div className="grid-section">
           <h3>Agent Performance</h3>
-          <div className="agent-performance-grid">
+              <div className="table-wrapper">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Agent Name</th>
+                      <th>Avg Rating</th>
+                      <th>Feedback Count</th>
+                      <th>Avg Response Time</th>
+                      <th>Models Used</th>
+                    </tr>
+                  </thead>
+                  <tbody>
             {Object.entries(agentPerformance).map(([agent, stats]) => (
-              <div key={agent} className="agent-card">
-                <div className="agent-header">
-                  <h4>{agent}</h4>
-                  <div className="agent-rating">{renderStars(parseFloat(stats.avgRating))}</div>
+                      <tr key={agent}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <FaRobot style={{ color: 'var(--accent-color)' }} />
+                            {agent}
                 </div>
-                <div className="agent-stats">
-                  <div className="stat-row">
-                    <span>Avg Rating:</span>
-                    <span className="stat-value">{stats.avgRating}</span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            {renderStars(parseFloat(stats.avgRating))}
+                            <span style={{ marginLeft: '4px' }}>{stats.avgRating}</span>
                   </div>
-                  <div className="stat-row">
-                    <span>Feedback Count:</span>
-                    <span className="stat-value">{stats.count}</span>
-                  </div>
-                  <div className="stat-row">
-                    <span>Avg Response Time:</span>
-                    <span className="stat-value">{stats.avgResponseTime}s</span>
-                  </div>
-                  <div className="stat-row">
-                    <span>Models Used:</span>
-                    <span className="stat-value">{stats.models.join(', ')}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
+                        </td>
+                        <td>{stats.count}</td>
+                        <td>{stats.avgResponseTime}s</td>
+                        <td>{stats.models.join(', ')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
           </div>
         </div>
 
         <div className="grid-section">
           <h3>Model Performance</h3>
-          <div className="model-performance-grid">
+              <div className="table-wrapper">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Model</th>
+                      <th>Avg Rating</th>
+                      <th>Usage Count</th>
+                    </tr>
+                  </thead>
+                  <tbody>
             {Object.entries(modelPerformance).map(([model, stats]) => (
-              <div key={model} className="model-card">
-                <div className="model-header">
-                  <h4><span style={{ marginRight: '8px' }}>{stats.icon}</span>{model}</h4>
-                  <div className="model-rating">{renderStars(parseFloat(stats.avgRating))}</div>
+                      <tr key={model}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '1.2rem' }}>{stats.icon}</span>
+                            {model}
                 </div>
-                <div className="model-stats">
-                  <div className="stat-row">
-                    <span>Avg Rating:</span>
-                    <span className="stat-value">{stats.avgRating}</span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            {renderStars(parseFloat(stats.avgRating))}
+                            <span style={{ marginLeft: '4px' }}>{stats.avgRating}</span>
                   </div>
-                  <div className="stat-row">
-                    <span>Usage Count:</span>
-                    <span className="stat-value">{stats.count}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="dashboard-grid">
-        <div className="grid-section">
-          <h3>Feedback Type Analysis</h3>
-          <div className="feedback-type-chart">
-            {Object.entries(feedbackTypeStats).map(([type, count]) => (
-              <div key={type} className="feedback-type-item">
-                <div 
-                  className="feedback-type-indicator"
-                  style={{ backgroundColor: getFeedbackTypeColor(type) }}
-                />
-                <div className="feedback-type-content">
-                  <span className="feedback-type-label">
-                    {getFeedbackTypeIcon(type)} {type}
-                  </span>
-                  <span className="feedback-type-count">{count}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="grid-section">
-          <h3>Severity Analysis</h3>
-          <div className="severity-chart">
-            {Object.entries(severityStats).map(([severity, count]) => (
-              <div key={severity} className="severity-item">
-                <div 
-                  className="severity-indicator"
-                  style={{ backgroundColor: getSeverityColor(severity) }}
-                />
-                <div className="severity-content">
-                  <span className="severity-label">{severity}</span>
-                  <span className="severity-count">{count}</span>
-                </div>
-              </div>
-            ))}
+                        </td>
+                        <td>{stats.count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
           </div>
         </div>
       </div>
 
       <div className="feedback-list">
         <h3>Recent Feedback</h3>
-        <div className="feedback-items">
+            <div className="table-wrapper">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Agent</th>
+                    <th>Rating</th>
+                    <th>Feedback</th>
+                    <th>User</th>
+                    <th>Model</th>
+                    <th>Date</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
           {filteredData.map(feedback => (
-            <div key={feedback.id} className="feedback-item" onClick={() => {
-              const sessionMsgs = messages.filter(m => m.sessionId === feedback.sessionId);
-              setSelectedFeedback({ ...feedback, sessionMessages: sessionMsgs });
-            }} style={{
-              cursor:'pointer',
-              position: 'relative',
-              background: fixedFeedbackIds.includes(feedback.id) && feedback.rating <= 3 ? '#eaffea' : undefined,
-              border: fixedFeedbackIds.includes(feedback.id) && feedback.rating <= 3 ? '1.5px solid #52c41a' : undefined
-            }}>
-              {fixedFeedbackIds.includes(feedback.id) && feedback.rating <= 3 && (
-                <div style={{
-                  position: 'absolute',
-                  top: 10,
-                  right: 18,
-                  background: '#52c41a',
-                  color: 'white',
-                  borderRadius: 6,
-                  padding: '2px 12px',
-                  fontWeight: 700,
-                  fontSize: '0.98rem',
-                  boxShadow: '0 1px 4px #0001',
-                  zIndex: 2,
-                }}>
-                  Issue Fixed
+                    <tr key={feedback.id} className={fixedFeedbackIds.includes(feedback.id) ? 'fixed-issue' : ''}>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <FaRobot style={{ color: 'var(--accent-color)' }} />
+                          {feedback.agentName}
                 </div>
-              )}
-              <div className="feedback-header">
-                <div className="feedback-agent">
-                  <strong>{feedback.agentName}</strong>
-                  <span className="feedback-session">Session: {feedback.sessionId}</span>
-                </div>
-                <div className="feedback-rating">
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                   {renderStars(feedback.rating)}
                 </div>
+                      </td>
+                      <td>
+                        <div style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {feedback.feedback}
               </div>
-              <div className="feedback-content">
-                <p>{feedback.feedback}</p>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <FaUser style={{ color: 'var(--text-secondary)' }} />
+                          {feedback.userEmail}
               </div>
-              <div className="feedback-meta">
-                <span 
-                  className="feedback-severity"
-                  style={{ color: getSeverityColor(feedback.severity) }}
-                >
-                  {feedback.severity}
-                </span>
-                <span 
-                  className="feedback-type"
-                  style={{ color: getFeedbackTypeColor(feedback.feedbackType) }}
-                >
-                  {getFeedbackTypeIcon(feedback.feedbackType)} {feedback.feedbackType}
-                </span>
-                <span className="feedback-date">
-                  <FaCalendarAlt /> {new Date(feedback.timestamp).toLocaleDateString()}
-                </span>
-                <span className="feedback-user">
-                  {feedback.userEmail}
-                </span>
-                <span className="feedback-time">
-                  <FaClock /> {feedback.responseTime}s
-                </span>
-                <span className="feedback-model">
-                  <span style={{ marginRight: '4px' }}>{feedback.modelIcon}</span>
-                  {feedback.modelUsed}
-                </span>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ fontSize: '1.2rem' }}>{feedback.modelIcon}</span>
+                          {feedback.modelUsed}
               </div>
-            </div>
+                      </td>
+                      <td>{new Date(feedback.timestamp).toLocaleDateString()}</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <button
+                            onClick={() => setSelectedFeedback(feedback)}
+                            className="action-btn"
+                            title="View Details"
+                          >
+                            <FaEye />
+                          </button>
+                          {feedback.rating <= 3 && !fixedFeedbackIds.includes(feedback.id) && (
+                            <button
+                              onClick={() => handleMarkAsFixed(feedback.id)}
+                              className="action-btn"
+                              title="Mark as Fixed"
+                            >
+                              <FaCheckCircle />
+                            </button>
+                          )}
+              </div>
+                      </td>
+                    </tr>
           ))}
+                </tbody>
+              </table>
         </div>
       </div>
+        </>
+      )}
+
       {selectedFeedback && (
         <>
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            width: '100vw',
-            height: '100vh',
-            background: 'rgba(0,0,0,0.32)',
-            zIndex: 3999,
-          }} onClick={() => setSelectedFeedback(null)} />
-          <div
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 4000,
-              background:'#f8f9fa',
-              border:'1px solid #e0e0e0',
-              borderRadius:12,
-              padding:'32px 28px',
-              boxShadow:'0 4px 32px #0004',
-              width: 700,
-              maxWidth: '99vw',
-              minWidth: 340,
-              maxHeight: '88vh',
-              overflowY: 'auto',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'stretch',
-            }}
-          >
-            <button
+          <div 
+            className="feedback-modal-overlay"
               onClick={() => setSelectedFeedback(null)}
-              style={{
-                position: 'absolute',
-                top: 14,
-                right: 18,
-                background: 'none',
-                border: 'none',
-                fontSize: 24,
-                color: '#888',
-                cursor: 'pointer',
-                zIndex: 4100,
-              }}
-              title="Close"
-            >
-              ×
-            </button>
-            <h4 style={{marginBottom:8}}>Developer Debug Info</h4>
-            <div style={{fontSize:'0.97rem',lineHeight:1.7,background:'#f4f6f8',padding:14,borderRadius:6,border:'1px solid #e0e0e0',marginBottom:12}}>
-              <strong>Raw Feedback Object:</strong>
-              <pre style={{fontSize:'0.95rem',background:'none',border:'none',margin:0}}>{JSON.stringify(selectedFeedback, null, 2)}</pre>
+          />
+          <div className="feedback-modal-content">
+            <h4 className="feedback-modal-title">Feedback Details</h4>
+            <div className="feedback-debug-info">
+              <strong>Session ID:</strong> {selectedFeedback.sessionId}<br/>
+              <strong>Agent:</strong> {selectedFeedback.agentName}<br/>
+              <strong>User:</strong> {selectedFeedback.userEmail}<br/>
+              <strong>Model:</strong> {selectedFeedback.modelUsed}<br/>
+              <strong>Rating:</strong> {selectedFeedback.rating}/5<br/>
+              <strong>Category:</strong> {selectedFeedback.category}<br/>
+              <strong>Severity:</strong> {selectedFeedback.severity}<br/>
+              <strong>Response Time:</strong> {selectedFeedback.responseTime}s<br/>
+              <strong>Date:</strong> {new Date(selectedFeedback.timestamp).toLocaleString()}
             </div>
-            <ul style={{fontSize:'0.98rem',lineHeight:1.7}}>
-              <li><strong>Session ID:</strong> {selectedFeedback.sessionId}</li>
-              <li><strong>Agent ID:</strong> {selectedFeedback.agentId}</li>
-              <li><strong>User Email:</strong> {selectedFeedback.userEmail}</li>
-              <li><strong>Timestamp:</strong> {selectedFeedback.timestamp}</li>
-              <li><strong>Model Used:</strong> {selectedFeedback.modelUsed}</li>
-              <li><strong>Model Icon:</strong> {selectedFeedback.modelIcon}</li>
-              <li><strong>Category:</strong> {selectedFeedback.category}</li>
-              <li><strong>Severity:</strong> {selectedFeedback.severity}</li>
-              <li><strong>Feedback Type:</strong> {selectedFeedback.feedbackType}</li>
-              <li><strong>Rating:</strong> {selectedFeedback.rating}</li>
-              <li><strong>Stars:</strong> {selectedFeedback.stars}</li>
-              <li><strong>Suggestion:</strong> {selectedFeedback.suggestion}</li>
-              <li><strong>Response Time:</strong> {selectedFeedback.responseTime}s</li>
-              <li><strong>Session Duration:</strong> {selectedFeedback.sessionDuration} min</li>
-              <li><strong>Document Chunk IDs:</strong> {Array.isArray(selectedFeedback.documentChunkIds) ? selectedFeedback.documentChunkIds.join(', ') : selectedFeedback.documentChunkIds}</li>
-              <li><strong>Message ID:</strong> {selectedFeedback.message_id}</li>
-            </ul>
+            <div className="feedback-debug-info">
+              <strong>Feedback Text:</strong><br/>
+              <p style={{ margin: '8px 0', lineHeight: '1.5' }}>{selectedFeedback.feedback}</p>
+            </div>
             {selectedFeedback.rating <= 3 && (
-              <div style={{marginTop:24,display:'flex',alignItems:'center',gap:16}}>
+              <div className="feedback-fix-actions">
                 <button
                   onClick={() => handleMarkAsFixed(selectedFeedback.id)}
                   disabled={fixedFeedbackIds.includes(selectedFeedback.id)}
-                  style={{
-                    background: fixedFeedbackIds.includes(selectedFeedback.id) ? '#b7eb8f' : 'var(--accent-color)',
-                    color: fixedFeedbackIds.includes(selectedFeedback.id) ? '#389e0d' : 'white',
-                    border: 'none',
-                    borderRadius: 6,
-                    padding: '10px 28px',
-                    fontWeight: 600,
-                    fontSize: '1.1rem',
-                    cursor: fixedFeedbackIds.includes(selectedFeedback.id) ? 'not-allowed' : 'pointer',
-                    boxShadow: '0 1px 4px #0001',
-                    transition: 'background 0.2s',
-                  }}
+                  className={`feedback-fix-btn ${fixedFeedbackIds.includes(selectedFeedback.id) ? 'fixed' : ''}`}
                 >
                   {fixedFeedbackIds.includes(selectedFeedback.id) ? 'Issue Fixed' : 'Mark as Fixed'}
                 </button>

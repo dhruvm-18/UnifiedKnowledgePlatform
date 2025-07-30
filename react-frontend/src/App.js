@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
+import { Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
 import './styles/backgrounds.css';
 import './styles/modal.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch, FaFileImage, FaFilePdf, FaEye, FaFileWord, FaFileExcel, FaFileAudio, FaFile } from 'react-icons/fa';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch, FaFileImage, FaFilePdf, FaEye, FaFileWord, FaFileExcel, FaFileAudio, FaFile, FaChartLine, FaExternalLinkAlt } from 'react-icons/fa';
 import { Image as ReactImage } from 'react-image';
 import ReactAudioPlayer from 'react-audio-player';
 import HomeView from './components/HomeView';
@@ -27,6 +28,8 @@ import FeedbackModalContent from './components/FeedbackModalContent';
 import LoginView from './views/LoginView';
 import ProfileModal from './components/ProfileModal';
 import FeedbackDashboard from './components/FeedbackDashboard';
+import MonitoringDashboard from './components/MonitoringDashboard';
+import DeveloperDashboard from './components/DeveloperDashboard';
 import { renderAsync as renderDocxPreview } from 'docx-preview';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
@@ -157,13 +160,30 @@ function App() {
   const [editingSessionId, setEditingSessionId] = useState(null);
   const [chatStarted, setChatStarted] = useState(false);
   const [showUserDetailsMenu, setShowUserDetailsMenu] = useState(false);
+  const location = useLocation();
   const [userName, setUserName] = useState(() => {
     const userData = JSON.parse(localStorage.getItem('ukpUser'));
     return userData?.name || 'Dhruv Mendiratta';
   });
   const [userAvatar, setUserAvatar] = useState(() => {
     const userData = JSON.parse(localStorage.getItem('ukpUser'));
-    return userData?.avatar || null;
+    const userEmail = userData?.email;
+    
+    // First try to get from userData.avatar
+    if (userData?.avatar) {
+      return userData.avatar;
+    }
+    
+    // If not found, try to get from profilePhoto_key
+    if (userEmail) {
+      const profilePhotoKey = `profilePhoto_${userEmail}`;
+      const savedPhoto = localStorage.getItem(profilePhotoKey);
+      if (savedPhoto) {
+        return savedPhoto;
+      }
+    }
+    
+    return null;
   });
   const [userEmail, setUserEmail] = useState(() => {
     const userData = JSON.parse(localStorage.getItem('ukpUser'));
@@ -830,7 +850,7 @@ function getFileType(file) {
   
   const loadExistingFeedback = async (messages) => {
     try {
-      const response = await fetch('/api/feedback');
+      const response = await fetch('http://localhost:5000/api/feedback');
       if (response.ok) {
         const allFeedback = await response.json();
         
@@ -863,7 +883,14 @@ function getFileType(file) {
   };
 
   const startNewSession = async (agentIdToActivate = null) => {
-    const res = await fetch(`${BACKEND_BASE}/sessions`, { method: 'POST' });
+    const userEmail = localStorage.getItem('userEmail') || 'anonymous@user.com';
+    const res = await fetch(`${BACKEND_BASE}/sessions`, { 
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userEmail })
+    });
     const session = await res.json();
     setSessions(sessions => [session, ...sessions]);
     setCurrentSessionId(session.id);
@@ -959,7 +986,14 @@ function getFileType(file) {
     try {
       // Create a new session first if none exists
       if (!currentSessionId) {
-        const sessionRes = await fetch(`${BACKEND_BASE}/sessions`, { method: 'POST' });
+        const userEmail = localStorage.getItem('userEmail') || 'anonymous@user.com';
+        const sessionRes = await fetch(`${BACKEND_BASE}/sessions`, { 
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userEmail })
+        });
         if (!sessionRes.ok) throw new Error(`Failed to create new session: ${sessionRes.status}`);
         const newSession = await sessionRes.json();
         setSessions(sessions => [newSession, ...sessions]);
@@ -977,7 +1011,7 @@ function getFileType(file) {
         const res = await fetch(`${BACKEND_BASE}/sessions/${newSession.id}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: value, userName: userName, model: modelBackendName })
+          body: JSON.stringify({ message: value, userName: userName, userEmail: userEmail, model: modelBackendName })
         });
 
         if (res.ok) {
@@ -1118,12 +1152,14 @@ function getFileType(file) {
     try {
       const modelBackendName = modelOptions.find(m => m.name === selectedModel)?.backendName || 'gemini';
       abortControllerRef.current = new AbortController();
+      const userEmail = localStorage.getItem('userEmail') || 'anonymous@user.com';
       const res = await fetch(`${BACKEND_BASE}/sessions/${sessionId}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           message: translatedInput,
           userName: userName, 
+          userEmail: userEmail,
           agentId: agentIdToSend,
           pdfSource: pdfSourceToSend,
           lang: detectedLang,
@@ -1196,12 +1232,14 @@ function getFileType(file) {
   const handleDeleteSession = async (sessionId) => {
     try {
       console.log(`Attempting to delete session: ${sessionId}`);
+      const userEmail = localStorage.getItem('userEmail') || 'anonymous@user.com';
       const response = await fetch(`${BACKEND_BASE}/sessions/${sessionId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
         },
+        body: JSON.stringify({ userEmail }),
         credentials: 'include'
       });
 
@@ -1464,7 +1502,14 @@ function getFileType(file) {
   // Dedicated agent chat creation for Knowledge Source
   const startDedicatedAgentChat = async (agentId) => {
     // Start a new session
-    const res = await fetch(`${BACKEND_BASE}/sessions`, { method: 'POST' });
+    const userEmail = localStorage.getItem('userEmail') || 'anonymous@user.com';
+    const res = await fetch(`${BACKEND_BASE}/sessions`, { 
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userEmail })
+    });
     const session = await res.json();
     setSessions(sessions => [session, ...sessions]);
     setCurrentSessionId(session.id);
@@ -1989,9 +2034,11 @@ function getFileType(file) {
     }));
   };
   const handleSubmitFeedback = async (msg, ratingOverride = null, modalData = null) => {
+    console.log('handleSubmitFeedback called with:', { msg, ratingOverride, modalData });
     const feedback = feedbackState[msg.id] || {};
     // If user downvotes but selects 5 stars, treat as upvote
     let rating = modalData?.stars || feedback.stars || (ratingOverride === 'up' ? 5 : ratingOverride === 'down' ? 2 : 0);
+    console.log('Calculated rating:', rating);
     const feedbackText = modalData?.reason || feedback.text;
     const stars = modalData?.stars || feedback.stars;
     
@@ -2013,29 +2060,9 @@ function getFileType(file) {
       console.log('After fallback, msg.content:', msg.content);
     }
     
-    // If rating is null, this means feedback is being removed
+    // Feedback deletion is disabled to ensure data persistence
     if (rating === null) {
-      // Remove feedback from backend
-      try {
-        await fetch('/feedback', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ answerId: msg.id })
-        });
-      } catch (error) {
-        console.error('Error removing feedback:', error);
-      }
-      
-      setFeedbackState(prev => ({ 
-        ...prev, 
-        [msg.id]: { 
-          ...prev[msg.id], 
-          rating: null, 
-          submitted: false, 
-          text: '', 
-          stars: 0 
-        } 
-      }));
+      console.log('Feedback deletion is disabled to ensure data persistence');
       return;
     }
     
@@ -2072,9 +2099,20 @@ function getFileType(file) {
     
     // Attach session transcript (all messages in the session)
     const sessionTranscript = messages.filter(m => m.sessionId === msg.sessionId);
+    
+    // Get user email from localStorage
+    const userEmail = localStorage.getItem('userEmail') || 'anonymous@user.com';
+    
+    // Get current model information
+    const currentModel = selectedModel || 'Gemini 2.5 Flash';
+    const modelIcon = currentModel.includes('Gemini') ? '🤖' : 
+                     currentModel.includes('Llama') ? '🦙' : 
+                     currentModel.includes('Mistral') ? '🌪️' : '🤖';
+    
     const feedbackData = {
       sessionId: msg.sessionId,
-      agentId: msg.agentId,
+      agentId: msg.agentId || 'default_agent',
+      agentName: msg.agentName || 'Unknown Agent',
       answerId: msg.id,
       documentChunkIds: msg.chunkIds,
       rating,
@@ -2082,29 +2120,42 @@ function getFileType(file) {
       stars,
       suggestion: modalData?.suggestion || '',
       userId: userId,
+      userEmail: userEmail,
       timestamp: new Date().toISOString(),
       // Additional fields for dashboard
       feedbackType,
       category,
       severity,
-      modelUsed: 'Gemini 2.5 Flash', // Default model
+      modelUsed: currentModel,
+      modelIcon: modelIcon,
       responseTime: Math.random() * 3 + 1, // Simulated response time
       sessionDuration: Math.floor(Math.random() * 30) + 5, // Simulated session duration
       answerText: msg.content,
-      sessionTranscript // <-- all messages in the session
+      sessionTranscript: sessionTranscript.map(m => ({
+        id: m.id,
+        sender: m.sender,
+        content: m.content,
+        timestamp: m.timestamp,
+        sessionId: m.sessionId
+      }))
     };
     
     try {
-      const response = await fetch('http://localhost:5000/feedback', {
+      console.log('Submitting feedback data:', feedbackData);
+      console.log('Making API call to /api/feedback...');
+      const response = await fetch('http://localhost:5000/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(feedbackData)
       });
       
+      console.log('Feedback submission response status:', response.status);
       if (response.ok) {
-        console.log('Feedback submitted successfully');
+        const result = await response.json();
+        console.log('Feedback submitted successfully:', result);
       } else {
-        console.error('Failed to submit feedback');
+        const errorText = await response.text();
+        console.error('Failed to submit feedback:', response.status, errorText);
       }
     } catch (error) {
       console.error('Error submitting feedback:', error);
@@ -2165,10 +2216,18 @@ function getFileType(file) {
       // Store admin status if available
       if (userData.isAdmin) {
         localStorage.setItem('userIsAdmin', 'true');
+        localStorage.setItem(`userIsAdmin_${userData.email}`, 'true');
         localStorage.setItem('userRole', userData.role || 'Administrator');
       } else {
-        localStorage.removeItem('userIsAdmin');
-        localStorage.removeItem('userRole');
+        // Check if user has specific admin status
+        const userSpecificAdmin = localStorage.getItem(`userIsAdmin_${userData.email}`);
+        if (userSpecificAdmin === 'true') {
+          localStorage.setItem('userIsAdmin', 'true');
+          localStorage.setItem('userRole', 'Administrator');
+        } else {
+          localStorage.removeItem('userIsAdmin');
+          localStorage.removeItem('userRole');
+        }
       }
     } else {
       setUserName('Dhruv Mendiratta');
@@ -2176,6 +2235,21 @@ function getFileType(file) {
       setUserEmail('dhruv.mendiratta4@gmail.com');
     }
     setCurrentView('chat'); // Open to chats tab after login
+    
+    // Log user login activity
+    try {
+      fetch('http://localhost:5000/api/monitoring', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userEmail: userData?.email || 'dhruv.mendiratta4@gmail.com',
+          action: 'login',
+          details: { userName: userData?.name || 'Dhruv Mendiratta' }
+        })
+      });
+    } catch (err) {
+      console.error('Error logging login activity:', err);
+    }
   };
 
   // Handle logout (optional, for future use)
@@ -2184,11 +2258,146 @@ function getFileType(file) {
     localStorage.removeItem('isLoggedIn');
     localStorage.removeItem('userEmail');
   };
+
+  // Handle profile updates from ProfileModal
+  const handleProfileUpdate = (updatedUser) => {
+    setUserName(updatedUser.name || 'User');
+    setUserAvatar(updatedUser.avatar || null);
+    setUserEmail(updatedUser.email || 'user@example.com');
+    
+    // Update localStorage
+    localStorage.setItem('ukpUser', JSON.stringify(updatedUser));
+    
+    // Update users array
+    const users = JSON.parse(localStorage.getItem('ukpUsers')) || [];
+    const existingUserIndex = users.findIndex(u => u.email === updatedUser.email);
+    if (existingUserIndex !== -1) {
+      users[existingUserIndex] = updatedUser;
+    }
+    localStorage.setItem('ukpUsers', JSON.stringify(users));
+  };
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileModalFromSidebar, setProfileModalFromSidebar] = useState(false);
+
+  
+
+  
   // Show login page if not logged in
   if (!isLoggedIn) {
     return <LoginView onLogin={handleLogin} />;
+  }
+
+  // Use location to check current route
+ 
+  
+  // If we're on the developer dashboard route, check admin access
+  if (location.pathname === '/developer-dashboard') {
+    // Check if current user is admin
+    const currentUserEmail = userEmail || localStorage.getItem('userEmail');
+    const isGlobalAdmin = localStorage.getItem('userIsAdmin') === 'true';
+    const isUserSpecificAdmin = localStorage.getItem(`userIsAdmin_${currentUserEmail}`) === 'true';
+    
+    if (isGlobalAdmin || isUserSpecificAdmin) {
+      return <DeveloperDashboard />;
+    } else {
+      return (
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100vh',
+          background: 'var(--bg-primary)',
+          color: 'var(--text-primary)',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        }}>
+          <div style={{
+            textAlign: 'center',
+            padding: '3rem',
+            background: 'var(--bg-secondary)',
+            borderRadius: '1rem',
+            border: '1px solid var(--border-color)',
+            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+            maxWidth: '500px'
+          }}>
+            <div style={{
+              fontSize: '4rem',
+              marginBottom: '1rem',
+              color: '#ef4444'
+            }}>
+              ⚠️
+            </div>
+            <h1 style={{
+              fontSize: '2rem',
+              fontWeight: 700,
+              marginBottom: '1rem',
+              color: 'var(--text-primary)'
+            }}>
+              Access Denied
+            </h1>
+            <p style={{
+              fontSize: '1.1rem',
+              color: 'var(--text-secondary)',
+              marginBottom: '2rem',
+              lineHeight: '1.6'
+            }}>
+              You don't have permission to access the Developer Dashboard. 
+              This area is restricted to administrators only.
+            </p>
+            <div style={{
+              display: 'flex',
+              gap: '1rem',
+              justifyContent: 'center'
+            }}>
+              <button
+                onClick={() => window.history.back()}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'var(--bg-tertiary)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '0.5rem',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'var(--bg-primary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = 'var(--bg-tertiary)';
+                }}
+              >
+                Go Back
+              </button>
+              <button
+                onClick={() => window.location.href = '/'}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: 'var(--accent-color)',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: 600,
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'scale(1)';
+                }}
+              >
+                Go to Home
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
   }
 
 
@@ -2348,7 +2557,7 @@ function getFileType(file) {
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   opacity: showUserDetailsMenu ? 0.8 : 0.7
                 }}>{userEmail}</div>
-                {localStorage.getItem('userIsAdmin') === 'true' && (
+                {(localStorage.getItem('userIsAdmin') === 'true' || localStorage.getItem(`userIsAdmin_${userEmail}`) === 'true') && (
                   <div style={{ 
                     display: 'inline-flex', 
                     alignItems: 'center', 
@@ -2402,11 +2611,13 @@ function getFileType(file) {
                     <span style={{ fontWeight: 500 }}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
                   </div>
                   <div className="menu-item" onClick={() => { setShowProfileModal(true); setProfileModalFromSidebar(true); setShowUserDetailsMenu(false); }}>Profile</div>
-                  {localStorage.getItem('userIsAdmin') === 'true' && (
-                    <div className="menu-item" onClick={() => { setCurrentView('feedback-dashboard'); setShowUserDetailsMenu(false); }}>
-                      Feedback Dashboard
-                    </div>
-                  )}
+                  <div className="menu-item" onClick={() => { 
+                    window.open('/developer-dashboard', '_blank');
+                    setShowUserDetailsMenu(false); 
+                  }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Developer Options</span>
+                    <FaExternalLinkAlt style={{ fontSize: '12px', opacity: 0.7 }} />
+                  </div>
                   <div className="menu-item" onClick={handleLogout}>Log out</div>
                 </div>
               )}
@@ -3245,6 +3456,7 @@ function getFileType(file) {
         {currentView === 'supported-languages' && <SupportedLanguages />}
         {currentView === 'my-projects' && <MyProjectsView refreshKey={currentView} />}
         {currentView === 'feedback-dashboard' && <FeedbackDashboard messages={messages} />}
+        {currentView === 'monitoring-dashboard' && <MonitoringDashboard />}
         {currentView === 'pdf-viewer' && viewedPdfUrl && (
           <div className="pdf-viewer-container">
             <PDFViewer
@@ -3869,7 +4081,7 @@ function getFileType(file) {
         <Modal onClose={() => setFeedbackModal({ open: false, msg: null })}>
           <FeedbackModalContent
             msg={feedbackModal.msg}
-            onSubmit={(modalData) => handleSubmitFeedback(feedbackModal.msg, 'down', modalData)}
+            onSubmit={(modalData) => handleSubmitFeedback(feedbackModal.msg, null, modalData)}
             onCancel={() => setFeedbackModal({ open: false, msg: null })}
           />
         </Modal>
@@ -3918,15 +4130,8 @@ function getFileType(file) {
               setProfileModalFromSidebar(false);
               return;
             }
-            setUserName(updatedUser.name);
-            setUserAvatar(updatedUser.avatar);
+            handleProfileUpdate(updatedUser);
             setPreferredModel(updatedUser.preferredModel || preferredModel);
-            // Save to localStorage
-            const userData = JSON.parse(localStorage.getItem('ukpUser')) || {};
-            userData.name = updatedUser.name;
-            userData.avatar = updatedUser.avatar;
-            userData.preferredModel = updatedUser.preferredModel || preferredModel;
-            localStorage.setItem('ukpUser', JSON.stringify(userData));
             setShowProfileModal(false);
             setProfileModalFromSidebar(false);
           }}
@@ -3938,6 +4143,8 @@ function getFileType(file) {
           onPreferredModelChange={handlePreferredModelChange}
         />
       )}
+      
+
       {/* PDF Preview Modal */}
       {previewPdfFile && (
         <Modal onClose={() => { setPreviewPdfFile(null); setCsvPreview(null); setDocxPreviewNode(null); }} size="large">

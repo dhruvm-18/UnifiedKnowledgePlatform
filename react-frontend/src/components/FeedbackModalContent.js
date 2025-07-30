@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '../styles/FeedbackModal.css';
 
 export default function FeedbackModalContent({ msg, onSubmit, onCancel }) {
   const [stars, setStars] = useState(0);
@@ -27,13 +28,13 @@ export default function FeedbackModalContent({ msg, onSubmit, onCancel }) {
     "We'd love to improve. What could be better?";
 
   return (
-    <form className="feedback-modal-form modern-feedback-modal" onSubmit={handleSubmit}>
+    <form className="feedback-modal-form" onSubmit={handleSubmit}>
       <h3 className="feedback-modal-heading">{heading}</h3>
-      <div className="star-rating-row modern-stars">
+      <div className="star-rating-row">
         {[1,2,3,4,5].map(n => (
           <span
             key={n}
-            className={`star modern-star ${stars >= n ? 'filled' : ''}`}
+            className={`star ${stars >= n ? 'filled' : ''}`}
             onClick={() => handleStarClick(n)}
             tabIndex={0}
             role="button"
@@ -54,7 +55,7 @@ export default function FeedbackModalContent({ msg, onSubmit, onCancel }) {
         placeholder={stars <= 3 ? 'Please explain...' : 'Share what worked well!'}
         className="feedback-textarea"
       />
-      <label className="feedback-label">Any suggestions for improvement? <span style={{color:'#aaa',fontWeight:400}}>(optional)</span></label>
+      <label className="feedback-label">Any suggestions for improvement? <span style={{color:'var(--text-secondary)',fontWeight:400}}>(optional)</span></label>
       <textarea
         value={suggestion}
         onChange={e => setSuggestion(e.target.value)}
@@ -62,10 +63,10 @@ export default function FeedbackModalContent({ msg, onSubmit, onCancel }) {
         placeholder="Your suggestions..."
         className="feedback-textarea"
       />
-      {error && <div className="feedback-error" style={{color:'red',marginTop:4}}>{error}</div>}
+      {error && <div className="feedback-error">{error}</div>}
       <div className="feedback-modal-actions">
-        <button type="submit" className="feedback-submit-btn modern-btn">Submit</button>
-        <button type="button" className="feedback-cancel-btn modern-btn" onClick={onCancel}>Cancel</button>
+        <button type="submit" className="feedback-submit-btn">Submit</button>
+        <button type="button" className="feedback-cancel-btn" onClick={onCancel}>Cancel</button>
       </div>
     </form>
   );

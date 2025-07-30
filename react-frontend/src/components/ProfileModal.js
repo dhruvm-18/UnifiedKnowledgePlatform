@@ -35,6 +35,17 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
   // const [preferredAgent, setPreferredAgent] = useState(user.preferredAgent || 'Gemini');
   // const AGENT_OPTIONS = ['Gemini', 'Mistral', 'Qwen', 'Custom Agent'];
 
+  // Load profile photo from localStorage on mount
+  useEffect(() => {
+    const userEmail = user.email;
+    const profilePhotoKey = `profilePhoto_${userEmail}`;
+    const savedPhoto = localStorage.getItem(profilePhotoKey);
+    
+    if (savedPhoto && !avatar) {
+      setAvatar(savedPhoto);
+    }
+  }, [user.email, avatar]);
+
   // Close modal on outside click
   useEffect(() => {
     function handleClickOutside(event) {
@@ -49,9 +60,77 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setError('Please select an image file.');
+      return;
+    }
+    
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image size should be less than 5MB.');
+      return;
+    }
+    
     const reader = new FileReader();
-    reader.onload = (ev) => setAvatar(ev.target.result);
+    reader.onload = (ev) => {
+      const imageData = ev.target.result;
+      setAvatar(imageData);
+      
+      // Save to localStorage immediately
+      const userEmail = user.email;
+      const profilePhotoKey = `profilePhoto_${userEmail}`;
+      localStorage.setItem(profilePhotoKey, imageData);
+      
+      // Update user object in localStorage
+      const updatedUser = { ...user, avatar: imageData };
+      localStorage.setItem('ukpUser', JSON.stringify(updatedUser));
+      
+      // Update in users array
+      const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+      const idx = users.findIndex(u => u.email === user.email);
+      if (idx !== -1) {
+        users[idx] = { ...users[idx], avatar: imageData };
+        localStorage.setItem(USERS_KEY, JSON.stringify(users));
+      }
+      
+      setSuccess('Profile photo updated!');
+      setTimeout(() => setSuccess(''), 3000);
+    };
     reader.readAsDataURL(file);
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatar(null);
+    
+    // Remove from localStorage
+    const userEmail = user.email;
+    const profilePhotoKey = `profilePhoto_${userEmail}`;
+    localStorage.removeItem(profilePhotoKey);
+    
+    // Update user object in localStorage
+    const updatedUser = { ...user, avatar: null };
+    localStorage.setItem('ukpUser', JSON.stringify(updatedUser));
+    
+    // Update in users array
+    const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+    const idx = users.findIndex(u => u.email === user.email);
+    if (idx !== -1) {
+      users[idx] = { ...users[idx], avatar: null };
+      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    }
+    
+    setSuccess('Profile photo removed!');
+    setTimeout(() => setSuccess(''), 3000);
+  };
+
+  // Utility function to clear all profile photos (for debugging)
+  const clearAllProfilePhotos = () => {
+    const keys = Object.keys(localStorage);
+    const profilePhotoKeys = keys.filter(key => key.startsWith('profilePhoto_'));
+    profilePhotoKeys.forEach(key => localStorage.removeItem(key));
+    console.log('All profile photos cleared from localStorage');
   };
 
   const handleProfileSave = (e) => {
@@ -215,11 +294,31 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
                   if (tooltip) tooltip.style.opacity = 0;
                 }}
               >
-              {avatar ? (
+                {avatar ? (
                   <img src={avatar} alt="Avatar" style={{ width: 80, height: 80, borderRadius: '50%', objectFit: 'cover' }} />
                 ) : (
                   <div className="user-avatar-initial" style={{ width: 80, height: 80, fontSize: 38, borderRadius: '50%', background: theme === 'dark' ? 'var(--accent-color-dark, #6c2eb7)' : 'var(--accent-color, #6c2eb7)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{name.charAt(0)}</div>
                 )}
+                
+                {/* Upload overlay */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'rgba(0,0,0,0.6)',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  opacity: 0,
+                  transition: 'opacity 0.2s',
+                  pointerEvents: 'none'
+                }} className="upload-overlay">
+                  <FaEdit style={{ color: 'white', fontSize: 20 }} />
+                </div>
+                
                 <div id="avatar-tooltip" style={{
                   position: 'absolute',
                   bottom: -32,
@@ -235,6 +334,7 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
                   transition: 'opacity 0.2s',
                   zIndex: 10
                 }}>Change Profile Photo</div>
+                
                 <input
                   ref={fileInputRef}
                   id="profileAvatar"
@@ -244,6 +344,36 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
                   style={{ display: 'none' }}
                 />
               </div>
+              
+              {/* Remove photo button (only show if avatar exists) */}
+              {avatar && (
+                <button
+                  onClick={handleRemoveAvatar}
+                  style={{
+                    position: 'absolute',
+                    top: -8,
+                    right: -8,
+                    background: ERROR_COLOR,
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: 24,
+                    height: 24,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    color: 'white',
+                    fontSize: 12,
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                    transition: 'transform 0.2s'
+                  }}
+                  title="Remove Profile Photo"
+                  onMouseEnter={e => e.target.style.transform = 'scale(1.1)'}
+                  onMouseLeave={e => e.target.style.transform = 'scale(1)'}
+                >
+                  <FaTimes />
+                </button>
+              )}
             </div>
             {/* Inline editable name */}
             <div style={{ width: '100%', textAlign: 'center', marginBottom: 4 }}>
