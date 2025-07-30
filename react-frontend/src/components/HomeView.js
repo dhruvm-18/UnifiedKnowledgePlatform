@@ -36,7 +36,7 @@ const CORE_FEATURES = [
   },
 ];
 
-function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledgeSources, onNavigateToMyProjects, onNavigateToChat }) {
+function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledgeSources, onNavigateToMyProjects, onNavigateToChat, theme }) {
   const heroRef = useRef(null);
   const howItWorksRef = useRef(null);
   const coreFeaturesRef = useRef(null);
@@ -142,7 +142,9 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
       </div>
 
       {/* --- Why Choose Us Section --- */}
-      <div className="why-choose-section beautiful-card super-why-choose">
+      <div className="why-choose-section beautiful-card super-why-choose" style={{
+        background: theme === 'dark' ? 'var(--bg-primary-dark, #18181b)' : 'white',
+      }}>
         <h2 className="accent-color">Why Choose Us?</h2>
         <div className="super-selling-points">
           {sellingPoints.map((sp, idx) => (
@@ -162,7 +164,9 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
       </div>
 
       {/* --- How It Works Roadmap Section --- */}
-      <div className="how-it-works-section beautiful-card crazy-roadmap" ref={howItWorksRef}>
+      <div className="how-it-works-section beautiful-card crazy-roadmap" ref={howItWorksRef} style={{
+        background: theme === 'dark' ? 'var(--bg-primary-dark, #18181b)' : 'white',
+      }}>
         <h2 className="accent-color">How it Works</h2>
         <div className="roadmap-container">
           {[
@@ -189,7 +193,7 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
           ].map((step, idx, arr) => (
             <div key={idx} className="roadmap-step">
               <div className="roadmap-icon-circle">
-                {step.icon}
+                  {step.icon}
                 <div className="roadmap-step-number">{idx + 1}</div>
               </div>
               <div className="roadmap-step-title">{step.title}</div>
@@ -197,11 +201,13 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
               {idx < arr.length - 1 && <div className="roadmap-connector"><span className="roadmap-arrow" style={{fontSize: '3.2rem', color: '#6c2eb7', fontWeight: 900, filter: 'drop-shadow(0 0 6px #a084e8)'}}>→</span></div>}
             </div>
           ))}
-        </div>
-      </div>
-
+                  </div>
+                </div>
+                
       {/* --- Quick Start Guide --- */}
-      <div className="quick-start-section beautiful-card super-quick-start">
+      <div className="quick-start-section beautiful-card super-quick-start" style={{
+        background: theme === 'dark' ? '#232136' : 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+      }}>
         <h2 className="accent-color">Quick Start Guide</h2>
         <div className="super-quick-start-steps">
           {quickStart.map((step, idx) => (
@@ -219,10 +225,12 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
         <FaLightbulb style={{ fontSize: 24, color: 'var(--accent-color)', marginRight: 12 }} />
           <span>Tip: You can start chatting as soon as your first document is uploaded!</span>
         </div>
-      </div>
-
+              </div>
+              
       {/* --- Expanded Features Section --- */}
-      <div className="core-features-section beautiful-card" ref={coreFeaturesRef}>
+      <div className="core-features-section beautiful-card" ref={coreFeaturesRef} style={{
+        background: theme === 'dark' ? 'var(--bg-primary-dark, #18181b)' : 'white',
+      }}>
         <h2 className="accent-color">Platform Capabilities</h2>
         <div className="features-grid expanded-features-grid">
           {ALL_FEATURES.map((feature, index) => (
@@ -230,7 +238,7 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
               <div className="roadmap-icon-circle">
                 {feature.icon}
                 <div className="roadmap-step-number">{index + 1}</div>
-              </div>
+                </div>
               <h3>{feature.title}</h3>
               <p>{feature.description}</p>
             </div>
@@ -268,6 +276,7 @@ HomeView.propTypes = {
   onNavigateToKnowledgeSources: PropTypes.func.isRequired,
   onNavigateToMyProjects: PropTypes.func.isRequired,
   onNavigateToChat: PropTypes.func.isRequired,
+  theme: PropTypes.string,
 };
 
 export default HomeView; 

@@ -203,27 +203,28 @@
 
 /* Dark theme colors */
 .dark-mode {
-  --bg-primary: #2c2c2c; /* Main app background - matches Knowledge Sources view */
-  --bg-secondary: #3a3a3a; /* Used for sidebars, chat input - matches Knowledge Sources cards/overlay */
-  --bg-tertiary: #4a4a4a; /* For deeper elements like inputs - matches Knowledge Sources inputs */
-  --text-primary: #f0f0f0; /* Main text color - matches Knowledge Sources general text */
-  --text-secondary: #b0b0b0; /* Secondary text color - matches Knowledge Sources paragraph text */
-  --text-tertiary: #ffffff; /* Headings/prominent text - matches Knowledge Sources headings */
-  --border-color: #555; /* General border color */
-  --shadow-color: rgba(0, 0, 0, 0.4); /* Darker, more prominent shadows */
-  --accent-color: #9c27b0; /* Primary accent color - matches Knowledge Sources accent */
-  --error-color: #e53935; /* Consistent red for errors */
-  --success-color: #43a047; /* Consistent green for success */
-  --scrollbar-bg: #2c2c2c;
-  --scrollbar-thumb: #555;
-  --scrollbar-thumb-hover: #777;
+  --bg-primary: #18181b;
+  --bg-primary-dark: #18181b;
+  --bg-secondary: #232136;
+  --bg-tertiary: #232136;
+  --text-primary: #f0f0f0;
+  --text-secondary: #b0b0b0;
+  --text-tertiary: #ffffff;
+  --border-color: #222;
+  --shadow-color: rgba(0, 0, 0, 0.4);
+  --accent-color: #9c27b0;
+  --error-color: #e53935;
+  --success-color: #43a047;
+  --scrollbar-bg: #18181b;
+  --scrollbar-thumb: #333;
+  --scrollbar-thumb-hover: #555;
 }
 
-html, body, #root, .home-view-container {
+html, body, #root {
   height: 100%;
   min-height: 100%;
   font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-  background-color: var(--bg-primary);
+  background-color: var(--bg-primary-dark, #18181b) !important;
   color: var(--text-primary);
   margin: 0;
   padding: 0;
@@ -240,7 +241,7 @@ html, body, #root, .home-view-container {
   width: 300px;
   height: 100vh;
   z-index: 10;
-  background: var(--bg-primary);
+  background: var(--bg-primary-dark, #18181b) !important;
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
@@ -427,7 +428,7 @@ html, body, #root, .home-view-container {
   align-items: flex-start;
   justify-content: flex-start;
   animation: fadeIn 0.5s ease-out;
-  background-color: var(--bg-primary);
+  background-color: #FFFFFF; /* Use white background for light mode */
   overflow: hidden; /* Prevent main-content itself from scrolling */
 }
 
@@ -760,7 +761,7 @@ html, body, #root, .home-view-container {
 
 .left-sidebar {
   width: 245px;
-  background: var(--bg-primary);
+  background: var(--bg-primary-dark, #18181b) !important;
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
@@ -774,7 +775,7 @@ html, body, #root, .home-view-container {
 }
 .right-sidebar {
   width: 245px;
-  background: var(--bg-primary);
+  background: var(--bg-primary-dark, #18181b) !important;
   color: var(--text-primary);
   display: flex;
   flex-direction: column;
@@ -1160,6 +1161,11 @@ html, body, #root, .home-view-container {
   position: relative;
   background-color: var(--bg-primary);
 }
+
+.dark-mode .welcome-center-outer {
+  background: var(--bg-primary-dark, #18181b) !important;
+}
+
 .welcome-center-area {
   display: flex;
   flex-direction: column;
@@ -1617,6 +1623,7 @@ html, body, #root, .home-view-container {
   max-width: 1200px; /* Increase max-width for a slightly wider layout */
   margin: 0 auto;
   overflow-y: auto; /* Enable scrolling if content overflows */
+  background-color: #FFFFFF; /* Use white background for light mode */
 }
 
 .app-layout.left-collapsed .main-content .home-view-container {
@@ -3028,4 +3035,14 @@ html, body, #root, .home-view-container {
 
 .dark-mode .answer-feedback-row {
   color: #aaa;
+}
+
+.dark-mode .main-content,
+.dark-mode .chatbot-full-window,
+.dark-mode .chat-window {
+  background: var(--bg-primary-dark, #18181b) !important;
+}
+
+.dark-mode .home-view-container {
+  background-color: var(--bg-primary-dark, #18181b) !important;
 }

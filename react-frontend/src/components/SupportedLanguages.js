@@ -21,7 +21,16 @@ export default function SupportedLanguages() {
   // Detect dark mode from the document body/class
   const isDarkMode = document.body.classList.contains('dark-mode') || document.documentElement.classList.contains('dark-mode');
   return (
-    <div style={{ height: '100%', width: '100%', background: 'var(--bg-primary)', borderRadius: 0, boxShadow: 'none', padding: '2.5rem 2.5rem 2rem 2.5rem', border: 'none', overflowY: 'auto' }}>
+    <div style={{ 
+      height: '100%', 
+      width: '100%', 
+      background: isDarkMode ? 'var(--bg-primary-dark, #18181b)' : '#FFFFFF', 
+      borderRadius: 0, 
+      boxShadow: 'none', 
+      padding: '2.5rem 2.5rem 2rem 2.5rem', 
+      border: 'none', 
+      overflowY: 'auto' 
+    }}>
       <div style={{ maxWidth: 700, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 24 }}>
           <div style={{

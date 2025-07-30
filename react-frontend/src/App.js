@@ -177,6 +177,7 @@ function App() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [editingAssistantName, setEditingAssistantName] = useState(false);
   const assistantNameInputRef = useRef(null);
+  const [preferredModel, setPreferredModel] = useState(() => localStorage.getItem('preferredModel') || modelOptions[0]?.name || 'Gemini 2.5 Flash');
 
   // State for PDF viewer
   const [viewedPdfUrl, setViewedPdfUrl] = useState(null);
@@ -202,6 +203,27 @@ function App() {
   const userDetailsMenuRef = useRef(null);
 
   const [inputValue, setInputValue] = useState('');
+  
+  useEffect(() => {
+    if (preferredModel) {
+      localStorage.setItem('preferredModel', preferredModel);
+    }
+  }, [preferredModel]);
+
+    useEffect(() => {
+    if (preferredModel && preferredModel !== selectedModel) {
+      setSelectedModel(preferredModel);
+    }
+  }, [preferredModel]);
+
+  const handlePreferredModelChange = (modelName) => {
+    setPreferredModel(modelName);
+    localStorage.setItem('preferredModel', modelName);
+    // Optionally update user profile in localStorage
+    const userData = JSON.parse(localStorage.getItem('ukpUser')) || {};
+    userData.preferredModel = modelName;
+    localStorage.setItem('ukpUser', JSON.stringify(userData));
+  };
 
 // 1. Generalize the handler (move inside App)
 const handleOpenSourceLink = (e, href, msg = null) => {
@@ -2211,6 +2233,11 @@ function getFileType(file) {
   // Add state for CSV and DOCX preview content
   
 
+  // After modelOptions and selectedModel state:
+
+  // After selectedModel and preferredModel useState hooks:
+
+
   return (
     <div className={`app-layout ${theme}-mode${leftCollapsed ? ' left-collapsed' : ''}${rightCollapsed ? ' right-collapsed' : ''}`}>
       <aside className={`left-sidebar${leftCollapsed ? ' collapsed' : ''}`}>
@@ -2361,6 +2388,7 @@ function getFileType(file) {
           onNavigateToKnowledgeSources={handleNavigateToKnowledgeSources}
           onNavigateToMyProjects={handleNavigateToMyProjects}
           onNavigateToChat={handleNavigateToChat}
+          theme={theme}
         />}
         {currentView === 'chat' && (
           <>
@@ -2668,13 +2696,13 @@ function getFileType(file) {
                       display: 'flex',
                       alignItems: 'center',
                       gap: 8,
-                      background: 'rgba(240,244,255,0.95)',
-                      border: '1.5px solid var(--accent-color)',
+                      background: theme === 'dark' ? 'var(--bg-secondary-dark, #232136)' : 'rgba(240,244,255,0.95)',
+                      border: `1.5px solid ${theme === 'dark' ? 'var(--accent-color-dark, #6c2eb7)' : 'var(--accent-color, #6c2eb7)'}`,
                       borderRadius: 999,
                       padding: '3px 14px',
                       fontSize: '0.98rem',
                       fontWeight: 500,
-                      color: 'var(--accent-color)',
+                      color: theme === 'dark' ? 'var(--accent-color-dark, #6c2eb7)' : 'var(--accent-color, #6c2eb7)',
                       marginBottom: 6,
                       maxWidth: '100%',
                       whiteSpace: 'nowrap',
@@ -2683,7 +2711,7 @@ function getFileType(file) {
                     }}
                   >
                     <span style={{ fontWeight: 700 }}>UKP Mode</span>
-                    <span style={{ color: '#888', fontWeight: 400, marginLeft: 8 }}>Ask anything across all knowledge sources</span>
+                    <span style={{ color: theme === 'dark' ? '#bbb' : '#888', fontWeight: 400, marginLeft: 8 }}>Ask anything across all knowledge sources</span>
                   </div>
                 )}
                 {activeAgentDetails && !isDedicatedChat && (
@@ -3172,6 +3200,7 @@ function getFileType(file) {
           editedTileLineEndColor={editedTileLineEndColor}
           setEditedTileLineEndColor={setEditedTileLineEndColor}
           refreshKey={agentRefreshKey}
+          theme={theme}
         />}
         {currentView === 'supported-languages' && <SupportedLanguages />}
         {currentView === 'my-projects' && <MyProjectsView refreshKey={currentView} />}
@@ -3835,7 +3864,8 @@ function getFileType(file) {
             avatar: userAvatar, 
             password: (JSON.parse(localStorage.getItem('ukpUser')) || {}).password || '',
             isAdmin: localStorage.getItem('userIsAdmin') === 'true',
-            role: localStorage.getItem('userRole') || 'User'
+            role: localStorage.getItem('userRole') || 'User',
+            preferredModel: preferredModel,
           }}
           onClose={() => setShowProfileModal(false)}
           onSave={updatedUser => {
@@ -3846,10 +3876,20 @@ function getFileType(file) {
             }
             setUserName(updatedUser.name);
             setUserAvatar(updatedUser.avatar);
-            // Password is saved in localStorage by modal
+            setPreferredModel(updatedUser.preferredModel || preferredModel);
+            // Save to localStorage
+            const userData = JSON.parse(localStorage.getItem('ukpUser')) || {};
+            userData.name = updatedUser.name;
+            userData.avatar = updatedUser.avatar;
+            userData.preferredModel = updatedUser.preferredModel || preferredModel;
+            localStorage.setItem('ukpUser', JSON.stringify(userData));
+            setShowProfileModal(false);
           }}
           theme={theme}
           setTheme={setTheme}
+          modelOptions={modelOptions}
+          preferredModel={preferredModel}
+          onPreferredModelChange={handlePreferredModelChange}
         />
       )}
       {/* PDF Preview Modal */}

@@ -57,8 +57,8 @@
   background-size: 8px 8px;
   background-blend-mode: overlay; /* Reverted to overlay for better blending */
   /* Removed opacity to ensure all content and background colors are visible */
-  background: var(--bg-secondary, #fff); /* Use theme variable for light mode */
-  margin-top: -24px;
+  background: #FFFFFF; /* Use white background for light mode */
+  margin-top: 0; /* Remove negative margin to make it one unified panel */
 }
 
 .knowledge-sources-view h1 {
@@ -1418,12 +1418,13 @@
   border-radius: 0;
   padding: 2.5rem 2rem 0.5rem 2rem;
   overflow: visible;
-  background: var(--bg-secondary, #fff);
+  background: #FFFFFF; /* Use white background for light mode */
   margin: 0;
+  margin-top: -30px; /* Remove gap from top to start from left sidebar */
   box-sizing: border-box;
   min-height: 220px;
   height: auto;
-  z-index: auto;
+  z-index: 1;
 }
 .knowledge-header-bg .header-bg-svg {
   position: absolute;
@@ -1442,10 +1443,10 @@
   padding: 0;
 }
 .knowledge-sources-view {
-  background: var(--bg-secondary, #fff);
+  background: #FFFFFF; /* Use white background for light mode */
 }
 .dark-mode .knowledge-header-bg {
-  background: var(--bg-primary, #18181b);
+  background: var(--bg-primary-dark, #18181b) !important;
 }
 .dark-mode .knowledge-header-bg .header-bg-svg rect {
   fill: #3a4371 !important;
@@ -1455,7 +1456,7 @@
   color: #fff;
 }
 .dark-mode .knowledge-sources-view {
-  background: var(--bg-primary, #18181b);
+  background: var(--bg-primary-dark, #18181b) !important;
 }
 
 .modal-content > button,
