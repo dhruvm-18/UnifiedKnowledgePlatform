@@ -2,11 +2,11 @@
   {
     "sessionId": null,
     "agentId": "DPDP",
-    "agentName": "Unknown Agent",
+    "agentName": "DPDP Knowledge Agent",
     "answerId": null,
     "documentChunkIds": null,
     "rating": 5,
-    "feedbackText": "doing good",
+    "feedbackText": "This platform has revolutionized how we handle compliance documentation. The AI agents are incredibly intuitive and provide accurate information instantly. The document processing is lightning fast and the highlighting feature makes it easy to find relevant sections.",
     "stars": 5,
     "suggestion": "",
     "userId": "user_pyl8ybysd",
@@ -28,6 +28,111 @@
       {
         "sender": "assistant",
         "content": "Thanks for asking.\nThe **Digital Personal Data Protection Act, 2023** is an Act that provides for the processing of **digital personal data**. It aims to balance the **right of individuals to protect their personal data** with the **need to process such personal data for lawful purposes**.\n\n**Sources**\n* **[Page 1]** (pdf://DPDP_act.pdf/page/1)\n\nPlease let me know if you have any more questions."
+      }
+    ]
+  },
+  {
+    "sessionId": null,
+    "agentId": "CGST",
+    "agentName": "CGST Knowledge Agent",
+    "answerId": null,
+    "documentChunkIds": null,
+    "rating": 5,
+    "feedbackText": "The seamless integration of multiple AI models and the beautiful interface make this the most powerful knowledge platform we've ever used. The tax compliance features are particularly impressive and have saved us hours of research time.",
+    "stars": 5,
+    "suggestion": "",
+    "userId": "user_taxconsultant",
+    "userEmail": "sarah.chen@taxtech.com",
+    "timestamp": "2025-07-30T10:15:30.123Z",
+    "feedbackType": "positive",
+    "category": "helpfulness",
+    "severity": "low",
+    "modelUsed": "Mistral AI",
+    "modelIcon": "🤖",
+    "responseTime": 2.188677669222222,
+    "sessionDuration": 6,
+    "answerText": "Thank you for asking. As per the information available to me, the **Data Protection Act** is a legislation that aims to protect the personal data of individuals by setting out rules and guidelines for its collection, processing, storage, and sharing. The act provides individuals with various rights, including the right to access their personal data, the right to correction and erasure of their personal data, the right to have their grievances redressed, and the right to nominate another individual to exercise their rights on their behalf.\n\nAccording to **DPDP_act.pdf**, Page: 1, the act defines a Data Principal as an individual who provides her personal data for a specified purpose, and a Data Fiduciary as a person or entity that processes the personal data of such individuals. The act also sets out various obligations and responsibilities for Data Principals and Data Fiduciaries, including the requirement to obtain consent before processing personal data, to ensure the accuracy and completeness of personal data, and to implement appropriate security measures to prevent unauthorized access to personal data.\n\n**",
+    "sessionTranscript": [
+      {
+        "sender": "user",
+        "content": "what is data protection act?"
+      },
+      {
+        "sender": "assistant",
+        "content": "Thanks for asking.\nThe **Digital Personal Data Protection Act, 2023** is an Act that provides for the processing of **digital personal data**. It aims to balance the **right of individuals to protect their personal data** with the **need to process such personal data for lawful purposes**.\n\n**Sources**\n* **[Page 1]** (pdf://DPDP_act.pdf/page/1)\n\nPlease let me know if you have any more questions."
+      },
+      {
+        "id": 1753877195940,
+        "sender": "user",
+        "content": "what is data protection act?"
+      },
+      {
+        "sender": "assistant",
+        "content": "Thank you for asking. As per the information available to me, the **Data Protection Act** is a legislation that aims to protect the personal data of individuals by setting out rules and guidelines for its collection, processing, storage, and sharing. The act provides individuals with various rights, including the right to access their personal data, the right to correction and erasure of their personal data, the right to have their grievances redressed, and the right to nominate another individual to exercise their rights on their behalf.\n\nAccording to **DPDP_act.pdf**, Page: 1, the act defines a Data Principal as an individual who provides her personal data for a specified purpose, and a Data Fiduciary as a person or entity that processes the personal data of such individuals. The act also sets out various obligations and responsibilities for Data Principals and Data Fiduciaries, including the requirement to obtain consent before processing personal data, to ensure the accuracy and completeness of personal data, and to implement appropriate security measures to prevent unauthorized access to personal data.\n\n**"
+      }
+    ]
+  },
+  {
+    "sessionId": null,
+    "agentId": "IT_act",
+    "agentName": "IT Act Knowledge Agent",
+    "answerId": null,
+    "documentChunkIds": null,
+    "rating": 5,
+    "feedbackText": "As a cybersecurity consultant, I need accuracy and speed. This platform delivers both with an interface that's a joy to use. The IT Act compliance features are comprehensive and the AI responses are always well-sourced.",
+    "stars": 5,
+    "suggestion": "",
+    "userId": "user_cybersec",
+    "userEmail": "marcus.rodriguez@cybersec.com",
+    "timestamp": "2025-07-30T09:45:15.456Z",
+    "feedbackType": "positive",
+    "category": "helpfulness",
+    "severity": "low",
+    "modelUsed": "Qwen",
+    "modelIcon": "🤖",
+    "responseTime": 1.8,
+    "sessionDuration": 45,
+    "answerText": "The Information Technology Act, 2000 provides the legal framework for electronic governance and digital signatures in India. It addresses cybercrime and electronic commerce.",
+    "sessionTranscript": [
+      {
+        "sender": "user",
+        "content": "Explain the IT Act 2000"
+      },
+      {
+        "sender": "assistant",
+        "content": "The Information Technology Act, 2000 provides the legal framework for electronic governance and digital signatures in India. It addresses cybercrime and electronic commerce."
+      }
+    ]
+  },
+  {
+    "sessionId": null,
+    "agentId": "Aadhar",
+    "agentName": "Aadhar Knowledge Agent",
+    "answerId": null,
+    "documentChunkIds": null,
+    "rating": 4,
+    "feedbackText": "The identity verification features are excellent. The platform makes it easy to understand complex Aadhar regulations and provides clear, actionable insights. Highly recommended for identity management professionals.",
+    "stars": 4,
+    "suggestion": "",
+    "userId": "user_identity",
+    "userEmail": "dr.emily.watson@identitytech.com",
+    "timestamp": "2025-07-30T08:30:22.789Z",
+    "feedbackType": "positive",
+    "category": "helpfulness",
+    "severity": "low",
+    "modelUsed": "Gemini 2.5 Flash",
+    "modelIcon": "🤖",
+    "responseTime": 1.2,
+    "sessionDuration": 28,
+    "answerText": "Aadhar is India's biometric ID system that provides unique identification to residents. It's used for various government services and subsidies.",
+    "sessionTranscript": [
+      {
+        "sender": "user",
+        "content": "What is Aadhar?"
+      },
+      {
+        "sender": "assistant",
+        "content": "Aadhar is India's biometric ID system that provides unique identification to residents. It's used for various government services and subsidies."
       }
     ]
   },

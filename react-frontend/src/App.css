@@ -761,7 +761,11 @@ html, body, #root {
 }
 
 .left-sidebar {
-  width: 245px;
+  width: 300px !important;
+  min-width: 300px !important;
+  max-width: 300px !important;
+  flex-basis: 300px !important;
+  flex-shrink: 0 !important;
   background: var(--bg-primary-dark, #18181b) !important;
   color: var(--text-primary);
   display: flex;
@@ -775,7 +779,11 @@ html, body, #root {
   animation: fadeIn 0.5s ease-out;
 }
 .right-sidebar {
-  width: 245px;
+  width: 300px !important;
+  min-width: 300px !important;
+  max-width: 300px !important;
+  flex-basis: 300px !important;
+  flex-shrink: 0 !important;
   background: var(--bg-primary-dark, #18181b) !important;
   color: var(--text-primary);
   display: flex;
@@ -1588,11 +1596,10 @@ html, body, #root {
 .user-details {
   display: flex;
   align-items: center;
-  justify-content: center;
-  width: 90%;
-  max-width: 280px;
-  padding: 0.6rem 0.8rem; /* Reduced padding */
-  margin: 0 auto;
+  justify-content: flex-start;
+  width: 100%;
+  padding: 0.8rem 1rem; /* Increased padding for full width */
+  margin: 0;
   margin-top: auto; /* Push to the bottom */
   /* Remove default background, border-radius, and box-shadow */
   background: none;
@@ -1602,9 +1609,10 @@ html, body, #root {
   cursor: pointer; /* Indicate it might be clickable */
   /* Add border for hover state transition */
   border: 1px solid transparent;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.3s ease; /* Simplified transition for better performance */
   position: relative; /* Needed for absolute positioning of the menu */
   overflow: visible; /* Ensure menu is not clipped */
+  box-sizing: border-box; /* Ensure padding doesn't affect width */
 }
 
 /* Add a subtle glow effect on hover */
@@ -1627,7 +1635,7 @@ html, body, #root {
   background: var(--bg-secondary); /* Apply background on hover */
   border-radius: 0.6rem; /* Apply border-radius on hover */
   box-shadow: 0 8px 25px rgba(156, 39, 176, 0.15), 0 4px 12px var(--shadow-color); /* Enhanced shadow with accent color */
-  transform: translateY(-2px) scale(1.02); /* Enhanced lift and slight scale */
+  transform: translateY(-2px); /* Remove scale to prevent overflow */
   border-color: rgba(156, 39, 176, 0.3); /* Subtle accent border */
 }
 
@@ -3270,7 +3278,7 @@ html, body, #root {
   background: var(--bg-primary-dark, #18181b) !important;
   border-color: var(--accent-color) !important;
   box-shadow: 0 8px 25px rgba(156, 39, 176, 0.25), 0 4px 12px rgba(0, 0, 0, 0.3) !important;
-  transform: translateY(-2px) scale(1.02) !important;
+  transform: translateY(-2px) !important;
 }
 
 .dark-mode .user-details:hover::before {

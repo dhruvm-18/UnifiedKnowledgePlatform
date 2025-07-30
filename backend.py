@@ -60,6 +60,7 @@ import threading
 import pandas as pd
 import pdfplumber
 import pytesseract
+import base64
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 from PIL import Image
 import cv2
@@ -2934,6 +2935,72 @@ def log_system_metrics(metric_type, value, details=None):
 
 # Load monitoring data on startup
 load_monitoring_data()
+
+# GitHub OAuth Configuration
+GITHUB_CLIENT_ID = os.getenv('GITHUB_CLIENT_ID', 'YOUR_GITHUB_CLIENT_ID_HERE')
+GITHUB_CLIENT_SECRET = os.getenv('GITHUB_CLIENT_SECRET', 'YOUR_GITHUB_CLIENT_SECRET_HERE')
+
+@app.route('/api/github/auth', methods=['POST'])
+def github_auth():
+    """Handle GitHub OAuth callback and exchange code for access token"""
+    try:
+        data = request.get_json()
+        code = data.get('code')
+        
+        if not code:
+            return jsonify({'error': 'Authorization code is required'}), 400
+        
+        # Exchange code for access token
+        token_response = requests.post('https://github.com/login/oauth/access_token', {
+            'client_id': GITHUB_CLIENT_ID,
+            'client_secret': GITHUB_CLIENT_SECRET,
+            'code': code
+        }, headers={'Accept': 'application/json'})
+        
+        if token_response.status_code != 200:
+            return jsonify({'error': 'Failed to exchange code for token'}), 400
+        
+        token_data = token_response.json()
+        access_token = token_data.get('access_token')
+        
+        if not access_token:
+            return jsonify({'error': 'Failed to get access token'}), 400
+        
+        # Get user information
+        user_response = requests.get('https://api.github.com/user', {
+            'access_token': access_token
+        }, headers={'Authorization': f'token {access_token}'})
+        
+        if user_response.status_code != 200:
+            return jsonify({'error': 'Failed to get user information'}), 400
+        
+        user_data = user_response.json()
+        
+        # Get user email
+        emails_response = requests.get('https://api.github.com/user/emails', {
+            'access_token': access_token
+        }, headers={'Authorization': f'token {access_token}'})
+        
+        emails_data = emails_response.json() if emails_response.status_code == 200 else []
+        primary_email = next((email['email'] for email in emails_data if email['primary']), user_data.get('email'))
+        
+        user_info = {
+            'id': user_data['id'],
+            'login': user_data['login'],
+            'name': user_data.get('name') or user_data['login'],
+            'email': primary_email,
+            'avatar_url': user_data['avatar_url'],
+            'access_token': access_token
+        }
+        
+        return jsonify({
+            'access_token': access_token,
+            'user': user_info
+        })
+        
+    except Exception as e:
+        logger.error(f"GitHub OAuth error: {e}")
+        return jsonify({'error': 'GitHub authentication failed'}), 500
 
 if __name__ == '__main__':
     print("Starting Flask app...")
