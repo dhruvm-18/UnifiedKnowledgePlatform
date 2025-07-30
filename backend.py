@@ -1342,7 +1342,8 @@ REMEMBER: Start your answer with \"Thank you for asking. As per the information 
         'sender': 'assistant',
         'content': str(formatted_response), # Ensure assistant response is always a string
         'agentId': agent_id, # Store the agent ID for assistant messages as well
-        'lang': lang  # Store BCP-47 code
+        'lang': lang,  # Store BCP-47 code
+        'model_used': model_used  # Store the model used for this response
     })
     
     # Update session title if it's the first message

@@ -3046,3 +3046,47 @@ html, body, #root {
 .dark-mode .home-view-container {
   background-color: var(--bg-primary-dark, #18181b) !important;
 }
+
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes genieEffect {
+  0% {
+    transform: scale(0.1) translate(-50px, 50px);
+    opacity: 0;
+    filter: blur(10px);
+  }
+  20% {
+    transform: scale(0.3) translate(-30px, 30px);
+    opacity: 0.3;
+    filter: blur(5px);
+  }
+  40% {
+    transform: scale(0.6) translate(-15px, 15px);
+    opacity: 0.6;
+    filter: blur(2px);
+  }
+  60% {
+    transform: scale(0.85) translate(-5px, 5px);
+    opacity: 0.85;
+    filter: blur(1px);
+  }
+  80% {
+    transform: scale(0.95) translate(-2px, 2px);
+    opacity: 0.95;
+    filter: blur(0.5px);
+  }
+  100% {
+    transform: scale(1) translate(0, 0);
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+.genie-modal {
+  animation: genieEffect 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important;
+  transform-origin: bottom left !important;
+}

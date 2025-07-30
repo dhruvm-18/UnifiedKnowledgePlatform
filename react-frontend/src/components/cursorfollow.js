@@ -461,7 +461,7 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
     position: "relative",
     width: `${sphereSize}px`,
     height: `${sphereSize}px`,
-    background: `radial-gradient(circle at 30% 30%, ${getAccentColor()}, ${isDarkMode ? '#5a189a' : '#1d4ed8'}, ${isDarkMode ? '#1e1b4b' : '#1e40af'})`,
+    background: getAccentColor(),
     borderRadius: "50%",
     boxShadow: `0px 20px 25px ${getAccentColor()}40, inset -5px -5px 15px rgba(0, 0, 0, 0.5), inset 5px 5px 15px rgba(255, 255, 255, 0.1)`,
     animation: isThinking ? "thinkingFloat 2s ease-in-out infinite" : "float 3s ease-in-out infinite",

@@ -801,7 +801,7 @@ function getFileType(file) {
             processedMsg.modelUsed = msg.modelUsed || msg.model_used;
             if (processedMsg.modelUsed) {
               const modelOption = modelOptions.find(m => m.backendName === processedMsg.modelUsed);
-              processedMsg.modelDisplayName = modelOption ? modelOption.name : processedMsg.modelUsed;
+              processedMsg.modelDisplayName = modelOption ? modelOption.name : null;
               processedMsg.modelDisplayIcon = modelOption ? modelOption.icon : null;
             }
           }
@@ -1019,6 +1019,7 @@ function getFileType(file) {
     if (!userInput.trim() || loading) return;
 
     setInput('');
+    setInputValue('');
     if (inputRef.current) {
       inputRef.current.innerHTML = '';
     }
@@ -1323,6 +1324,7 @@ function getFileType(file) {
 
           const data = await response.json();
           setInput(data.transcript); // Set the transcribed text to input
+          setInputValue(data.transcript); // Update inputValue state for send button
           if (inputRef.current) {
             inputRef.current.innerText = data.transcript;
             restoreSelection(inputRef.current, data.transcript.length);
@@ -1484,6 +1486,7 @@ function getFileType(file) {
       inputRef.current.innerText = '';
       inputRef.current.focus();
     }
+    setInputValue('');
     setIsDedicatedChat(true);
     return session.id;
   };
@@ -2182,6 +2185,7 @@ function getFileType(file) {
     localStorage.removeItem('userEmail');
   };
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileModalFromSidebar, setProfileModalFromSidebar] = useState(false);
   // Show login page if not logged in
   if (!isLoggedIn) {
     return <LoginView onLogin={handleLogin} />;
@@ -2285,12 +2289,39 @@ function getFileType(file) {
             >
               <FaGlobe style={{ marginRight: '10px' }} /> Supported Languages
             </button>
-            <div className="user-details" onClick={e => { e.stopPropagation(); setShowUserDetailsMenu(!showUserDetailsMenu); }}>
-              <div className="user-avatar">
+            <div className="user-details" onClick={e => { e.stopPropagation(); setShowUserDetailsMenu(!showUserDetailsMenu); }}
+                 style={{
+                   cursor: 'pointer',
+                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                   transform: showUserDetailsMenu ? 'scale(1.02)' : 'scale(1)',
+                   filter: showUserDetailsMenu ? 'brightness(1.1)' : 'brightness(1)'
+                 }}>
+              <div className="user-avatar" style={{
+                position: 'relative',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transform: showUserDetailsMenu ? 'scale(1.1)' : 'scale(1)',
+                boxShadow: showUserDetailsMenu ? '0 4px 12px rgba(0, 0, 0, 0.3)' : '0 2px 8px rgba(0, 0, 0, 0.2)'
+              }}>
                 {userAvatar && <img src={userAvatar} alt="avatar" style={{ width: 40, height: 40, borderRadius: '50%' }} />}
                 {!userAvatar && <div className="user-avatar-initial">{userName.charAt(0)}</div>}
+                {showUserDetailsMenu && (
+                  <div style={{
+                    position: 'absolute',
+                    top: -2,
+                    right: -2,
+                    width: 12,
+                    height: 12,
+                    background: 'var(--accent-color)',
+                    borderRadius: '50%',
+                    border: '2px solid var(--bg-primary)',
+                    animation: 'pulse 2s infinite'
+                  }} />
+                )}
               </div>
-              <div className="user-info">
+              <div className="user-info" style={{
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transform: showUserDetailsMenu ? 'translateX(4px)' : 'translateX(0)'
+              }}>
                 {editingUserName ? (
                   <input
                     type="text"
@@ -2308,22 +2339,31 @@ function getFileType(file) {
                     ref={userNameInputRef}
                   />
                 ) : (
-                  <div className="user-name">{userName}</div>
+                  <div className="user-name" style={{
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    color: showUserDetailsMenu ? 'var(--accent-color)' : 'var(--text-primary)'
+                  }}>{userName}</div>
                 )}
-                <div className="user-email">{userEmail}</div>
+                <div className="user-email" style={{
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  opacity: showUserDetailsMenu ? 0.8 : 0.7
+                }}>{userEmail}</div>
                 {localStorage.getItem('userIsAdmin') === 'true' && (
                   <div style={{ 
                     display: 'inline-flex', 
                     alignItems: 'center', 
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', 
+                    background: 'var(--accent-color)', 
                     color: 'white', 
-                    padding: '2px 8px', 
-                    borderRadius: 12, 
-                    fontSize: '0.65rem', 
+                    padding: '2px 6px', 
+                    borderRadius: 8, 
+                    fontSize: '0.6rem', 
                     fontWeight: 600,
                     marginTop: 2,
-                    boxShadow: '0 1px 4px rgba(102, 126, 234, 0.25)',
-                    letterSpacing: '0.3px'
+                    boxShadow: showUserDetailsMenu ? '0 2px 8px rgba(0, 0, 0, 0.3)' : '0 1px 3px rgba(0, 0, 0, 0.2)',
+                    letterSpacing: '0.2px',
+                    width: 'fit-content',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transform: showUserDetailsMenu ? 'scale(1.05)' : 'scale(1)'
                   }}>
                     ADMIN
                   </div>
@@ -2361,12 +2401,12 @@ function getFileType(file) {
                     </div>
                     <span style={{ fontWeight: 500 }}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
                   </div>
+                  <div className="menu-item" onClick={() => { setShowProfileModal(true); setProfileModalFromSidebar(true); setShowUserDetailsMenu(false); }}>Profile</div>
                   {localStorage.getItem('userIsAdmin') === 'true' && (
                     <div className="menu-item" onClick={() => { setCurrentView('feedback-dashboard'); setShowUserDetailsMenu(false); }}>
                       Feedback Dashboard
                     </div>
                   )}
-                  <div className="menu-item" onClick={() => { setShowProfileModal(true); setShowUserDetailsMenu(false); }}>Profile</div>
                   <div className="menu-item" onClick={handleLogout}>Log out</div>
                 </div>
               )}
@@ -2472,10 +2512,10 @@ function getFileType(file) {
                           <div className="bubble assistant">
                             <div className="message-content">
                               {/* Model name and icon above agent name */}
-                              {msg.modelDisplayName && (
+                              {msg.modelDisplayName && msg.modelDisplayIcon && (
                                 <div className="model-info-display" style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                                  {msg.modelDisplayIcon && <span className="model-info-icon">{msg.modelDisplayIcon}</span>}
-                                  <span className="model-info-name" style={{ fontWeight: 600, fontSize: '0.98em', color: '#2563eb' }}>{msg.modelDisplayName}</span>
+                                  <span className="model-info-icon">{msg.modelDisplayIcon}</span>
+                                  <span className="model-info-name" style={{ fontWeight: 600, fontSize: '0.98em', color: 'var(--accent-color)' }}>{msg.modelDisplayName}</span>
                                 </div>
                               )}
                               {msg.agentName && (
@@ -2721,7 +2761,7 @@ function getFileType(file) {
                       display: 'flex',
                       alignItems: 'center',
                       gap: 8,
-                      background: 'rgba(240,244,255,0.95)',
+                      background: theme === 'dark' ? 'rgba(108, 46, 183, 0.1)' : 'rgba(240,244,255,0.95)',
                       border: '1.5px solid var(--accent-color)',
                       borderRadius: 999,
                       padding: '3px 14px',
@@ -2769,7 +2809,7 @@ function getFileType(file) {
                       display: 'flex',
                       alignItems: 'center',
                       gap: 8,
-                      background: 'rgba(240,244,255,0.95)',
+                      background: theme === 'dark' ? 'rgba(108, 46, 183, 0.1)' : 'rgba(240,244,255,0.95)',
                       border: '1.5px solid var(--accent-color)',
                       borderRadius: 999,
                       padding: '3px 14px',
@@ -3010,10 +3050,10 @@ function getFileType(file) {
                         className="send-btn"
                         title="Send"
                         onClick={handleSend}
-                        disabled={loading || !input.trim()}
+                        disabled={loading || !inputValue.trim()}
                         style={{
                           background: 'none',
-                          color: input.trim() ? '#2563eb' : '#b0b8d9',
+                          color: inputValue.trim() ? 'var(--accent-color)' : '#b0b8d9',
                           border: 'none',
                           borderRadius: 8,
                           width: 40,
@@ -3022,7 +3062,7 @@ function getFileType(file) {
                           alignItems: 'center',
                           justifyContent: 'center',
                           fontSize: 20,
-                          cursor: loading || !input.trim() ? 'not-allowed' : 'pointer'
+                          cursor: loading || !inputValue.trim() ? 'not-allowed' : 'pointer'
                         }}
                       >
                         <FaPaperPlane />
@@ -3867,11 +3907,15 @@ function getFileType(file) {
             role: localStorage.getItem('userRole') || 'User',
             preferredModel: preferredModel,
           }}
-          onClose={() => setShowProfileModal(false)}
+          onClose={() => {
+            setShowProfileModal(false);
+            setProfileModalFromSidebar(false);
+          }}
           onSave={updatedUser => {
             if (updatedUser.deleted) {
               handleLogout();
               setShowProfileModal(false);
+              setProfileModalFromSidebar(false);
               return;
             }
             setUserName(updatedUser.name);
@@ -3884,7 +3928,9 @@ function getFileType(file) {
             userData.preferredModel = updatedUser.preferredModel || preferredModel;
             localStorage.setItem('ukpUser', JSON.stringify(userData));
             setShowProfileModal(false);
+            setProfileModalFromSidebar(false);
           }}
+          fromSidebar={profileModalFromSidebar}
           theme={theme}
           setTheme={setTheme}
           modelOptions={modelOptions}

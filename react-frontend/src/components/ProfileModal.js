@@ -15,7 +15,7 @@ const LIGHT_BG = '#f5f7fa';
 const LIGHT_CARD = '#fff';
 const LIGHT_TEXT = '#232136';
 
-function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [], preferredModel, onPreferredModelChange }) {
+function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [], preferredModel, onPreferredModelChange, fromSidebar = false }) {
   const [editMode, setEditMode] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [name, setName] = useState(user.name || '');
@@ -146,7 +146,7 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
       animation: 'fadeIn 0.5s',
       color: theme === 'dark' ? DARK_TEXT : LIGHT_TEXT
     }}>
-      <div className="modal-content" ref={modalRef} style={{
+      <div className={`modal-content ${fromSidebar ? 'genie-modal' : ''}`} ref={modalRef} style={{
         maxWidth: 520,
         width: '100%',
         padding: '2.7rem 2.2rem',
@@ -156,8 +156,9 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
         position: 'relative',
         overflow: 'visible',
         minHeight: 420,
-        animation: 'fadeInScale 0.7s cubic-bezier(.23,1.01,.32,1)',
-        color: theme === 'dark' ? DARK_TEXT : LIGHT_TEXT
+        animation: fromSidebar ? 'genieEffect 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'fadeInScale 0.7s cubic-bezier(.23,1.01,.32,1)',
+        color: theme === 'dark' ? DARK_TEXT : LIGHT_TEXT,
+        transformOrigin: fromSidebar ? 'bottom left' : 'center'
       }}>
         {/* Theme Switcher */}
         
@@ -275,8 +276,33 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
                 <>
                   <div style={{ fontWeight: 700, fontSize: '1.3rem', color: theme === 'dark' ? DARK_TEXT : LIGHT_TEXT }}>{name}</div>
                   <div style={{ color: theme === 'dark' ? '#bbb' : '#888', fontSize: '1.05rem', marginTop: 2 }}>{user.email}</div>
-                  <div style={{ color: theme === 'dark' ? 'var(--accent-color-dark, #6c2eb7)' : 'var(--accent-color, #6c2eb7)', fontSize: '1.05rem', marginTop: 2, fontWeight: 600 }}>
-                    Preferred Model: {preferredModel}
+                  <div style={{ 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    alignItems: 'center', 
+                    gap: 8, 
+                    color: theme === 'dark' ? 'var(--accent-color-dark, #6c2eb7)' : 'var(--accent-color, #6c2eb7)', 
+                    fontSize: '1.05rem', 
+                    marginTop: 8, 
+                    fontWeight: 600 
+                  }}>
+                    <span>Preferred Model:</span>
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 6,
+                      background: theme === 'dark' ? 'rgba(108, 46, 183, 0.1)' : 'rgba(108, 46, 183, 0.05)',
+                      padding: '4px 8px',
+                      borderRadius: 6,
+                      border: `1px solid ${theme === 'dark' ? 'rgba(108, 46, 183, 0.3)' : 'rgba(108, 46, 183, 0.2)'}`
+                    }}>
+                      {modelOptions.find(m => m.name === preferredModel)?.icon && (
+                        <div style={{ width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {modelOptions.find(m => m.name === preferredModel)?.icon}
+                        </div>
+                      )}
+                      <span>{preferredModel}</span>
+                    </div>
                   </div>
                 </>
               )}
