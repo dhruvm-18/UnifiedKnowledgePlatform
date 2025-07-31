@@ -57,6 +57,19 @@ const OTPVerification = ({ email, onBack, onSuccess }) => {
   };
 
   const handleOtpChange = (index, value) => {
+    // Handle pasting 6 digits
+    if (value.length === 6 && /^\d{6}$/.test(value)) {
+      const digits = value.split('');
+      setOtp(digits);
+      setError('');
+      // Auto-verify after a short delay
+      setTimeout(() => {
+        handleVerifyOTP();
+      }, 500);
+      return;
+    }
+    
+    // Handle single digit input
     if (value.length > 1) return; // Only allow single digit
     
     const newOtp = [...otp];
@@ -67,14 +80,61 @@ const OTPVerification = ({ email, onBack, onSuccess }) => {
     // Auto-focus next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
+    } else if (value && index === 5) {
+      // Auto-verify when last digit is entered
+      setTimeout(() => {
+        handleVerifyOTP();
+      }, 300);
     }
   };
 
   const handleKeyDown = (index, e) => {
+    // Handle backspace
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
+    
+    // Handle arrow keys
+    if (e.key === 'ArrowLeft' && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+    if (e.key === 'ArrowRight' && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+    
+    // Handle paste
+    if (e.ctrlKey && e.key === 'v') {
+      e.preventDefault();
+      navigator.clipboard.readText().then(text => {
+        if (text.length === 6 && /^\d{6}$/.test(text)) {
+          const digits = text.split('');
+          setOtp(digits);
+          setError('');
+          // Auto-verify after a short delay
+          setTimeout(() => {
+            handleVerifyOTP();
+          }, 500);
+        }
+      });
+    }
   };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+    
+    if (pastedText.length === 6 && /^\d{6}$/.test(pastedText)) {
+      const digits = pastedText.split('');
+      setOtp(digits);
+      setError('');
+      // Auto-verify after a short delay
+      setTimeout(() => {
+        handleVerifyOTP();
+      }, 500);
+    }
+  };
+
+
 
   const handleVerifyOTP = async () => {
     const otpString = otp.join('');
@@ -83,8 +143,11 @@ const OTPVerification = ({ email, onBack, onSuccess }) => {
       return;
     }
 
-    setLoading(true);
-    setError('');
+    // Don't show error if we're already loading (auto-verification)
+    if (!loading) {
+      setLoading(true);
+      setError('');
+    }
 
     try {
       const response = await fetch('http://localhost:5000/api/otp/verify', {
@@ -197,10 +260,20 @@ const OTPVerification = ({ email, onBack, onSuccess }) => {
   };
 
   const renderOTPStep = () => (
-    <div className="otp-step">
+    <div className="otp-step" style={{ animation: 'fadeInScale 0.6s ease' }}>
       <div className="step-header">
-        <h2>Enter OTP</h2>
-        <p>We've sent a 6-digit code to <strong>{email}</strong></p>
+        <h2 style={{ 
+          background: 'linear-gradient(135deg, #6c2eb7 0%, #8b5cf6 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          backgroundClip: 'text',
+          animation: 'textGlow 2s ease-in-out infinite alternate'
+        }}>
+          Enter OTP
+        </h2>
+        <p style={{ animation: 'fadeInUp 0.5s ease 0.1s both' }}>
+          We've sent a 6-digit code to <strong style={{ color: '#6c2eb7' }}>{email}</strong>
+        </p>
       </div>
 
       <div className="otp-input-container">
@@ -213,11 +286,16 @@ const OTPVerification = ({ email, onBack, onSuccess }) => {
             value={digit}
             onChange={(e) => handleOtpChange(index, e.target.value)}
             onKeyDown={(e) => handleKeyDown(index, e)}
+            onPaste={handlePaste}
             className="otp-input"
             placeholder="0"
+            inputMode="numeric"
+            pattern="[0-9]*"
           />
         ))}
       </div>
+      
+
 
       <div className="timer-container">
         <p className="timer">
@@ -225,12 +303,22 @@ const OTPVerification = ({ email, onBack, onSuccess }) => {
         </p>
       </div>
 
+      {error && <div className="error-message">{error}</div>}
+      {success && <div className="success-message">{success}</div>}
+
       <button
         onClick={handleVerifyOTP}
         disabled={loading || otp.join('').length !== 6}
         className="verify-btn"
       >
-        {loading ? 'Verifying...' : 'Verify OTP'}
+        {loading ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="spinner" style={{ width: '16px', height: '16px', border: '2px solid #ffffff', borderTop: '2px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+            Verifying...
+          </div>
+        ) : (
+          'Verify OTP'
+        )}
       </button>
 
       <div className="resend-container">
@@ -248,6 +336,12 @@ const OTPVerification = ({ email, onBack, onSuccess }) => {
 
   const renderPasswordStep = () => (
     <div className="password-step">
+      {success && (
+        <div className="success-message">
+          <FaCheck /> {success}
+        </div>
+      )}
+      
       <div className="step-header">
         <h2>Set New Password</h2>
         <p>Enter your new password below</p>
@@ -329,12 +423,6 @@ const OTPVerification = ({ email, onBack, onSuccess }) => {
       {error && (
         <div className="error-message">
           <FaTimes /> {error}
-        </div>
-      )}
-
-      {success && (
-        <div className="success-message">
-          <FaCheck /> {success}
         </div>
       )}
 

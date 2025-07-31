@@ -1,0 +1,402 @@
+/* AnimatedScene Component Styles - Using .dark-mode class */
+
+/* Light Mode (Default) */
+.animated-scene {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+  transition: all 0.5s ease;
+  background: linear-gradient(to bottom, #eff6ff, #dbeafe);
+}
+
+.animated-scene .slide-card {
+  background: #ffffff;
+  border: 1px solid rgba(229, 231, 235, 0.6);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.animated-scene .slide-header {
+  border-bottom: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+.animated-scene .slide-title {
+  color: #374151;
+}
+
+.animated-scene .slide-message {
+  color: #1f2937;
+}
+
+.animated-scene .message-left {
+  background: #eff6ff;
+}
+
+.animated-scene .message-center {
+  background: #faf5ff;
+}
+
+.animated-scene .message-right {
+  background: #f9fafb;
+}
+
+.animated-scene .indicator-active {
+  background: #2563eb;
+}
+
+.animated-scene .indicator-inactive {
+  background: #d1d5db;
+}
+
+.animated-scene .main-title {
+  color: #1f2937;
+}
+
+.animated-scene .subtitle {
+  color: #4b5563;
+}
+
+/* Dark Mode */
+.dark-mode .animated-scene {
+  background: linear-gradient(to bottom, #111827, #000000);
+}
+
+.dark-mode .animated-scene .slide-card {
+  background: rgba(31, 41, 55, 0.6);
+  border: 1px solid rgba(75, 85, 99, 0.3);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.dark-mode .animated-scene .slide-header {
+  border-bottom: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.dark-mode .animated-scene .slide-title {
+  color: #d1d5db;
+}
+
+.dark-mode .animated-scene .slide-message {
+  color: #e5e7eb;
+}
+
+.dark-mode .animated-scene .message-left {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.dark-mode .animated-scene .message-center {
+  background: rgba(147, 51, 234, 0.2);
+}
+
+.dark-mode .animated-scene .message-right {
+  background: rgba(75, 85, 99, 0.4);
+}
+
+.dark-mode .animated-scene .indicator-active {
+  background: #ffffff;
+}
+
+.dark-mode .animated-scene .indicator-inactive {
+  background: #6b7280;
+}
+
+.dark-mode .animated-scene .main-title {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.dark-mode .animated-scene .subtitle {
+  color: #9ca3af;
+}
+
+/* Logo Section */
+.logo-section {
+  position: absolute;
+  top: 48px;
+  right: 48px;
+  z-index: 10;
+}
+
+.logo-image {
+  width: 120px;
+  height: 80px;
+  border-radius: 12px;
+  object-fit: contain;
+  background: transparent;
+}
+
+/* Slideshow Container */
+.slideshow-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 40px;
+}
+
+.slides-container {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 1200px;
+  gap: 30px;
+}
+
+/* Chat Windows */
+.chat-window {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.slide-card {
+  border-radius: 1rem;
+  backdrop-filter: blur(8px);
+  transition: all 0.5s ease;
+  width: 350px;
+  height: 380px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Slide Header */
+.slide-header {
+  padding: 1rem;
+  transition: all 0.5s ease;
+  flex-shrink: 0;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+.status-indicator.green {
+  background: #10b981;
+}
+
+.status-indicator.purple {
+  background: #8b5cf6;
+}
+
+.status-indicator.cyan {
+  background: #06b6d4;
+}
+
+/* Slide Content */
+.slide-content {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+  overflow: hidden;
+}
+
+.slide-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.5s ease;
+}
+
+.slide-message {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  transition: all 0.5s ease;
+  white-space: pre-line;
+  overflow-y: auto;
+  flex: 1;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Message Areas */
+.message-left,
+.message-center,
+.message-right {
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  transition: all 0.5s ease;
+  width: 100%;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+.message-right {
+  margin-left: auto;
+}
+
+/* Typing Indicator */
+.typing-indicator {
+  display: flex;
+  gap: 6px;
+  margin-top: 0.5rem;
+}
+
+.right-typing {
+  justify-content: flex-end;
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3b82f6;
+  animation: bounce 1.4s infinite;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+/* Slide Indicator */
+.slide-indicator {
+  position: absolute;
+  bottom: 140px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.indicator-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+}
+
+.indicator-active {
+  transform: scale(1.25);
+}
+
+/* Scene Title */
+.scene-title {
+  position: absolute;
+  bottom: 48px;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  width: 100%;
+  max-width: 600px;
+}
+
+.main-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  transition: all 0.5s ease;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.subtitle {
+  font-size: 1.25rem;
+  font-weight: 400;
+  transition: all 0.5s ease;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  opacity: 0.8;
+}
+
+/* Animation Classes */
+.animate-chat-float {
+  animation: chatFloat 6s ease-in-out infinite;
+}
+
+.animate-chat-float-center {
+  animation: chatFloatCenter 6s ease-in-out infinite 1s;
+}
+
+.animate-logo-subtle {
+  animation: logoSubtle 8s ease-in-out infinite;
+}
+
+.animate-title-subtle {
+  animation: titleSubtle 8s ease-in-out infinite;
+}
+
+.animate-subtitle-subtle {
+  animation: subtitleSubtle 8s ease-in-out infinite 1s;
+}
+
+/* Keyframe Animations */
+@keyframes chatFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes chatFloatCenter {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes logoSubtle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes titleSubtle {
+  0%, 100% {
+    opacity: 0.9;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes subtitleSubtle {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes bounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+} 

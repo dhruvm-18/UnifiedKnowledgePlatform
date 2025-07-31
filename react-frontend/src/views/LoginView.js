@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/LoginView.css';
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGithub, FaHeart, FaMagic, FaSun, FaMoon } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGithub, FaHeart, FaMagic, FaSun, FaMoon, FaUserPlus } from 'react-icons/fa';
 import { GITHUB_CONFIG } from '../config/github';
 import CustomAuthAnimation from '../components/CustomAuthAnimation';
 import OTPVerification from '../components/OTPVerification';
+import AccountCreation from '../components/AccountCreation';
+import AnimatedScene from '../components/AnimatedScene';
 
 const APP_NAME = 'Unified Knowledge Platform';
 const USERS_KEY = 'ukpUsers';
@@ -12,6 +14,7 @@ function LoginView({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [showRegister, setShowRegister] = useState(false);
   const [regName, setRegName] = useState('');
@@ -41,6 +44,7 @@ function LoginView({ onLogin }) {
   const [otpLoading, setOtpLoading] = useState(false);
   const [otpError, setOtpError] = useState('');
   const [otpSuccess, setOtpSuccess] = useState('');
+  const [showAccountCreation, setShowAccountCreation] = useState(false);
 
   const getUsers = () => JSON.parse(localStorage.getItem(USERS_KEY)) || [];
   const saveUsers = (users) => localStorage.setItem(USERS_KEY, JSON.stringify(users));
@@ -300,6 +304,17 @@ function LoginView({ onLogin }) {
     setFpConfirmPassword('');
   };
 
+  const handleAccountCreationBack = () => {
+    setShowAccountCreation(false);
+  };
+
+  const handleAccountCreationSuccess = (accountData) => {
+    setShowAccountCreation(false);
+    setError(''); // Clear any existing errors
+    setSuccess(`Account created successfully! Welcome ${accountData.name}! You can now login.`);
+    setTimeout(() => setSuccess(''), 5000);
+  };
+
   const handleGitHubLogin = () => {
     setLoading(true);
     
@@ -424,18 +439,9 @@ function LoginView({ onLogin }) {
 
       {/* Main Content */}
       <div className="login-content">
-        {/* Left Panel - Features */}
+        {/* Left Panel - Animated Scene */}
         <div className="features-panel">
-          <div className="features-content">
-            <div className="logo-section">
-              <div className="logo-container">
-                <img src="/unified-knowledge-platform.png" alt="Logo" className="main-logo" />
-                <div className="logo-glow"></div>
-              </div>
-              <h1 className="app-title">{APP_NAME}</h1>
-              <p className="app-subtitle">AI-Powered Knowledge Management</p>
-            </div>
-          </div>
+          <AnimatedScene />
         </div>
 
         {/* Right Panel - Login Form */}
@@ -446,6 +452,11 @@ function LoginView({ onLogin }) {
                 email={otpEmail}
                 onBack={handleOTPBack}
                 onSuccess={handleOTPSuccess}
+              />
+            ) : showAccountCreation ? (
+              <AccountCreation
+                onBack={handleAccountCreationBack}
+                onSuccess={handleAccountCreationSuccess}
               />
             ) : showAuthAnimation ? (
               <div className="auth-animation-container">
@@ -532,6 +543,7 @@ function LoginView({ onLogin }) {
                       </div>
                       
                       {error && <div className="error-message">{error}</div>}
+                      {success && <div className="success-message">{success}</div>}
                       
                       <button type="submit" className={`submit-button ${isAnimating ? 'animating' : ''}`} disabled={loading}>
                         {loading ? (
@@ -570,7 +582,7 @@ function LoginView({ onLogin }) {
                       </button>
                       <div className="register-prompt">
                   <span>Don't have an account?</span>
-                        <button type="button" className="link-button" onClick={() => setShowRegister(true)}>
+                        <button type="button" className="link-button" onClick={() => setShowAccountCreation(true)}>
                           Create one
                         </button>
                       </div>

@@ -3039,13 +3039,138 @@ def generate_otp():
     """Generate a 6-digit OTP"""
     return ''.join([str(secrets.randbelow(10)) for _ in range(6)])
 
-def send_otp_email(email, otp):
+def send_otp_email(email, otp, email_type='password_reset'):
     """Send OTP via email"""
     try:
-        msg = Message(
-            subject='Password Reset OTP - Unified Knowledge Platform',
-            recipients=[email],
-            body=f'''
+        if email_type == 'account_creation':
+            subject = 'Account Creation OTP - Unified Knowledge Platform'
+            body_text = f'''
+Hello,
+
+You have requested to create a new account on Unified Knowledge Platform.
+
+Your OTP (One-Time Password) is: {otp}
+
+This OTP is valid for 10 minutes. Please do not share this OTP with anyone.
+
+If you did not request to create this account, please ignore this email.
+
+Best regards,
+Unified Knowledge Platform Team
+            '''
+            html_content = f'''
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background: #f9f9f9; padding: 20px; border-radius: 0 0 10px 10px; }}
+        .otp {{ background: #667eea; color: white; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; border-radius: 5px; margin: 20px 0; }}
+        .warning {{ background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin: 20px 0; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Account Creation OTP</h1>
+            <p>Unified Knowledge Platform</p>
+        </div>
+        <div class="content">
+            <p>Hello,</p>
+            <p>You have requested to create a new account on Unified Knowledge Platform.</p>
+            <div class="otp">Your OTP: {otp}</div>
+            <p>This OTP is valid for <strong>10 minutes</strong>. Please do not share this OTP with anyone.</p>
+            <div class="warning">
+                <strong>Security Notice:</strong> If you did not request to create this account, please ignore this email.
+            </div>
+            <p>Best regards,<br>Unified Knowledge Platform Team</p>
+        </div>
+    </div>
+</body>
+</html>
+            '''
+        elif email_type == 'account_deletion':
+            subject = 'Account Deletion OTP - Unified Knowledge Platform'
+            body_text = f'''
+Hello,
+
+We're sorry to see you go! You have requested to delete your Unified Knowledge Platform account.
+
+Your OTP (One-Time Password) is: {otp}
+
+This OTP is valid for 10 minutes. Please do not share this OTP with anyone.
+
+⚠️ WARNING: This action is irreversible and will permanently delete your account and all associated data including:
+• Your profile information
+• All your projects and notes
+• Chat history and conversations
+• Uploaded documents and files
+• Account settings and preferences
+
+If you did not request to delete your account, please ignore this email and ensure your account is secure.
+
+If you change your mind, you can always create a new account in the future.
+
+We hope to see you again!
+
+Best regards,
+Unified Knowledge Platform Team
+            '''
+            html_content = f'''
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background: #f9f9f9; padding: 20px; border-radius: 0 0 10px 10px; }}
+        .otp {{ background: #dc3545; color: white; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; border-radius: 5px; margin: 20px 0; }}
+        .danger {{ background: #f8d7da; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin: 20px 0; color: #721c24; }}
+        .warning {{ background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin: 20px 0; }}
+        .goodbye {{ background: #e8f5e8; border: 1px solid #c3e6c3; padding: 15px; border-radius: 5px; margin: 20px 0; color: #2d5a2d; }}
+        .data-list {{ margin: 10px 0; padding-left: 20px; }}
+        .data-list li {{ margin: 5px 0; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Account Deletion OTP</h1>
+            <p>Unified Knowledge Platform</p>
+        </div>
+        <div class="content">
+            <p>Hello,</p>
+            <p><strong>We're sorry to see you go!</strong> You have requested to delete your Unified Knowledge Platform account.</p>
+            <div class="otp">Your OTP: {otp}</div>
+            <p>This OTP is valid for <strong>10 minutes</strong>. Please do not share this OTP with anyone.</p>
+            <div class="danger">
+                <strong>⚠️ WARNING:</strong> This action is irreversible and will permanently delete your account and all associated data including:
+                <ul class="data-list">
+                    <li>Your profile information</li>
+                    <li>All your projects and notes</li>
+                    <li>Chat history and conversations</li>
+                    <li>Uploaded documents and files</li>
+                    <li>Account settings and preferences</li>
+                </ul>
+            </div>
+            <div class="warning">
+                <strong>Security Notice:</strong> If you did not request to delete your account, please ignore this email and ensure your account is secure.
+            </div>
+            <div class="goodbye">
+                <strong>💝 Farewell Message:</strong> If you change your mind, you can always create a new account in the future. We hope to see you again!
+            </div>
+            <p>Best regards,<br>Unified Knowledge Platform Team</p>
+        </div>
+    </div>
+</body>
+</html>
+            '''
+        else:  # password_reset
+            subject = 'Password Reset OTP - Unified Knowledge Platform'
+            body_text = f'''
 Hello,
 
 You have requested a password reset for your Unified Knowledge Platform account.
@@ -3058,8 +3183,8 @@ If you did not request this password reset, please ignore this email.
 
 Best regards,
 Unified Knowledge Platform Team
-            ''',
-            html=f'''
+            '''
+            html_content = f'''
 <!DOCTYPE html>
 <html>
 <head>
@@ -3092,6 +3217,12 @@ Unified Knowledge Platform Team
 </body>
 </html>
             '''
+        
+        msg = Message(
+            subject=subject,
+            recipients=[email],
+            body=body_text,
+            html=html_content
         )
         mail.send(msg)
         return True
@@ -3234,6 +3365,201 @@ def reset_password():
     except Exception as e:
         logger.error(f"Password reset error: {e}")
         return jsonify({'error': 'Failed to reset password'}), 500
+
+@app.route('/api/otp/create-account', methods=['POST'])
+def create_account():
+    """Create new account with OTP verification"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
+        name = data.get('name', '')
+        
+        if not all([email, password]):
+            return jsonify({'error': 'Email and password are required'}), 400
+        
+        # Validate password strength
+        if len(password) < 6:
+            return jsonify({'error': 'Password must be at least 6 characters long'}), 400
+        
+        # Check if user already exists (you can modify this based on your user storage)
+        # For now, we'll assume the frontend handles this check
+        
+        # Generate OTP for account creation
+        otp = generate_otp()
+        expiry_time = datetime.now() + timedelta(minutes=10)
+        
+        # Store OTP with account creation data
+        otp_storage[email] = {
+            'otp': otp,
+            'expiry': expiry_time,
+            'attempts': 0,
+            'type': 'account_creation',
+            'password': password,
+            'name': name
+        }
+        
+        # Send OTP via email
+        if send_otp_email(email, otp, 'account_creation'):
+            return jsonify({
+                'message': 'OTP sent for account creation',
+                'email': email
+            })
+        else:
+            return jsonify({'error': 'Failed to send OTP email'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error creating account: {e}")
+        return jsonify({'error': 'Failed to create account'}), 500
+
+@app.route('/api/otp/verify-account', methods=['POST'])
+def verify_account():
+    """Verify OTP and create account"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        otp = data.get('otp')
+        
+        if not all([email, otp]):
+            return jsonify({'error': 'Email and OTP are required'}), 400
+        
+        # Verify OTP
+        if email not in otp_storage:
+            return jsonify({'error': 'No OTP found for this email'}), 400
+        
+        otp_data = otp_storage[email]
+        
+        # Check if OTP is for account creation
+        if otp_data.get('type') != 'account_creation':
+            return jsonify({'error': 'Invalid OTP type'}), 400
+        
+        # Check expiry
+        if datetime.now() > otp_data['expiry']:
+            del otp_storage[email]
+            return jsonify({'error': 'OTP has expired'}), 400
+        
+        # Check attempts
+        if otp_data['attempts'] >= 3:
+            del otp_storage[email]
+            return jsonify({'error': 'Too many attempts. Please request a new OTP'}), 400
+        
+        # Verify OTP
+        if otp_data['otp'] != otp:
+            otp_data['attempts'] += 1
+            return jsonify({'error': 'Invalid OTP'}), 400
+        
+        # Account creation successful
+        # In production, you would save to database here
+        # For now, we'll return success and let frontend handle user storage
+        
+        account_data = {
+            'email': email,
+            'password': otp_data['password'],
+            'name': otp_data.get('name', ''),
+            'created_at': datetime.now().isoformat()
+        }
+        
+        # Clear OTP data
+        del otp_storage[email]
+        
+        return jsonify({
+            'message': 'Account created successfully',
+            'account': account_data
+        })
+        
+    except Exception as e:
+        logger.error(f"Error verifying account: {e}")
+        return jsonify({'error': 'Failed to verify account'}), 500
+
+@app.route('/api/otp/delete-account', methods=['POST'])
+def delete_account_otp():
+    """Send OTP for account deletion"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+        
+        # Check if user exists (you can modify this based on your user storage)
+        # For now, we'll assume the user exists if they provide an email
+        
+        # Generate OTP for account deletion
+        otp = generate_otp()
+        expiry_time = datetime.now() + timedelta(minutes=10)
+        
+        # Store OTP with deletion data
+        otp_storage[email] = {
+            'otp': otp,
+            'expiry': expiry_time,
+            'attempts': 0,
+            'type': 'account_deletion'
+        }
+        
+        # Send OTP via email
+        if send_otp_email(email, otp, 'account_deletion'):
+            return jsonify({
+                'message': 'OTP sent for account deletion',
+                'email': email
+            })
+        else:
+            return jsonify({'error': 'Failed to send OTP email'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error sending deletion OTP: {e}")
+        return jsonify({'error': 'Failed to send deletion OTP'}), 500
+
+@app.route('/api/otp/verify-deletion', methods=['POST'])
+def verify_deletion_otp():
+    """Verify OTP and delete account"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        otp = data.get('otp')
+        
+        if not all([email, otp]):
+            return jsonify({'error': 'Email and OTP are required'}), 400
+        
+        # Verify OTP
+        if email not in otp_storage:
+            return jsonify({'error': 'No OTP found for this email'}), 400
+        
+        otp_data = otp_storage[email]
+        
+        # Check if OTP is for account deletion
+        if otp_data.get('type') != 'account_deletion':
+            return jsonify({'error': 'Invalid OTP type'}), 400
+        
+        # Check expiry
+        if datetime.now() > otp_data['expiry']:
+            del otp_storage[email]
+            return jsonify({'error': 'OTP has expired'}), 400
+        
+        # Check attempts
+        if otp_data['attempts'] >= 3:
+            del otp_storage[email]
+            return jsonify({'error': 'Too many attempts. Please request a new OTP'}), 400
+        
+        # Verify OTP
+        if otp_data['otp'] != otp:
+            otp_data['attempts'] += 1
+            return jsonify({'error': 'Invalid OTP'}), 400
+        
+        # Account deletion successful
+        # In production, you would delete from database here
+        # For now, we'll return success and let frontend handle user removal
+        
+        # Clear OTP data
+        del otp_storage[email]
+        
+        return jsonify({
+            'message': 'Account deleted successfully',
+            'email': email
+        })
+        
+    except Exception as e:
+        logger.error(f"Error verifying deletion OTP: {e}")
+        return jsonify({'error': 'Failed to verify deletion OTP'}), 500
 
 if __name__ == '__main__':
     print("Starting Flask app...")
