@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import '../styles/LoginView.css';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGithub, FaHeart, FaMagic, FaSun, FaMoon } from 'react-icons/fa';
 import { GITHUB_CONFIG } from '../config/github';
+import CustomAuthAnimation from '../components/CustomAuthAnimation';
 
 const APP_NAME = 'Unified Knowledge Platform';
 const USERS_KEY = 'ukpUsers';
@@ -32,6 +33,8 @@ function LoginView({ onLogin }) {
     const saved = localStorage.getItem('theme');
     return saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
+  const [showAuthAnimation, setShowAuthAnimation] = useState(false);
+  const [pendingLoginData, setPendingLoginData] = useState(null);
 
   const getUsers = () => JSON.parse(localStorage.getItem(USERS_KEY)) || [];
   const saveUsers = (users) => localStorage.setItem(USERS_KEY, JSON.stringify(users));
@@ -101,6 +104,96 @@ function LoginView({ onLogin }) {
     return () => clearInterval(interval);
   }, []);
 
+  const handleAnimationComplete = () => {
+    console.log('Animation completed, processing login...');
+    setLoading(false);
+    setIsAnimating(false);
+    setShowAuthAnimation(false);
+    
+    // Get login data from localStorage as backup
+    const storedLoginData = localStorage.getItem('pendingLoginData');
+    const loginData = pendingLoginData || (storedLoginData ? JSON.parse(storedLoginData) : null);
+    
+    if (!loginData) {
+      console.log('No pending login data found');
+      return;
+    }
+    
+    console.log('Processing login for:', loginData.email);
+    
+    // Check if this is a GitHub login (has githubId)
+    if (loginData.githubId) {
+      console.log('GitHub login detected');
+      const userData = {
+        name: loginData.name,
+        email: loginData.email,
+        avatar: loginData.avatar,
+        githubId: loginData.githubId,
+        githubUsername: loginData.githubUsername,
+        isAdmin: loginData.isAdmin,
+        role: loginData.role
+      };
+      localStorage.setItem('ukpUser', JSON.stringify(userData));
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('userEmail', userData.email);
+      localStorage.setItem('userIsAdmin', userData.isAdmin ? 'true' : 'false');
+      localStorage.setItem('githubId', userData.githubId);
+      localStorage.setItem('githubUsername', userData.githubUsername);
+      console.log('Calling onLogin with GitHub user data');
+      onLogin && onLogin({ 
+        email: loginData.email, 
+        name: loginData.name, 
+        avatar: loginData.avatar, 
+        isAdmin: loginData.isAdmin, 
+        role: loginData.role 
+      });
+      setPendingLoginData(null);
+      localStorage.removeItem('pendingLoginData');
+      return;
+    }
+    
+    // Regular email/password login
+    const users = getUsers();
+    const user = users.find(u => u.email === loginData.email && u.password === loginData.password);
+    
+    // Check for admin account
+    if (loginData.email === 'dhruv.mendiratta4@gmail.com' && loginData.password === 'Dhruv@9013669130') {
+      console.log('Admin login detected');
+      const adminData = { 
+        name: 'Dhruv Mendiratta', 
+        email: 'dhruv.mendiratta4@gmail.com', 
+        avatar: null, 
+        isAdmin: true,
+        role: 'Administrator'
+      };
+      localStorage.setItem('ukpUser', JSON.stringify(adminData));
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('userEmail', adminData.email);
+      localStorage.setItem('userIsAdmin', 'true');
+      console.log('Calling onLogin with admin data');
+      onLogin && onLogin({ email: loginData.email, name: adminData.name, avatar: adminData.avatar, isAdmin: true, role: adminData.role });
+      setPendingLoginData(null);
+      localStorage.removeItem('pendingLoginData');
+      return;
+    }
+    
+    if ((loginData.email === 'demo@ukp.com' && loginData.password === 'password') || user) {
+      console.log('Regular user login detected');
+      const userData = user || { name: 'Demo User', email: 'demo@ukp.com', avatar: null, isAdmin: false, role: 'User' };
+      localStorage.setItem('ukpUser', JSON.stringify(userData));
+      localStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem('userEmail', userData.email);
+      localStorage.setItem('userIsAdmin', userData.isAdmin ? 'true' : 'false');
+      console.log('Calling onLogin with user data');
+      onLogin && onLogin({ email: loginData.email, name: userData.name, avatar: userData.avatar, isAdmin: userData.isAdmin, role: userData.role });
+    } else {
+      console.log('Invalid credentials');
+      setError('Invalid email or password.');
+    }
+    setPendingLoginData(null);
+    localStorage.removeItem('pendingLoginData');
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
@@ -108,37 +201,20 @@ function LoginView({ onLogin }) {
       setError('Please enter both email and password.');
       return;
     }
+    
+    const loginData = { email, password };
+    setPendingLoginData(loginData);
+    // Also store in localStorage as backup
+    localStorage.setItem('pendingLoginData', JSON.stringify(loginData));
+    
+    setShowAuthAnimation(true);
     setLoading(true);
     setIsAnimating(true);
     
+    // The new animation takes about 5 seconds (5 stages * 1 second each)
     setTimeout(() => {
-      setLoading(false);
-      setIsAnimating(false);
-      const users = getUsers();
-      const user = users.find(u => u.email === email && u.password === password);
-      
-      // Check for admin account
-      if (email === 'dhruv.mendiratta4@gmail.com' && password === 'Dhruv@9013669130') {
-        const adminData = { 
-          name: 'Dhruv Mendiratta', 
-          email: 'dhruv.mendiratta4@gmail.com', 
-          avatar: null, 
-          isAdmin: true,
-          role: 'Administrator'
-        };
-        localStorage.setItem('ukpUser', JSON.stringify(adminData));
-        onLogin && onLogin({ email, name: adminData.name, avatar: adminData.avatar, isAdmin: true, role: adminData.role });
-        return;
-      }
-      
-      if ((email === 'demo@ukp.com' && password === 'password') || user) {
-        const userData = user || { name: 'Demo User', email: 'demo@ukp.com', avatar: null, isAdmin: false, role: 'User' };
-        localStorage.setItem('ukpUser', JSON.stringify(userData));
-        onLogin && onLogin({ email, name: userData.name, avatar: userData.avatar, isAdmin: false, role: userData.role });
-      } else {
-        setError('Invalid email or password.');
-      }
-    }, 1500);
+      handleAnimationComplete();
+    }, 5500); // Slightly longer than the animation to ensure it completes
   };
 
   const handleRegister = (e) => {
@@ -201,12 +277,17 @@ function LoginView({ onLogin }) {
   };
 
   const handleGitHubLogin = () => {
+    setLoading(true);
+    
+    // Redirect immediately to GitHub without showing animation
     const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CONFIG.CLIENT_ID}&redirect_uri=${encodeURIComponent(GITHUB_CONFIG.REDIRECT_URI)}&scope=${encodeURIComponent(GITHUB_CONFIG.SCOPE)}&state=${Math.random().toString(36).substring(7)}`;
     window.location.href = githubAuthUrl;
   };
 
   const handleGitHubCallback = async (code) => {
     try {
+      // Start animation immediately when callback is received
+      setShowAuthAnimation(true);
       setLoading(true);
       setError('');
       
@@ -224,7 +305,7 @@ function LoginView({ onLogin }) {
 
       const data = await response.json();
       const { access_token, user } = data;
-
+      
       const users = getUsers();
       const existingUser = users.find(u => u.email === user.email);
       
@@ -250,18 +331,27 @@ function LoginView({ onLogin }) {
         saveUsers(users);
       }
       
-      localStorage.setItem('ukpUser', JSON.stringify(userData));
-      onLogin && onLogin({ 
+      // Store login data for animation completion
+      const loginData = { 
         email: user.email, 
         name: userData.name, 
         avatar: userData.avatar, 
         isAdmin: userData.isAdmin, 
-        role: userData.role 
-      });
+        role: userData.role,
+        githubId: user.id,
+        githubUsername: user.login
+      };
+      localStorage.setItem('pendingLoginData', JSON.stringify(loginData));
+      
+      // Animation will complete after 5.5 seconds and call handleAnimationComplete
+      setTimeout(() => {
+        handleAnimationComplete();
+      }, 5500);
+      
     } catch (error) {
       console.error('GitHub login error:', error);
       setError('GitHub login failed. Please try again.');
-    } finally {
+      setShowAuthAnimation(false);
       setLoading(false);
     }
   };
@@ -321,258 +411,262 @@ function LoginView({ onLogin }) {
               <h1 className="app-title">{APP_NAME}</h1>
               <p className="app-subtitle">AI-Powered Knowledge Management</p>
             </div>
-
-
           </div>
         </div>
 
         {/* Right Panel - Login Form */}
         <div className="login-panel">
-      <div className="login-card">
-        {showForgot ? (
-              <div className="forgot-password-form">
-                <div className="form-header">
-                  <button type="button" className="back-button" onClick={() => setShowForgot(false)}>
-                    <span>←</span> Back
-                  </button>
-                  <h2>Reset Password</h2>
-            </div>
-                
-                <form onSubmit={handleForgotPassword} className="form">
-                  <div className="input-group">
-                    <label>Email</label>
-                    <div className="input-wrapper">
-                      <FaEnvelope className="input-icon" />
-              <input
-                type="email"
-                value={fpEmail}
-                onChange={e => setFpEmail(e.target.value)}
-                placeholder="Enter your email"
-                required
-              />
-                    </div>
-                  </div>
-                  
-                  <div className="input-group">
-                    <label>Old Password</label>
-                    <div className="input-wrapper">
-                      <FaLock className="input-icon" />
-              <input
-                type="password"
-                value={fpOldPassword}
-                onChange={e => setFpOldPassword(e.target.value)}
-                placeholder="Enter old password"
-                required
-              />
-                    </div>
-                  </div>
-                  
-                  <div className="input-group">
-                    <label>New Password</label>
-                    <div className="input-wrapper">
-                      <FaLock className="input-icon" />
-              <input
-                type="password"
-                value={fpNewPassword}
-                onChange={e => setFpNewPassword(e.target.value)}
-                placeholder="Enter new password"
-                required
-              />
-                    </div>
-                  </div>
-                  
-                  <div className="input-group">
-                    <label>Confirm Password</label>
-                    <div className="input-wrapper">
-                      <FaLock className="input-icon" />
-              <input
-                type="password"
-                value={fpConfirmPassword}
-                onChange={e => setFpConfirmPassword(e.target.value)}
-                placeholder="Confirm new password"
-                required
-              />
-                    </div>
-                  </div>
-                  
-                  {fpError && <div className="error-message">{fpError}</div>}
-                  {fpSuccess && <div className="success-message">{fpSuccess}</div>}
-                  
-                  <button type="submit" className="submit-button" disabled={fpLoading}>
-                    {fpLoading ? <div className="spinner"></div> : 'Update Password'}
-              </button>
-            </form>
+          <div className="login-card">
+            {showAuthAnimation ? (
+              <div className="auth-animation-container">
+                <CustomAuthAnimation />
               </div>
-        ) : (
-          <>
-            {!showRegister ? (
-                  <div className="login-form">
-                    <div className="form-header">
-                      <h2>Welcome Back</h2>
-                      <p>Sign in to continue</p>
-                    </div>
-                    
-                    <form onSubmit={handleSubmit} className="form">
-                      <div className="input-group">
-                        <label>Email</label>
-                        <div className="input-wrapper">
-                    <FaEnvelope className="input-icon" />
-                    <input
-                      type="email"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                            placeholder="Enter your email"
-                      required
-                    />
-                  </div>
-                      </div>
-                      
-                      <div className="input-group">
-                        <label>Password</label>
-                        <div className="input-wrapper">
-                    <FaLock className="input-icon" />
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={e => setPassword(e.target.value)}
-                            placeholder="Enter your password"
-                      required
-                    />
-                          <button 
-                            type="button" 
-                            className="password-toggle"
-                            onClick={() => setShowPassword(!showPassword)}
-                          >
-                      {showPassword ? <FaEyeSlash /> : <FaEye />}
-                    </button>
-                  </div>
-                      </div>
-                      
-                      {error && <div className="error-message">{error}</div>}
-                      
-                      <button type="submit" className={`submit-button ${isAnimating ? 'animating' : ''}`} disabled={loading}>
-                        {loading ? (
-                          <div className="loading-content">
-                            <div className="spinner"></div>
-                            <span>Signing In...</span>
-                          </div>
-                        ) : (
-                          <div className="button-content">
-                            <FaMagic />
-                            <span>Sign In</span>
-                          </div>
-                        )}
-                  </button>
-                </form>
-                    
-                    <div className="divider">
-                      <span>or</span>
-                    </div>
-                    
-                    <div className="github-section">
-                      <h3 className="github-heading">Login or Sign up with GitHub</h3>
-                      <button 
-                        type="button" 
-                        className="github-button"
-                        onClick={handleGitHubLogin}
-                        disabled={loading}
-                      >
-                        <FaGithub />
-                      </button>
-                </div>
-                    
-                    <div className="form-footer">
-                      <button type="button" className="link-button" onClick={() => setShowForgot(true)}>
-                        Forgot password?
-                      </button>
-                      <div className="register-prompt">
-                  <span>Don't have an account?</span>
-                        <button type="button" className="link-button" onClick={() => setShowRegister(true)}>
-                          Create one
-                        </button>
-                      </div>
-                    </div>
-                </div>
             ) : (
-                  <div className="register-form">
+              <>
+                {showForgot ? (
+                  <div className="forgot-password-form">
                     <div className="form-header">
-                      <button type="button" className="back-button" onClick={() => setShowRegister(false)}>
+                      <button type="button" className="back-button" onClick={() => setShowForgot(false)}>
                         <span>←</span> Back
                       </button>
-                      <h2>Create Account</h2>
-                      <p>Join the future</p>
-                </div>
+                      <h2>Reset Password</h2>
+                    </div>
                     
-                    <form onSubmit={handleRegister} className="form">
-                      <div className="input-group">
-                        <label>Full Name</label>
-                        <div className="input-wrapper">
-                          <FaEnvelope className="input-icon" />
-                  <input
-                    type="text"
-                    value={regName}
-                    onChange={e => setRegName(e.target.value)}
-                            placeholder="Enter your full name"
-                    required
-                  />
-                        </div>
-                      </div>
-                      
+                    <form onSubmit={handleForgotPassword} className="form">
                       <div className="input-group">
                         <label>Email</label>
                         <div className="input-wrapper">
                           <FaEnvelope className="input-icon" />
-                  <input
-                    type="email"
-                    value={regEmail}
-                    onChange={e => setRegEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    required
-                  />
+                          <input
+                            type="email"
+                            value={fpEmail}
+                            onChange={e => setFpEmail(e.target.value)}
+                            placeholder="Enter your email"
+                            required
+                          />
                         </div>
                       </div>
                       
                       <div className="input-group">
-                        <label>Password</label>
+                        <label>Old Password</label>
                         <div className="input-wrapper">
                           <FaLock className="input-icon" />
-                  <input
-                    type="password"
-                    value={regPassword}
-                    onChange={e => setRegPassword(e.target.value)}
-                    placeholder="Create a password"
-                    required
-                  />
+                          <input
+                            type="password"
+                            value={fpOldPassword}
+                            onChange={e => setFpOldPassword(e.target.value)}
+                            placeholder="Enter old password"
+                            required
+                          />
                         </div>
                       </div>
                       
                       <div className="input-group">
-                        <label>Profile Picture (Optional)</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                          className="file-input"
-                  />
-                        {regAvatar && (
-                          <div className="avatar-preview">
-                            <img src={regAvatar} alt="Avatar preview" />
-                          </div>
-                        )}
+                        <label>New Password</label>
+                        <div className="input-wrapper">
+                          <FaLock className="input-icon" />
+                          <input
+                            type="password"
+                            value={fpNewPassword}
+                            onChange={e => setFpNewPassword(e.target.value)}
+                            placeholder="Enter new password"
+                            required
+                          />
+                        </div>
                       </div>
                       
-                      {regError && <div className="error-message">{regError}</div>}
-                      
-                      <button type="submit" className="submit-button">
-                        <div className="button-content">
-                          <FaHeart />
-                          <span>Create Account</span>
+                      <div className="input-group">
+                        <label>Confirm Password</label>
+                        <div className="input-wrapper">
+                          <FaLock className="input-icon" />
+                          <input
+                            type="password"
+                            value={fpConfirmPassword}
+                            onChange={e => setFpConfirmPassword(e.target.value)}
+                            placeholder="Confirm new password"
+                            required
+                          />
                         </div>
+                      </div>
+                      
+                      {fpError && <div className="error-message">{fpError}</div>}
+                      {fpSuccess && <div className="success-message">{fpSuccess}</div>}
+                      
+                      <button type="submit" className="submit-button" disabled={fpLoading}>
+                        {fpLoading ? <div className="spinner"></div> : 'Update Password'}
                       </button>
-                </form>
-                    
-
+                    </form>
                   </div>
+                ) : (
+                  <>
+                    {!showRegister ? (
+                      <div className="login-form">
+                        <div className="form-header">
+                          <h2>Welcome Back</h2>
+                          <p>Sign in to continue</p>
+                        </div>
+                        
+                        <form onSubmit={handleSubmit} className="form">
+                          <div className="input-group">
+                            <label>Email</label>
+                            <div className="input-wrapper">
+                              <FaEnvelope className="input-icon" />
+                              <input
+                                type="email"
+                                value={email}
+                                onChange={e => setEmail(e.target.value)}
+                                placeholder="Enter your email"
+                                required
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="input-group">
+                            <label>Password</label>
+                            <div className="input-wrapper">
+                              <FaLock className="input-icon" />
+                              <input
+                                type={showPassword ? 'text' : 'password'}
+                                value={password}
+                                onChange={e => setPassword(e.target.value)}
+                                placeholder="Enter your password"
+                                required
+                              />
+                              <button 
+                                type="button" 
+                                className="password-toggle"
+                                onClick={() => setShowPassword(!showPassword)}
+                              >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                              </button>
+                            </div>
+                          </div>
+                          
+                          {error && <div className="error-message">{error}</div>}
+                          
+                          <button type="submit" className={`submit-button ${isAnimating ? 'animating' : ''}`} disabled={loading}>
+                            {loading ? (
+                              <div className="loading-content">
+                                <div className="spinner"></div>
+                                <span>Signing In...</span>
+                              </div>
+                            ) : (
+                              <div className="button-content">
+                                <FaMagic />
+                                <span>Sign In</span>
+                              </div>
+                            )}
+                          </button>
+                        </form>
+                        
+                        <div className="divider">
+                          <span>or</span>
+                        </div>
+                        
+                        <div className="github-section">
+                          <h3 className="github-heading">Login or Sign up with GitHub</h3>
+                          <button 
+                            type="button" 
+                            className="github-button"
+                            onClick={handleGitHubLogin}
+                            disabled={loading}
+                          >
+                            <FaGithub />
+                          </button>
+                        </div>
+                        
+                        <div className="form-footer">
+                          <button type="button" className="link-button" onClick={() => setShowForgot(true)}>
+                            Forgot password?
+                          </button>
+                          <div className="register-prompt">
+                            <span>Don't have an account?</span>
+                            <button type="button" className="link-button" onClick={() => setShowRegister(true)}>
+                              Create one
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="register-form">
+                        <div className="form-header">
+                          <button type="button" className="back-button" onClick={() => setShowRegister(false)}>
+                            <span>←</span> Back
+                          </button>
+                          <h2>Create Account</h2>
+                          <p>Join the future</p>
+                        </div>
+                        
+                        <form onSubmit={handleRegister} className="form">
+                          <div className="input-group">
+                            <label>Full Name</label>
+                            <div className="input-wrapper">
+                              <FaEnvelope className="input-icon" />
+                              <input
+                                type="text"
+                                value={regName}
+                                onChange={e => setRegName(e.target.value)}
+                                placeholder="Enter your full name"
+                                required
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="input-group">
+                            <label>Email</label>
+                            <div className="input-wrapper">
+                              <FaEnvelope className="input-icon" />
+                              <input
+                                type="email"
+                                value={regEmail}
+                                onChange={e => setRegEmail(e.target.value)}
+                                placeholder="Enter your email"
+                                required
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="input-group">
+                            <label>Password</label>
+                            <div className="input-wrapper">
+                              <FaLock className="input-icon" />
+                              <input
+                                type="password"
+                                value={regPassword}
+                                onChange={e => setRegPassword(e.target.value)}
+                                placeholder="Create a password"
+                                required
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="input-group">
+                            <label>Profile Picture (Optional)</label>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleAvatarChange}
+                              className="file-input"
+                            />
+                            {regAvatar && (
+                              <div className="avatar-preview">
+                                <img src={regAvatar} alt="Avatar preview" />
+                              </div>
+                            )}
+                          </div>
+                          
+                          {regError && <div className="error-message">{regError}</div>}
+                          
+                          <button type="submit" className="submit-button">
+                            <div className="button-content">
+                              <FaHeart />
+                              <span>Create Account</span>
+                            </div>
+                          </button>
+                        </form>
+                      </div>
+                    )}
+                  </>
                 )}
               </>
             )}

@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import '../styles/LoginView.css';
 import Switch from 'react-switch';
-import { FaSun, FaMoon, FaKey, FaTrash, FaCheckCircle, FaTimesCircle, FaEdit, FaSave, FaTimes } from 'react-icons/fa';
+import { FaSun, FaMoon, FaKey, FaTrash, FaCheckCircle, FaTimesCircle, FaEdit, FaSave, FaTimes, FaGithub, FaLink, FaUnlink, FaCrown, FaUser, FaThumbsUp } from 'react-icons/fa';
+import { GITHUB_CONFIG } from '../config/github';
+import { getUserRoleInfo } from '../utils/permissions';
 
 const USERS_KEY = 'ukpUsers';
 const ACCENT_COLOR = '#6c2eb7';
@@ -30,10 +32,11 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
   const modalRef = useRef(null);
   const [editingName, setEditingName] = useState(false);
   const fileInputRef = useRef(null);
-  // Remove preferredAgent state, use preferredModel prop instead
-  // Add state for edit mode and preferred agent
-  // const [preferredAgent, setPreferredAgent] = useState(user.preferredAgent || 'Gemini');
-  // const AGENT_OPTIONS = ['Gemini', 'Mistral', 'Qwen', 'Custom Agent'];
+  const [showGitHubDisconnectConfirm, setShowGitHubDisconnectConfirm] = useState(false);
+  const [showGitHubConnectWarning, setShowGitHubConnectWarning] = useState(false);
+
+  // Check if user is connected to GitHub
+  const isGitHubConnected = user.githubId && user.githubUsername;
 
   // Load profile photo from localStorage on mount
   useEffect(() => {
@@ -217,6 +220,36 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
     onClose && onClose();
   };
 
+  const handleGitHubConnect = () => {
+    const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${GITHUB_CONFIG.CLIENT_ID}&redirect_uri=${encodeURIComponent(GITHUB_CONFIG.REDIRECT_URI)}&scope=${encodeURIComponent(GITHUB_CONFIG.SCOPE)}&state=${Math.random().toString(36).substring(7)}`;
+    window.location.href = githubAuthUrl;
+  };
+
+  const handleGitHubDisconnect = () => {
+    // Remove GitHub connection from user data
+    const updatedUser = { ...user };
+    delete updatedUser.githubId;
+    delete updatedUser.githubUsername;
+    
+    // Update localStorage
+    localStorage.setItem('ukpUser', JSON.stringify(updatedUser));
+    
+    // Update in users array
+    const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+    const idx = users.findIndex(u => u.email === user.email);
+    if (idx !== -1) {
+      delete users[idx].githubId;
+      delete users[idx].githubUsername;
+      localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    }
+    
+    setSuccess('GitHub connection removed!');
+    setTimeout(() => setSuccess(''), 3000);
+    
+    // Update the user prop
+    onSave && onSave(updatedUser);
+  };
+
   return (
     <div className="modal-overlay animated-bg" style={{
       zIndex: 2000,
@@ -233,7 +266,8 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
         background: theme === 'dark' ? '#18181b' : LIGHT_CARD,
         boxShadow: '0 8px 40px rgba(108,46,183,0.18)',
         position: 'relative',
-        overflow: 'visible',
+        overflow: 'auto',
+        maxHeight: '90vh',
         minHeight: 420,
         animation: fromSidebar ? 'genieEffect 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)' : 'fadeInScale 0.7s cubic-bezier(.23,1.01,.32,1)',
         color: theme === 'dark' ? DARK_TEXT : LIGHT_TEXT,
@@ -401,21 +435,67 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
                       <option key={model.name} value={model.name}>{model.name}</option>
                     ))}
                   </select>
+                  
+                  {/* GitHub Connection Management in Edit Mode */}
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    gap: 16, 
+                    marginBottom: 8, 
+                    width: '100%',
+                    padding: '8px 12px',
+                    background: theme === 'dark' ? 'rgba(108, 46, 183, 0.05)' : 'rgba(108, 46, 183, 0.02)',
+                    borderRadius: 8,
+                    border: `1px solid ${theme === 'dark' ? 'rgba(108, 46, 183, 0.2)' : 'rgba(108, 46, 183, 0.1)'}`
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <FaGithub style={{ 
+                        fontSize: 18, 
+                        color: isGitHubConnected ? SUCCESS_COLOR : ERROR_COLOR 
+                      }} />
+                      <span style={{ 
+                        color: theme === 'dark' ? DARK_TEXT : LIGHT_TEXT,
+                        fontWeight: 600
+                      }}>
+                        GitHub: {isGitHubConnected ? 'Connected' : 'Not Connected'}
+                      </span>
+                      {isGitHubConnected && (
+                        <span style={{ 
+                          fontSize: '0.9rem', 
+                          color: theme === 'dark' ? '#bbb' : '#888'
+                        }}>
+                          (@{user.githubUsername})
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ 
+                      fontSize: '0.9rem', 
+                      color: theme === 'dark' ? '#bbb' : '#888',
+                      fontStyle: 'italic'
+                    }}>
+                      Click status to manage
+                    </div>
+                  </div>
                 </>
               ) : (
                 <>
                   <div style={{ fontWeight: 700, fontSize: '1.3rem', color: theme === 'dark' ? DARK_TEXT : LIGHT_TEXT }}>{name}</div>
                   <div style={{ color: theme === 'dark' ? '#bbb' : '#888', fontSize: '1.05rem', marginTop: 2 }}>{user.email}</div>
+                  {/* Preferred Model and GitHub Connection in one line */}
                   <div style={{ 
                     display: 'flex', 
-                    flexDirection: 'column',
                     alignItems: 'center', 
-                    gap: 8, 
+                    justifyContent: 'space-between',
+                    gap: 16, 
                     color: theme === 'dark' ? 'var(--accent-color-dark, #6c2eb7)' : 'var(--accent-color, #6c2eb7)', 
                     fontSize: '1.05rem', 
-                    marginTop: 8, 
-                    fontWeight: 600 
+                    marginTop: 12, 
+                    fontWeight: 600,
+                    width: '100%'
                   }}>
+                    {/* Preferred Model */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
                     <span>Preferred Model:</span>
                     <div style={{ 
                       display: 'flex', 
@@ -432,15 +512,64 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
                         </div>
                       )}
                       <span>{preferredModel}</span>
+                      </div>
+                    </div>
+                    
+                    {/* GitHub Connection Status */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                      <span>GitHub Connection:</span>
+                      <div 
+                        className="github-status-hover"
+                        style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: 8,
+                          background: isGitHubConnected 
+                            ? (theme === 'dark' ? 'rgba(46, 204, 64, 0.1)' : 'rgba(46, 204, 64, 0.05)')
+                            : (theme === 'dark' ? 'rgba(255, 88, 88, 0.1)' : 'rgba(255, 88, 88, 0.05)'),
+                          padding: '6px 12px',
+                          borderRadius: 8,
+                          border: `1px solid ${isGitHubConnected 
+                            ? (theme === 'dark' ? 'rgba(46, 204, 64, 0.3)' : 'rgba(46, 204, 64, 0.2)')
+                            : (theme === 'dark' ? 'rgba(255, 88, 88, 0.3)' : 'rgba(255, 88, 88, 0.2)')}`,
+                          minWidth: 140,
+                          justifyContent: 'center',
+                          cursor: isGitHubConnected ? 'pointer' : 'pointer',
+                          position: 'relative',
+                          transition: 'all 0.3s ease',
+                          transform: 'scale(1)'
+                        }}
+                        title={isGitHubConnected ? `GitHub User ID: ${user.githubId}\nUsername: @${user.githubUsername}\nClick to disconnect` : 'Click to connect GitHub'}
+                        onClick={isGitHubConnected ? () => setShowGitHubDisconnectConfirm(true) : () => setShowGitHubConnectWarning(true)}
+                      >
+                        <FaGithub className="fa-github" style={{ 
+                          fontSize: 16, 
+                          color: isGitHubConnected ? SUCCESS_COLOR : ERROR_COLOR 
+                        }} />
+                        <span style={{ 
+                          color: isGitHubConnected ? SUCCESS_COLOR : ERROR_COLOR,
+                          fontWeight: 600
+                        }}>
+                          {isGitHubConnected ? 'Connected' : 'Not Connected'}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </>
               )}
-              {user.isAdmin && (
+              {/* Role Badge */}
+              {(() => {
+                const roleInfo = getUserRoleInfo(user.email);
+                if (roleInfo.role !== 'user') {
+                  const IconComponent = roleInfo.role === 'owner' || roleInfo.role === 'admin' ? FaCrown : 
+                                       roleInfo.role === 'feedback-manager' ? FaThumbsUp : FaUser;
+                  
+                  return (
                 <div style={{ 
                   display: 'inline-flex', 
                   alignItems: 'center', 
-                  background: theme === 'dark' ? 'var(--accent-color-dark, #6c2eb7)' : 'var(--accent-color, #6c2eb7)',
+                      gap: '0.25rem',
+                      background: roleInfo.color,
                   color: 'white', 
                   padding: '3px 12px',
                   borderRadius: 20, 
@@ -451,33 +580,37 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
                   letterSpacing: '0.5px',
                   animation: 'badgeShimmer 2.5s infinite'
                 }}>
-                  Administrator
+                      <IconComponent style={{ fontSize: '0.8rem' }} />
+                      {roleInfo.name}
                 </div>
-              )}
+                  );
+                }
+                return null;
+              })()}
             </div>
             {/* Accent color buttons with icons always visible */}
             {/* Only show Change Password and Delete Account buttons when not in edit mode and not in password form */}
             {!editMode && !showPasswordForm && (
-              <div style={{ display: 'flex', gap: 14, width: '100%', marginTop: 18 }}>
+              <div style={{ display: 'flex', gap: 12, width: '100%', marginTop: 16 }}>
                 <button
                   className="login-btn profile-anim-btn"
                   style={{
-                    width: '70%',
+                    width: '50%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 8,
+                    gap: 6,
                     fontWeight: 700,
-                    fontSize: '1.05rem',
+                    fontSize: '1rem',
                     background: theme === 'dark' ? 'var(--accent-color-dark, #6c2eb7)' : 'var(--accent-color, #6c2eb7)',
                     color: 'white',
                     border: 'none',
                     borderRadius: 10,
-                    padding: '10px 20px',
+                    padding: '8px 16px',
                     boxShadow: '0 2px 8px var(--accent-color, #6c2eb7)',
                     transition: 'background 0.18s, transform 0.18s, box-shadow 0.18s',
                     outline: 'none',
-                    minHeight: 44,
+                    minHeight: 40,
                     cursor: 'pointer',
                     position: 'relative',
                     overflow: 'hidden',
@@ -485,28 +618,28 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
                   }}
                   onClick={() => setShowPasswordForm(true)}
                 >
-                  <FaKey style={{ fontSize: 20 }} />
+                  <FaKey style={{ fontSize: 18 }} />
                   <span>Change Password</span>
                 </button>
             <button
                   className="login-btn profile-anim-btn"
                   style={{
-                    width: '70%',
+                    width: '50%',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: 8,
+                    gap: 6,
                     fontWeight: 700,
-                    fontSize: '1.05rem',
+                    fontSize: '1rem',
                     background: '#f44336',
                     color: 'white',
                     border: 'none',
                     borderRadius: 10,
-                    padding: '10px 0',
+                    padding: '8px 16px',
                     boxShadow: '0 2px 8px #f44336',
                     transition: 'background 0.18s, transform 0.18s, box-shadow 0.18s',
                     outline: 'none',
-                    minHeight: 44,
+                    minHeight: 40,
                     cursor: 'pointer',
                     position: 'relative',
                     overflow: 'hidden',
@@ -514,7 +647,7 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
                   }}
               onClick={() => setShowDeleteConfirm(true)}
                 >
-                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 22, width: 22 }}><FaTrash style={{ fontSize: 20, verticalAlign: 'middle' }} /></span>
+                  <FaTrash style={{ fontSize: 18 }} />
                   <span>Delete Account</span>
                 </button>
               </div>
@@ -534,6 +667,100 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
                       style={{ background: ERROR_COLOR, color: 'white', border: 'none', borderRadius: 8, padding: '10px 28px', fontWeight: 700, fontSize: '1.05rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
                       onClick={handleDeleteAccount}
                     ><FaTrash /> Delete</button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* GitHub Disconnect Confirmation Modal */}
+            {showGitHubDisconnectConfirm && (
+              <div className="modal-overlay" style={{ zIndex: 3000, background: theme === 'dark' ? 'rgba(35,33,54,0.85)' : 'rgba(60, 30, 90, 0.35)', backdropFilter: 'blur(2px)' }}>
+                <div className="modal-content" style={{ maxWidth: 420, width: '100%', borderRadius: 20, textAlign: 'center', background: theme === 'dark' ? DARK_CARD : LIGHT_CARD, boxShadow: '0 8px 40px #ff5858', padding: '2.5rem 2rem', position: 'relative', animation: 'fadeInScale 0.7s cubic-bezier(.23,1.01,.32,1)', color: theme === 'dark' ? DARK_TEXT : LIGHT_TEXT }}>
+                  <div style={{ fontSize: 48, marginBottom: 12, color: '#ff9800', animation: 'bounce 1.5s infinite' }}>🔗</div>
+                  <div style={{ fontWeight: 800, fontSize: '1.18rem', marginBottom: 10, color: '#ff9800', letterSpacing: 0.5 }}>Disconnect GitHub Account?</div>
+                  <div style={{ color: theme === 'dark' ? '#bbb' : '#666', marginBottom: 16, fontWeight: 500 }}>
+                    Are you sure you want to disconnect your GitHub account (@{user.githubUsername})?
+                  </div>
+                  <div style={{ color: '#ff9800', marginBottom: 22, fontWeight: 600, fontSize: '0.95rem' }}>
+                    You can always reconnect later by clicking the GitHub connection status.
+                  </div>
+                  <div style={{ 
+                    background: theme === 'dark' ? 'rgba(255, 152, 0, 0.1)' : 'rgba(255, 152, 0, 0.05)', 
+                    border: `1px solid ${theme === 'dark' ? 'rgba(255, 152, 0, 0.3)' : 'rgba(255, 152, 0, 0.2)'}`,
+                    borderRadius: 8, 
+                    padding: '12px', 
+                    marginBottom: 20,
+                    fontSize: '0.9rem',
+                    color: theme === 'dark' ? '#bbb' : '#666'
+                  }}>
+                    <strong style={{ color: '#ff9800' }}>Note:</strong> To completely remove access from GitHub's side, you'll need to visit 
+                    <a 
+                      href="https://github.com/settings/applications" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{ color: '#ff9800', textDecoration: 'underline', marginLeft: 4 }}
+                    >
+                      GitHub Settings → Applications
+                    </a> 
+                    and revoke access for "Unified Knowledge Platform".
+                  </div>
+                  <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 18 }}>
+                    <button
+                      style={{ background: '#bbb', color: '#222', border: 'none', borderRadius: 8, padding: '10px 28px', fontWeight: 700, fontSize: '1.05rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+                      onClick={() => setShowGitHubDisconnectConfirm(false)}
+                    ><FaTimesCircle /> Cancel</button>
+                    <button
+                      style={{ background: '#ff9800', color: 'white', border: 'none', borderRadius: 8, padding: '10px 28px', fontWeight: 700, fontSize: '1.05rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+                      onClick={() => {
+                        handleGitHubDisconnect();
+                        setShowGitHubDisconnectConfirm(false);
+                      }}
+                    ><FaUnlink /> Disconnect</button>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* GitHub Connect Warning Modal */}
+            {showGitHubConnectWarning && (
+              <div className="modal-overlay" style={{ zIndex: 3000, background: theme === 'dark' ? 'rgba(35,33,54,0.85)' : 'rgba(60, 30, 90, 0.35)', backdropFilter: 'blur(2px)' }}>
+                <div className="modal-content" style={{ maxWidth: 420, width: '100%', borderRadius: 20, textAlign: 'center', background: theme === 'dark' ? DARK_CARD : LIGHT_CARD, boxShadow: '0 8px 40px #6c2eb7', padding: '2.5rem 2rem', position: 'relative', animation: 'fadeInScale 0.7s cubic-bezier(.23,1.01,.32,1)', color: theme === 'dark' ? DARK_TEXT : LIGHT_TEXT }}>
+                  <div style={{ fontSize: 48, marginBottom: 12, color: ACCENT_COLOR, animation: 'bounce 1.5s infinite' }}>🔗</div>
+                  <div style={{ fontWeight: 800, fontSize: '1.18rem', marginBottom: 10, color: ACCENT_COLOR, letterSpacing: 0.5 }}>Connect GitHub Account?</div>
+                  <div style={{ color: theme === 'dark' ? '#bbb' : '#666', marginBottom: 16, fontWeight: 500 }}>
+                    You're about to connect your GitHub account to this application.
+                  </div>
+                  <div style={{ 
+                    background: theme === 'dark' ? 'rgba(108, 46, 183, 0.1)' : 'rgba(108, 46, 183, 0.05)', 
+                    border: `1px solid ${theme === 'dark' ? 'rgba(108, 46, 183, 0.3)' : 'rgba(108, 46, 183, 0.2)'}`,
+                    borderRadius: 8, 
+                    padding: '12px', 
+                    marginBottom: 20,
+                    fontSize: '0.9rem',
+                    color: theme === 'dark' ? '#bbb' : '#666'
+                  }}>
+                    <strong style={{ color: ACCENT_COLOR }}>What this app will access:</strong>
+                    <ul style={{ textAlign: 'left', margin: '8px 0 0 0', paddingLeft: '20px' }}>
+                      <li>Your GitHub username and profile information</li>
+                      <li>Your email address (if public)</li>
+                      <li>Basic account details</li>
+                    </ul>
+                  </div>
+                  <div style={{ color: ACCENT_COLOR, marginBottom: 22, fontWeight: 600, fontSize: '0.95rem' }}>
+                    You can disconnect anytime from your profile settings.
+                  </div>
+                  <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 18 }}>
+                    <button
+                      style={{ background: '#bbb', color: '#222', border: 'none', borderRadius: 8, padding: '10px 28px', fontWeight: 700, fontSize: '1.05rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+                      onClick={() => setShowGitHubConnectWarning(false)}
+                    ><FaTimesCircle /> Cancel</button>
+                    <button
+                      style={{ background: ACCENT_COLOR, color: 'white', border: 'none', borderRadius: 8, padding: '10px 28px', fontWeight: 700, fontSize: '1.05rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}
+                      onClick={() => {
+                        handleGitHubConnect();
+                        setShowGitHubConnectWarning(false);
+                      }}
+                    ><FaGithub /> Connect GitHub</button>
                   </div>
                 </div>
               </div>
@@ -684,6 +911,19 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
           }
           .admin-badge-anim {
             animation: badgeShimmer 2.5s infinite;
+          }
+          .github-status-hover:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 0 6px #a084e8aa, 0 4px 16px #6c2eb7;
+            transition: transform 0.2s, box-shadow 0.2s;
+          }
+          .github-status-hover:hover .fa-github {
+            animation: githubPulse 0.6s ease-in-out;
+          }
+          @keyframes githubPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
           }
         `}</style>
       </div>

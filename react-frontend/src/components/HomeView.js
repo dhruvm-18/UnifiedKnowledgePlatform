@@ -487,7 +487,7 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
             <button 
               onClick={onNavigateToChat}
               style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                background: 'var(--accent-color, #6c2eb7)',
                 color: 'white',
                 border: 'none',
                 padding: '1rem 2rem',
@@ -499,15 +499,17 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)'
+                boxShadow: '0 10px 30px rgba(108, 46, 183, 0.3)'
               }}
               onMouseEnter={(e) => {
                 e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 15px 40px rgba(102, 126, 234, 0.4)';
+                e.target.style.boxShadow = '0 15px 40px rgba(108, 46, 183, 0.4)';
+                e.target.style.background = 'var(--accent-color-dark, #5a1f9e)';
               }}
               onMouseLeave={(e) => {
                 e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.3)';
+                e.target.style.boxShadow = '0 10px 30px rgba(108, 46, 183, 0.3)';
+                e.target.style.background = 'var(--accent-color, #6c2eb7)';
               }}
             >
               Get Started <FaArrowRight />
@@ -537,12 +539,12 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
                 e.target.style.color = theme === 'dark' ? '#f5f5f7' : '#1d1d1f';
               }}
             >
-              {showDemoVideo ? 'Hide Demo' : 'View Demo'} <FaPlay />
+              View Demo <FaPlay />
             </button>
             <button 
               onClick={onNavigateToKnowledgeSources}
               style={{
-                background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+                background: 'var(--accent-color, #6c2eb7)',
                 color: 'white',
                 border: 'none',
                 padding: '1rem 2rem',
@@ -554,15 +556,17 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                boxShadow: '0 10px 30px rgba(67, 233, 123, 0.3)'
+                boxShadow: '0 10px 30px rgba(108, 46, 183, 0.3)'
               }}
               onMouseEnter={(e) => {
                 e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 15px 40px rgba(67, 233, 123, 0.4)';
+                e.target.style.boxShadow = '0 15px 40px rgba(108, 46, 183, 0.4)';
+                e.target.style.background = 'var(--accent-color-dark, #5a1f9e)';
               }}
               onMouseLeave={(e) => {
                 e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 10px 30px rgba(67, 233, 123, 0.3)';
+                e.target.style.boxShadow = '0 10px 30px rgba(108, 46, 183, 0.3)';
+                e.target.style.background = 'var(--accent-color, #6c2eb7)';
               }}
             >
               Explore Knowledge Source <FaArrowRight />
@@ -647,7 +651,7 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
               <button
                 onClick={onNavigateToChat}
                 style={{
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  background: 'var(--accent-color, #6c2eb7)',
                   color: 'white',
                   border: 'none',
                   padding: '1rem 2rem',
@@ -658,13 +662,18 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
                   transition: 'all 0.3s ease',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.5rem'
+                  gap: '0.5rem',
+                  boxShadow: '0 10px 30px rgba(108, 46, 183, 0.3)'
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.transform = 'scale(1.05)';
+                  e.target.style.background = 'var(--accent-color-dark, #5a1f9e)';
+                  e.target.style.boxShadow = '0 15px 40px rgba(108, 46, 183, 0.4)';
                 }}
                 onMouseLeave={(e) => {
                   e.target.style.transform = 'scale(1)';
+                  e.target.style.background = 'var(--accent-color, #6c2eb7)';
+                  e.target.style.boxShadow = '0 10px 30px rgba(108, 46, 183, 0.3)';
                 }}
               >
                 Try It Now <FaArrowRight />

@@ -5,6 +5,7 @@ import './App.css';
 import './styles/backgrounds.css';
 import './styles/modal.css';
 import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch, FaFileImage, FaFilePdf, FaEye, FaFileWord, FaFileExcel, FaFileAudio, FaFile, FaChartLine, FaExternalLinkAlt } from 'react-icons/fa';
+import { canAccessDeveloperOptions, getUserRoleInfo } from './utils/permissions';
 import { Image as ReactImage } from 'react-image';
 import ReactAudioPlayer from 'react-audio-player';
 import HomeView from './components/HomeView';
@@ -2204,11 +2205,13 @@ function getFileType(file) {
 
   // Handle login
   const handleLogin = (user) => {
+    console.log('handleLogin called with user:', user);
     setIsLoggedIn(true);
     localStorage.setItem('isLoggedIn', 'true');
     if (user && user.email) localStorage.setItem('userEmail', user.email);
     // Update user info from localStorage
     const userData = JSON.parse(localStorage.getItem('ukpUser'));
+    console.log('User data from localStorage:', userData);
     if (userData) {
       setUserName(userData.name);
       setUserAvatar(userData.avatar);
@@ -2234,7 +2237,17 @@ function getFileType(file) {
       setUserAvatar(null);
       setUserEmail('dhruv.mendiratta4@gmail.com');
     }
+    console.log('Setting current view to chat');
     setCurrentView('chat'); // Open to chats tab after login
+    
+    // Force a re-render by updating localStorage and triggering a state change
+    setTimeout(() => {
+      console.log('Forcing re-render after login');
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'isLoggedIn',
+        newValue: 'true'
+      }));
+    }, 100);
     
     // Log user login activity
     try {
@@ -2290,14 +2303,12 @@ function getFileType(file) {
   // Use location to check current route
  
   
-  // If we're on the developer dashboard route, check admin access
+  // If we're on the developer dashboard route, check developer options permission
   if (location.pathname === '/developer-dashboard') {
-    // Check if current user is admin
+    // Check if current user has developer options permission
     const currentUserEmail = userEmail || localStorage.getItem('userEmail');
-    const isGlobalAdmin = localStorage.getItem('userIsAdmin') === 'true';
-    const isUserSpecificAdmin = localStorage.getItem(`userIsAdmin_${currentUserEmail}`) === 'true';
     
-    if (isGlobalAdmin || isUserSpecificAdmin) {
+    if (canAccessDeveloperOptions(currentUserEmail)) {
       return <DeveloperDashboard />;
     } else {
       return (
@@ -2342,7 +2353,7 @@ function getFileType(file) {
               lineHeight: '1.6'
             }}>
               You don't have permission to access the Developer Dashboard. 
-              This area is restricted to administrators only.
+              This area requires the "Developer Options" permission.
             </p>
             <div style={{
               display: 'flex',
@@ -2557,26 +2568,34 @@ function getFileType(file) {
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   opacity: showUserDetailsMenu ? 0.8 : 0.7
                 }}>{userEmail}</div>
-                {(localStorage.getItem('userIsAdmin') === 'true' || localStorage.getItem(`userIsAdmin_${userEmail}`) === 'true') && (
-                  <div style={{ 
-                    display: 'inline-flex', 
-                    alignItems: 'center', 
-                    background: 'var(--accent-color)', 
-                    color: 'white', 
-                    padding: '2px 6px', 
-                    borderRadius: 8, 
-                    fontSize: '0.6rem', 
-                    fontWeight: 600,
-                    marginTop: 2,
-                    boxShadow: showUserDetailsMenu ? '0 2px 8px rgba(0, 0, 0, 0.3)' : '0 1px 3px rgba(0, 0, 0, 0.2)',
-                    letterSpacing: '0.2px',
-                    width: 'fit-content',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    transform: showUserDetailsMenu ? 'scale(1.05)' : 'scale(1)'
-                  }}>
-                    ADMIN
-                  </div>
-                )}
+                {/* Role Badge */}
+                {(() => {
+                  const roleInfo = getUserRoleInfo(userEmail);
+                  if (roleInfo.role !== 'user') {
+                    return (
+                      <div style={{ 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '0.25rem',
+                        background: roleInfo.color,
+                        color: 'white', 
+                        padding: '2px 6px', 
+                        borderRadius: 8, 
+                        fontSize: '0.6rem', 
+                        fontWeight: 600,
+                        marginTop: 2,
+                        boxShadow: showUserDetailsMenu ? '0 2px 8px rgba(0, 0, 0, 0.3)' : '0 1px 3px rgba(0, 0, 0, 0.2)',
+                        letterSpacing: '0.2px',
+                        width: 'fit-content',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        transform: showUserDetailsMenu ? 'scale(1.05)' : 'scale(1)'
+                      }}>
+                        {roleInfo.name.toUpperCase()}
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
               {showUserDetailsMenu && (
                 <div className="user-details-menu" ref={userDetailsMenuRef}>
@@ -2611,13 +2630,16 @@ function getFileType(file) {
                     <span style={{ fontWeight: 500 }}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
                   </div>
                   <div className="menu-item" onClick={() => { setShowProfileModal(true); setProfileModalFromSidebar(true); setShowUserDetailsMenu(false); }}>Profile</div>
-                  <div className="menu-item" onClick={() => { 
-                    window.open('/developer-dashboard', '_blank');
-                    setShowUserDetailsMenu(false); 
-                  }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>Developer Options</span>
-                    <FaExternalLinkAlt style={{ fontSize: '12px', opacity: 0.7 }} />
-                  </div>
+                  {/* Developer Options - Only visible to users with developer options permission */}
+                  {canAccessDeveloperOptions(userEmail) && (
+                    <div className="menu-item" onClick={() => { 
+                      window.open('/developer-dashboard', '_blank');
+                      setShowUserDetailsMenu(false); 
+                    }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span>Developer Options</span>
+                      <FaExternalLinkAlt style={{ fontSize: '12px', opacity: 0.7 }} />
+                    </div>
+                  )}
                   <div className="menu-item" onClick={handleLogout}>Log out</div>
                 </div>
               )}
@@ -4109,15 +4131,18 @@ function getFileType(file) {
         </div>
       )}
       {showProfileModal && (
-        <ProfileModal
-          user={{ 
-            name: userName, 
-            email: userEmail, 
-            avatar: userAvatar, 
+                <ProfileModal
+          user={{
+            name: userName,
+            email: userEmail,
+            avatar: userAvatar,
             password: (JSON.parse(localStorage.getItem('ukpUser')) || {}).password || '',
-            isAdmin: localStorage.getItem('userIsAdmin') === 'true',
+            isAdmin: localStorage.getItem('userIsAdmin') === 'true' || localStorage.getItem(`userIsAdmin_${userEmail}`) === 'true',
+            isFeedbackManager: localStorage.getItem(`userIsFeedbackManager_${userEmail}`) === 'true',
             role: localStorage.getItem('userRole') || 'User',
             preferredModel: preferredModel,
+            githubId: (JSON.parse(localStorage.getItem('ukpUser')) || {}).githubId,
+            githubUsername: (JSON.parse(localStorage.getItem('ukpUser')) || {}).githubUsername,
           }}
           onClose={() => {
             setShowProfileModal(false);

@@ -1448,7 +1448,7 @@ html, body, #root {
 .sidebar-nav-item {
   display: flex;
   align-items: center;
-  width: 100%;
+  width: 110%; /* Reduced from 120% to 110% for better balance */
   padding: 0.8rem 1rem; /* Adjust padding */
   margin-bottom: 0.5rem; /* Space between items */
   background: none; /* Ensure no background */
@@ -1460,6 +1460,7 @@ html, body, #root {
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
   text-align: left; /* Align text to the left */
+  margin-left: -5%; /* Reduced offset to keep better alignment */
 }
 
 .sidebar-nav-item:hover {
