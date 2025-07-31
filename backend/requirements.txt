@@ -10,3 +10,5 @@ pdf2image
 unstructured
 google-generativeai>=0.3.0
 langchain-google-genai>=0.0.5
+flask-mail>=0.9.1
+pyotp>=2.9.0

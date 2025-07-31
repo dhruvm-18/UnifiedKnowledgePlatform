@@ -415,7 +415,7 @@ const DeveloperDashboard = () => {
                 transition: 'all 0.3s ease'
               }} />
               IAM System
-            </button>
+          </button>
           )}
 
           {/* Developer Options Section - Positioned at bottom */}
@@ -440,7 +440,7 @@ const DeveloperDashboard = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
-              }}>
+            }}>
                 <FaCrown style={{ 
                   color: 'white', 
                   fontSize: '14px'
@@ -458,10 +458,10 @@ const DeveloperDashboard = () => {
             <p style={{
               color: 'var(--text-secondary)',
               fontSize: '0.8rem',
-              margin: 0,
+                margin: 0,
               fontWeight: 500,
               lineHeight: '1.4'
-            }}>
+              }}>
               Access advanced dashboard features
             </p>
           </div>

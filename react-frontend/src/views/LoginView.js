@@ -3,6 +3,7 @@ import '../styles/LoginView.css';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGithub, FaHeart, FaMagic, FaSun, FaMoon } from 'react-icons/fa';
 import { GITHUB_CONFIG } from '../config/github';
 import CustomAuthAnimation from '../components/CustomAuthAnimation';
+import OTPVerification from '../components/OTPVerification';
 
 const APP_NAME = 'Unified Knowledge Platform';
 const USERS_KEY = 'ukpUsers';
@@ -35,6 +36,11 @@ function LoginView({ onLogin }) {
   });
   const [showAuthAnimation, setShowAuthAnimation] = useState(false);
   const [pendingLoginData, setPendingLoginData] = useState(null);
+  const [showOTP, setShowOTP] = useState(false);
+  const [otpEmail, setOtpEmail] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [otpError, setOtpError] = useState('');
+  const [otpSuccess, setOtpSuccess] = useState('');
 
   const getUsers = () => JSON.parse(localStorage.getItem(USERS_KEY)) || [];
   const saveUsers = (users) => localStorage.setItem(USERS_KEY, JSON.stringify(users));
@@ -244,36 +250,54 @@ function LoginView({ onLogin }) {
     reader.readAsDataURL(file);
   };
 
-  const handleForgotPassword = (e) => {
+  const handleForgotPassword = async (e) => {
     e.preventDefault();
-    setFpError('');
-    setFpSuccess('');
-    setFpLoading(true);
-    setTimeout(() => {
-      setFpLoading(false);
-      const users = getUsers();
-      const idx = users.findIndex(u => u.email === fpEmail);
-      if (idx === -1) {
-        setFpError('No account found with this email.');
-        return;
+    setOtpError('');
+    setOtpSuccess('');
+    setOtpLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/otp/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: fpEmail }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setOtpEmail(fpEmail);
+        setShowOTP(true);
+        setOtpSuccess('OTP sent successfully! Check your email.');
+      } else {
+        setOtpError(data.error || 'Failed to send OTP');
       }
-      if (users[idx].password !== fpOldPassword) {
-        setFpError('Old password is incorrect.');
-        return;
+    } catch (err) {
+      setOtpError('Network error. Please try again.');
+    } finally {
+      setOtpLoading(false);
       }
-      if (fpNewPassword.length < 4) {
-        setFpError('New password must be at least 4 characters.');
-        return;
-      }
-      if (fpNewPassword !== fpConfirmPassword) {
-        setFpError('New passwords do not match.');
-        return;
-      }
-      users[idx].password = fpNewPassword;
-      saveUsers(users);
-      setFpSuccess('Password updated! You can now log in with your new password.');
-      setFpEmail(''); setFpOldPassword(''); setFpNewPassword(''); setFpConfirmPassword('');
-    }, 900);
+  };
+
+  const handleOTPBack = () => {
+    setShowOTP(false);
+    setOtpEmail('');
+    setOtpError('');
+    setOtpSuccess('');
+  };
+
+  const handleOTPSuccess = () => {
+    setShowOTP(false);
+    setShowForgot(false);
+    setOtpEmail('');
+    setOtpError('');
+    setOtpSuccess('');
+    setFpEmail('');
+    setFpOldPassword('');
+    setFpNewPassword('');
+    setFpConfirmPassword('');
   };
 
   const handleGitHubLogin = () => {
@@ -305,7 +329,7 @@ function LoginView({ onLogin }) {
 
       const data = await response.json();
       const { access_token, user } = data;
-      
+
       const users = getUsers();
       const existingUser = users.find(u => u.email === user.email);
       
@@ -416,255 +440,220 @@ function LoginView({ onLogin }) {
 
         {/* Right Panel - Login Form */}
         <div className="login-panel">
-          <div className="login-card">
-            {showAuthAnimation ? (
+      <div className="login-card">
+            {showOTP ? (
+              <OTPVerification 
+                email={otpEmail}
+                onBack={handleOTPBack}
+                onSuccess={handleOTPSuccess}
+              />
+            ) : showAuthAnimation ? (
               <div className="auth-animation-container">
                 <CustomAuthAnimation />
               </div>
             ) : (
               <>
-                {showForgot ? (
-                  <div className="forgot-password-form">
+        {showForgot ? (
+              <div className="forgot-password-form">
+                <div className="form-header">
+                  <button type="button" className="back-button" onClick={() => setShowForgot(false)}>
+                    <span>←</span> Back
+                  </button>
+                  <h2>Reset Password</h2>
+                      <p>Enter your email to receive a verification code</p>
+            </div>
+                
+                <form onSubmit={handleForgotPassword} className="form">
+                  <div className="input-group">
+                    <label>Email</label>
+                    <div className="input-wrapper">
+                      <FaEnvelope className="input-icon" />
+              <input
+                type="email"
+                value={fpEmail}
+                onChange={e => setFpEmail(e.target.value)}
+                placeholder="Enter your email"
+                required
+              />
+                    </div>
+                  </div>
+                  
+                      {otpError && <div className="error-message">{otpError}</div>}
+                      {otpSuccess && <div className="success-message">{otpSuccess}</div>}
+                  
+                      <button type="submit" className="submit-button" disabled={otpLoading}>
+                        {otpLoading ? <div className="spinner"></div> : 'Send OTP'}
+              </button>
+            </form>
+              </div>
+        ) : (
+          <>
+            {!showRegister ? (
+                  <div className="login-form">
                     <div className="form-header">
-                      <button type="button" className="back-button" onClick={() => setShowForgot(false)}>
-                        <span>←</span> Back
-                      </button>
-                      <h2>Reset Password</h2>
+                      <h2>Welcome Back</h2>
+                      <p>Sign in to continue</p>
                     </div>
                     
-                    <form onSubmit={handleForgotPassword} className="form">
+                    <form onSubmit={handleSubmit} className="form">
+                      <div className="input-group">
+                        <label>Email</label>
+                        <div className="input-wrapper">
+                    <FaEnvelope className="input-icon" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                            placeholder="Enter your email"
+                      required
+                    />
+                  </div>
+                      </div>
+                      
+                      <div className="input-group">
+                        <label>Password</label>
+                        <div className="input-wrapper">
+                    <FaLock className="input-icon" />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                            placeholder="Enter your password"
+                      required
+                    />
+                          <button 
+                            type="button" 
+                            className="password-toggle"
+                            onClick={() => setShowPassword(!showPassword)}
+                          >
+                      {showPassword ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                  </div>
+                      </div>
+                      
+                      {error && <div className="error-message">{error}</div>}
+                      
+                      <button type="submit" className={`submit-button ${isAnimating ? 'animating' : ''}`} disabled={loading}>
+                        {loading ? (
+                          <div className="loading-content">
+                            <div className="spinner"></div>
+                            <span>Signing In...</span>
+                          </div>
+                        ) : (
+                          <div className="button-content">
+                            <FaMagic />
+                            <span>Sign In</span>
+                          </div>
+                        )}
+                  </button>
+                </form>
+                    
+                    <div className="divider">
+                      <span>or</span>
+                    </div>
+                    
+                    <div className="github-section">
+                      <h3 className="github-heading">Login or Sign up with GitHub</h3>
+                      <button 
+                        type="button" 
+                        className="github-button"
+                        onClick={handleGitHubLogin}
+                        disabled={loading}
+                      >
+                        <FaGithub />
+                      </button>
+                </div>
+                    
+                    <div className="form-footer">
+                      <button type="button" className="link-button" onClick={() => setShowForgot(true)}>
+                        Forgot password?
+                      </button>
+                      <div className="register-prompt">
+                  <span>Don't have an account?</span>
+                        <button type="button" className="link-button" onClick={() => setShowRegister(true)}>
+                          Create one
+                        </button>
+                      </div>
+                    </div>
+                </div>
+            ) : (
+                  <div className="register-form">
+                    <div className="form-header">
+                      <button type="button" className="back-button" onClick={() => setShowRegister(false)}>
+                        <span>←</span> Back
+                      </button>
+                      <h2>Create Account</h2>
+                      <p>Join the future</p>
+                </div>
+                    
+                    <form onSubmit={handleRegister} className="form">
+                      <div className="input-group">
+                        <label>Full Name</label>
+                        <div className="input-wrapper">
+                          <FaEnvelope className="input-icon" />
+                  <input
+                    type="text"
+                    value={regName}
+                    onChange={e => setRegName(e.target.value)}
+                            placeholder="Enter your full name"
+                    required
+                  />
+                        </div>
+                      </div>
+                      
                       <div className="input-group">
                         <label>Email</label>
                         <div className="input-wrapper">
                           <FaEnvelope className="input-icon" />
-                          <input
-                            type="email"
-                            value={fpEmail}
-                            onChange={e => setFpEmail(e.target.value)}
-                            placeholder="Enter your email"
-                            required
-                          />
+                  <input
+                    type="email"
+                    value={regEmail}
+                    onChange={e => setRegEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    required
+                  />
                         </div>
                       </div>
                       
                       <div className="input-group">
-                        <label>Old Password</label>
+                        <label>Password</label>
                         <div className="input-wrapper">
                           <FaLock className="input-icon" />
-                          <input
-                            type="password"
-                            value={fpOldPassword}
-                            onChange={e => setFpOldPassword(e.target.value)}
-                            placeholder="Enter old password"
-                            required
-                          />
+                  <input
+                    type="password"
+                    value={regPassword}
+                    onChange={e => setRegPassword(e.target.value)}
+                    placeholder="Create a password"
+                    required
+                  />
                         </div>
                       </div>
                       
                       <div className="input-group">
-                        <label>New Password</label>
-                        <div className="input-wrapper">
-                          <FaLock className="input-icon" />
-                          <input
-                            type="password"
-                            value={fpNewPassword}
-                            onChange={e => setFpNewPassword(e.target.value)}
-                            placeholder="Enter new password"
-                            required
-                          />
-                        </div>
+                        <label>Profile Picture (Optional)</label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarChange}
+                          className="file-input"
+                  />
+                        {regAvatar && (
+                          <div className="avatar-preview">
+                            <img src={regAvatar} alt="Avatar preview" />
+                          </div>
+                        )}
                       </div>
                       
-                      <div className="input-group">
-                        <label>Confirm Password</label>
-                        <div className="input-wrapper">
-                          <FaLock className="input-icon" />
-                          <input
-                            type="password"
-                            value={fpConfirmPassword}
-                            onChange={e => setFpConfirmPassword(e.target.value)}
-                            placeholder="Confirm new password"
-                            required
-                          />
+                      {regError && <div className="error-message">{regError}</div>}
+                      
+                      <button type="submit" className="submit-button">
+                        <div className="button-content">
+                          <FaHeart />
+                          <span>Create Account</span>
                         </div>
-                      </div>
-                      
-                      {fpError && <div className="error-message">{fpError}</div>}
-                      {fpSuccess && <div className="success-message">{fpSuccess}</div>}
-                      
-                      <button type="submit" className="submit-button" disabled={fpLoading}>
-                        {fpLoading ? <div className="spinner"></div> : 'Update Password'}
                       </button>
-                    </form>
+                </form>
                   </div>
-                ) : (
-                  <>
-                    {!showRegister ? (
-                      <div className="login-form">
-                        <div className="form-header">
-                          <h2>Welcome Back</h2>
-                          <p>Sign in to continue</p>
-                        </div>
-                        
-                        <form onSubmit={handleSubmit} className="form">
-                          <div className="input-group">
-                            <label>Email</label>
-                            <div className="input-wrapper">
-                              <FaEnvelope className="input-icon" />
-                              <input
-                                type="email"
-                                value={email}
-                                onChange={e => setEmail(e.target.value)}
-                                placeholder="Enter your email"
-                                required
-                              />
-                            </div>
-                          </div>
-                          
-                          <div className="input-group">
-                            <label>Password</label>
-                            <div className="input-wrapper">
-                              <FaLock className="input-icon" />
-                              <input
-                                type={showPassword ? 'text' : 'password'}
-                                value={password}
-                                onChange={e => setPassword(e.target.value)}
-                                placeholder="Enter your password"
-                                required
-                              />
-                              <button 
-                                type="button" 
-                                className="password-toggle"
-                                onClick={() => setShowPassword(!showPassword)}
-                              >
-                                {showPassword ? <FaEyeSlash /> : <FaEye />}
-                              </button>
-                            </div>
-                          </div>
-                          
-                          {error && <div className="error-message">{error}</div>}
-                          
-                          <button type="submit" className={`submit-button ${isAnimating ? 'animating' : ''}`} disabled={loading}>
-                            {loading ? (
-                              <div className="loading-content">
-                                <div className="spinner"></div>
-                                <span>Signing In...</span>
-                              </div>
-                            ) : (
-                              <div className="button-content">
-                                <FaMagic />
-                                <span>Sign In</span>
-                              </div>
-                            )}
-                          </button>
-                        </form>
-                        
-                        <div className="divider">
-                          <span>or</span>
-                        </div>
-                        
-                        <div className="github-section">
-                          <h3 className="github-heading">Login or Sign up with GitHub</h3>
-                          <button 
-                            type="button" 
-                            className="github-button"
-                            onClick={handleGitHubLogin}
-                            disabled={loading}
-                          >
-                            <FaGithub />
-                          </button>
-                        </div>
-                        
-                        <div className="form-footer">
-                          <button type="button" className="link-button" onClick={() => setShowForgot(true)}>
-                            Forgot password?
-                          </button>
-                          <div className="register-prompt">
-                            <span>Don't have an account?</span>
-                            <button type="button" className="link-button" onClick={() => setShowRegister(true)}>
-                              Create one
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="register-form">
-                        <div className="form-header">
-                          <button type="button" className="back-button" onClick={() => setShowRegister(false)}>
-                            <span>←</span> Back
-                          </button>
-                          <h2>Create Account</h2>
-                          <p>Join the future</p>
-                        </div>
-                        
-                        <form onSubmit={handleRegister} className="form">
-                          <div className="input-group">
-                            <label>Full Name</label>
-                            <div className="input-wrapper">
-                              <FaEnvelope className="input-icon" />
-                              <input
-                                type="text"
-                                value={regName}
-                                onChange={e => setRegName(e.target.value)}
-                                placeholder="Enter your full name"
-                                required
-                              />
-                            </div>
-                          </div>
-                          
-                          <div className="input-group">
-                            <label>Email</label>
-                            <div className="input-wrapper">
-                              <FaEnvelope className="input-icon" />
-                              <input
-                                type="email"
-                                value={regEmail}
-                                onChange={e => setRegEmail(e.target.value)}
-                                placeholder="Enter your email"
-                                required
-                              />
-                            </div>
-                          </div>
-                          
-                          <div className="input-group">
-                            <label>Password</label>
-                            <div className="input-wrapper">
-                              <FaLock className="input-icon" />
-                              <input
-                                type="password"
-                                value={regPassword}
-                                onChange={e => setRegPassword(e.target.value)}
-                                placeholder="Create a password"
-                                required
-                              />
-                            </div>
-                          </div>
-                          
-                          <div className="input-group">
-                            <label>Profile Picture (Optional)</label>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleAvatarChange}
-                              className="file-input"
-                            />
-                            {regAvatar && (
-                              <div className="avatar-preview">
-                                <img src={regAvatar} alt="Avatar preview" />
-                              </div>
-                            )}
-                          </div>
-                          
-                          {regError && <div className="error-message">{regError}</div>}
-                          
-                          <button type="submit" className="submit-button">
-                            <div className="button-content">
-                              <FaHeart />
-                              <span>Create Account</span>
-                            </div>
-                          </button>
-                        </form>
-                      </div>
                     )}
                   </>
                 )}

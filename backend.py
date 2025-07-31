@@ -6,9 +6,12 @@ os.environ["PATH"] += os.pathsep + r"C:\ffmpeg\bin\bin"
 os.environ["FFMPEG_BINARY"] = r"C:\ffmpeg\bin\bin\ffmpeg.exe"
 import re
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, request, jsonify, send_from_directory, g, session
 from flask_cors import CORS
+from flask_mail import Mail, Message
+import pyotp
+import secrets
 import google.generativeai as genai
 from langchain_google_genai import ChatGoogleGenerativeAI, GoogleGenerativeAIEmbeddings
 from langchain_core.prompts import ChatPromptTemplate
@@ -95,9 +98,39 @@ faiss.omp_set_num_threads(4)  # Set number of threads for CPU operations
 # Initialize Flask app
 app = Flask(__name__)
 
+# Load environment variables FIRST
+env_path = os.path.join(os.path.dirname(__file__), '.env')
+print(f"Looking for .env file at: {env_path}")
+print(f"File exists: {os.path.exists(env_path)}")
+load_dotenv(env_path)
+
+# Debug: Check what environment variables are loaded
+print(f"EMAIL_USERNAME from env: {os.getenv('EMAIL_USERNAME')}")
+print(f"EMAIL_PASSWORD from env: {os.getenv('EMAIL_PASSWORD', 'NOT_FOUND')}")
+
 # Configure Flask app
 app.config['DEBUG'] = False
 app.config['TEMPLATES_AUTO_RELOAD'] = False
+
+# Email configuration for OTP
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = os.getenv('EMAIL_USERNAME', 'your-email@gmail.com')
+app.config['MAIL_PASSWORD'] = os.getenv('EMAIL_PASSWORD', 'your-app-password')
+app.config['MAIL_DEFAULT_SENDER'] = os.getenv('EMAIL_USERNAME', 'your-email@gmail.com')
+
+# Debug: Print email configuration (remove in production)
+logger.info(f"Email configuration loaded:")
+logger.info(f"MAIL_USERNAME: {app.config['MAIL_USERNAME']}")
+logger.info(f"MAIL_PASSWORD: {'*' * len(app.config['MAIL_PASSWORD']) if app.config['MAIL_PASSWORD'] != 'your-app-password' else 'NOT_SET'}")
+logger.info(f"MAIL_DEFAULT_SENDER: {app.config['MAIL_DEFAULT_SENDER']}")
+
+# Initialize Flask-Mail
+mail = Mail(app)
+
+# OTP storage (in production, use Redis or database)
+otp_storage = {}
 app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'supersecretkey')
 app.config['SESSION_COOKIE_NAME'] = 'rag_chatbot_session_id'
@@ -123,8 +156,7 @@ logger.info(f"UPLOAD_FOLDER resolved to: {UPLOAD_FOLDER}")
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 
-# Load environment variables
-load_dotenv()
+# Environment variables already loaded above
 
 # Configure Gemini API
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
@@ -3001,6 +3033,207 @@ def github_auth():
     except Exception as e:
         logger.error(f"GitHub OAuth error: {e}")
         return jsonify({'error': 'GitHub authentication failed'}), 500
+
+# OTP Functions
+def generate_otp():
+    """Generate a 6-digit OTP"""
+    return ''.join([str(secrets.randbelow(10)) for _ in range(6)])
+
+def send_otp_email(email, otp):
+    """Send OTP via email"""
+    try:
+        msg = Message(
+            subject='Password Reset OTP - Unified Knowledge Platform',
+            recipients=[email],
+            body=f'''
+Hello,
+
+You have requested a password reset for your Unified Knowledge Platform account.
+
+Your OTP (One-Time Password) is: {otp}
+
+This OTP is valid for 10 minutes. Please do not share this OTP with anyone.
+
+If you did not request this password reset, please ignore this email.
+
+Best regards,
+Unified Knowledge Platform Team
+            ''',
+            html=f'''
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+        .header {{ background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }}
+        .content {{ background: #f9f9f9; padding: 20px; border-radius: 0 0 10px 10px; }}
+        .otp {{ background: #667eea; color: white; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; border-radius: 5px; margin: 20px 0; }}
+        .warning {{ background: #fff3cd; border: 1px solid #ffeaa7; padding: 10px; border-radius: 5px; margin: 20px 0; }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Password Reset OTP</h1>
+            <p>Unified Knowledge Platform</p>
+        </div>
+        <div class="content">
+            <p>Hello,</p>
+            <p>You have requested a password reset for your Unified Knowledge Platform account.</p>
+            <div class="otp">Your OTP: {otp}</div>
+            <p>This OTP is valid for <strong>10 minutes</strong>. Please do not share this OTP with anyone.</p>
+            <div class="warning">
+                <strong>Security Notice:</strong> If you did not request this password reset, please ignore this email and ensure your account is secure.
+            </div>
+            <p>Best regards,<br>Unified Knowledge Platform Team</p>
+        </div>
+    </div>
+</body>
+</html>
+            '''
+        )
+        mail.send(msg)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send OTP email: {e}")
+        return False
+
+@app.route('/api/otp/send', methods=['POST'])
+def send_otp():
+    """Send OTP to user's email"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        
+        if not email:
+            return jsonify({'error': 'Email is required'}), 400
+        
+        # Check if user exists (you can modify this based on your user storage)
+        # For now, we'll assume the user exists if they provide an email
+        
+        # Generate OTP
+        otp = generate_otp()
+        expiry_time = datetime.now() + timedelta(minutes=10)
+        
+        # Store OTP with expiry
+        otp_storage[email] = {
+            'otp': otp,
+            'expiry': expiry_time,
+            'attempts': 0
+        }
+        
+        # Send OTP via email
+        if send_otp_email(email, otp):
+            return jsonify({
+                'message': 'OTP sent successfully',
+                'email': email
+            })
+        else:
+            return jsonify({'error': 'Failed to send OTP email'}), 500
+            
+    except Exception as e:
+        logger.error(f"OTP send error: {e}")
+        return jsonify({'error': 'Failed to send OTP'}), 500
+
+@app.route('/api/otp/verify', methods=['POST'])
+def verify_otp():
+    """Verify OTP and allow password reset"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        otp = data.get('otp')
+        
+        if not email or not otp:
+            return jsonify({'error': 'Email and OTP are required'}), 400
+        
+        # Check if OTP exists and is not expired
+        if email not in otp_storage:
+            return jsonify({'error': 'OTP not found or expired'}), 400
+        
+        otp_data = otp_storage[email]
+        
+        # Check if OTP is expired
+        if datetime.now() > otp_data['expiry']:
+            del otp_storage[email]
+            return jsonify({'error': 'OTP has expired'}), 400
+        
+        # Check if too many attempts
+        if otp_data['attempts'] >= 3:
+            del otp_storage[email]
+            return jsonify({'error': 'Too many failed attempts. Please request a new OTP'}), 400
+        
+        # Verify OTP
+        if otp_data['otp'] == otp:
+            # OTP is correct, generate reset token
+            reset_token = secrets.token_urlsafe(32)
+            otp_data['reset_token'] = reset_token
+            otp_data['reset_expiry'] = datetime.now() + timedelta(minutes=30)
+            
+            return jsonify({
+                'message': 'OTP verified successfully',
+                'reset_token': reset_token
+            })
+        else:
+            # Increment attempts
+            otp_data['attempts'] += 1
+            return jsonify({'error': 'Invalid OTP'}), 400
+            
+    except Exception as e:
+        logger.error(f"OTP verification error: {e}")
+        return jsonify({'error': 'Failed to verify OTP'}), 500
+
+@app.route('/api/otp/reset-password', methods=['POST'])
+def reset_password():
+    """Reset password using reset token"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        reset_token = data.get('reset_token')
+        new_password = data.get('new_password')
+        
+        if not email or not reset_token or not new_password:
+            return jsonify({'error': 'Email, reset token, and new password are required'}), 400
+        
+        # Validate password strength
+        if len(new_password) < 6:
+            return jsonify({'error': 'Password must be at least 6 characters long'}), 400
+        
+        # Check if reset token is valid
+        if email not in otp_storage:
+            return jsonify({'error': 'Invalid or expired reset token'}), 400
+        
+        otp_data = otp_storage[email]
+        
+        if 'reset_token' not in otp_data or 'reset_expiry' not in otp_data:
+            return jsonify({'error': 'Invalid reset token'}), 400
+        
+        if otp_data['reset_token'] != reset_token:
+            return jsonify({'error': 'Invalid reset token'}), 400
+        
+        if datetime.now() > otp_data['reset_expiry']:
+            del otp_storage[email]
+            return jsonify({'error': 'Reset token has expired'}), 400
+        
+        # Update password in user storage (modify this based on your user storage)
+        # For now, we'll update the ukpUsers in localStorage
+        try:
+            # This is a simplified approach - in production, you'd update your database
+            # For now, we'll just return success and let the frontend handle the password update
+            return jsonify({
+                'message': 'Password reset successful',
+                'email': email
+            })
+        except Exception as e:
+            logger.error(f"Failed to update password: {e}")
+            return jsonify({'error': 'Failed to update password'}), 500
+        
+        # Clean up OTP data
+        del otp_storage[email]
+        
+    except Exception as e:
+        logger.error(f"Password reset error: {e}")
+        return jsonify({'error': 'Failed to reset password'}), 500
 
 if __name__ == '__main__':
     print("Starting Flask app...")

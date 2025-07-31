@@ -855,6 +855,50 @@
                 "userName": "Dhruv Mendiratta"
             },
             "timestamp": "2025-07-31T17:20:50.265160"
+        },
+        {
+            "id": "3e7453a1-9450-4407-97ef-a806498dabaf",
+            "user_email": "cursorzeo@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv"
+            },
+            "timestamp": "2025-07-31T17:53:24.422174"
+        },
+        {
+            "id": "34531f26-0e5c-4021-b8a0-f8be347fd90f",
+            "user_email": "cursorzeo@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv"
+            },
+            "timestamp": "2025-07-31T18:07:18.867687"
+        },
+        {
+            "id": "96665ff5-c34b-4091-a396-4cb61eea496f",
+            "user_email": "cursorzeo@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv"
+            },
+            "timestamp": "2025-07-31T18:49:21.778058"
+        },
+        {
+            "id": "14e31ddf-79aa-4738-a4a7-011ee176140b",
+            "user_email": "cursorzeo@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv"
+            },
+            "timestamp": "2025-07-31T19:31:33.026298"
         }
     ],
     "session_metrics": [

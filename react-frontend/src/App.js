@@ -2573,25 +2573,25 @@ function getFileType(file) {
                   const roleInfo = getUserRoleInfo(userEmail);
                   if (roleInfo.role !== 'user') {
                     return (
-                      <div style={{ 
-                        display: 'inline-flex', 
-                        alignItems: 'center', 
+                  <div style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
                         gap: '0.25rem',
                         background: roleInfo.color,
-                        color: 'white', 
-                        padding: '2px 6px', 
-                        borderRadius: 8, 
-                        fontSize: '0.6rem', 
-                        fontWeight: 600,
-                        marginTop: 2,
-                        boxShadow: showUserDetailsMenu ? '0 2px 8px rgba(0, 0, 0, 0.3)' : '0 1px 3px rgba(0, 0, 0, 0.2)',
-                        letterSpacing: '0.2px',
-                        width: 'fit-content',
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        transform: showUserDetailsMenu ? 'scale(1.05)' : 'scale(1)'
-                      }}>
+                    color: 'white', 
+                    padding: '2px 6px', 
+                    borderRadius: 8, 
+                    fontSize: '0.6rem', 
+                    fontWeight: 600,
+                    marginTop: 2,
+                    boxShadow: showUserDetailsMenu ? '0 2px 8px rgba(0, 0, 0, 0.3)' : '0 1px 3px rgba(0, 0, 0, 0.2)',
+                    letterSpacing: '0.2px',
+                    width: 'fit-content',
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    transform: showUserDetailsMenu ? 'scale(1.05)' : 'scale(1)'
+                  }}>
                         {roleInfo.name.toUpperCase()}
-                      </div>
+                  </div>
                     );
                   }
                   return null;
@@ -2632,13 +2632,13 @@ function getFileType(file) {
                   <div className="menu-item" onClick={() => { setShowProfileModal(true); setProfileModalFromSidebar(true); setShowUserDetailsMenu(false); }}>Profile</div>
                   {/* Developer Options - Only visible to users with developer options permission */}
                   {canAccessDeveloperOptions(userEmail) && (
-                    <div className="menu-item" onClick={() => { 
-                      window.open('/developer-dashboard', '_blank');
-                      setShowUserDetailsMenu(false); 
-                    }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span>Developer Options</span>
-                      <FaExternalLinkAlt style={{ fontSize: '12px', opacity: 0.7 }} />
-                    </div>
+                  <div className="menu-item" onClick={() => { 
+                    window.open('/developer-dashboard', '_blank');
+                    setShowUserDetailsMenu(false); 
+                  }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Developer Options</span>
+                    <FaExternalLinkAlt style={{ fontSize: '12px', opacity: 0.7 }} />
+                  </div>
                   )}
                   <div className="menu-item" onClick={handleLogout}>Log out</div>
                 </div>
@@ -4131,11 +4131,11 @@ function getFileType(file) {
         </div>
       )}
       {showProfileModal && (
-                <ProfileModal
-          user={{
-            name: userName,
-            email: userEmail,
-            avatar: userAvatar,
+        <ProfileModal
+          user={{ 
+            name: userName, 
+            email: userEmail, 
+            avatar: userAvatar, 
             password: (JSON.parse(localStorage.getItem('ukpUser')) || {}).password || '',
             isAdmin: localStorage.getItem('userIsAdmin') === 'true' || localStorage.getItem(`userIsAdmin_${userEmail}`) === 'true',
             isFeedbackManager: localStorage.getItem(`userIsFeedbackManager_${userEmail}`) === 'true',
