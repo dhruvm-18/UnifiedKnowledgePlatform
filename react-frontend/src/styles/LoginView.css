@@ -1994,10 +1994,6 @@
   --text-primary-dark: #f5f7fa;
   --text-secondary: #666;
   --text-secondary-dark: #a1a1aa;
-  --accent-color: #6c2eb7;
-  --accent-color-dark: #8b5cf6;
-  --accent-secondary: #8b5cf6;
-  --accent-secondary-dark: #a855f7;
   --input-bg: #fff;
   --input-bg-dark: #232136;
   --disabled-bg: #f8f9fa;
@@ -2071,11 +2067,11 @@
 }
 
 .account-creation .step-header h2 {
-  color: var(--accent-color, #6c2eb7);
+  color: var(--accent-color, #3B82F6);
   font-size: 1.8rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
-  text-shadow: 0 2px 4px rgba(108, 46, 183, 0.1);
+  text-shadow: 0 2px 4px rgba(59, 130, 246, 0.1);
   animation: textGlow 2s ease-in-out infinite alternate;
 }
 
@@ -2117,7 +2113,7 @@
   left: 0;
   width: 0;
   height: 2px;
-  background: var(--accent-color, #6c2eb7);
+  background: var(--accent-color, #3B82F6);
   transition: width 0.3s ease;
 }
 
@@ -2130,7 +2126,7 @@
 }
 
 .dark-mode .account-creation label::after {
-  background: var(--accent-color-dark, #8b5cf6);
+  background: var(--accent-color-dark, #2563eb);
 }
 
 .account-creation input {
@@ -2148,8 +2144,8 @@
 
 .account-creation input:focus {
   outline: none;
-  border-color: var(--accent-color, #6c2eb7);
-  box-shadow: 0 0 0 3px rgba(108, 46, 183, 0.1);
+  border-color: var(--accent-color, #3B82F6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   transform: translateY(-2px);
   animation: inputPulse 0.6s ease;
 }
@@ -2222,9 +2218,9 @@
 }
 
 .account-creation .verify-btn {
-  background: linear-gradient(135deg, var(--accent-color, #6c2eb7) 0%, var(--accent-secondary, #8b5cf6) 100%);
+  background: linear-gradient(135deg, var(--accent-color, #3B82F6) 0%, var(--accent-secondary, #60a5fa) 100%);
   color: white;
-  box-shadow: 0 4px 15px rgba(108, 46, 183, 0.3);
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
 
 .dark-mode .account-creation .verify-btn {
@@ -2234,7 +2230,7 @@
 
 .account-creation .verify-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(108, 46, 183, 0.4);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
 .dark-mode .account-creation .verify-btn:hover:not(:disabled) {
@@ -2279,7 +2275,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(108, 46, 183, 0.1), transparent);
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
   transition: left 0.5s ease;
 }
 
@@ -2289,8 +2285,8 @@
 
 .otp-input:focus {
   outline: none;
-  border-color: var(--accent-color, #6c2eb7);
-  box-shadow: 0 0 0 3px rgba(108, 46, 183, 0.1);
+  border-color: var(--accent-color, #3B82F6);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
   transform: translateY(-2px) scale(1.05);
   animation: inputPulse 0.6s ease;
 }
@@ -3411,4 +3407,25 @@
 
 .features-panel .z-10 {
   z-index: 10 !important;
+}
+
+/* CSS Variables for LoginView */
+:root {
+  --accent-color: #3B82F6; /* Blue for light theme */
+  --accent-color-dark: #2563eb; /* Darker blue */
+  --accent-secondary: #60a5fa; /* Lighter blue */
+  --accent-secondary-dark: #3b82f6; /* Medium blue */
+}
+
+.dark-mode {
+  --accent-color: #9c27b0; /* Purple for dark theme */
+  --accent-color-dark: #8b5cf6; /* Lighter purple */
+  --accent-secondary: #a855f7; /* Medium purple */
+  --accent-secondary-dark: #7c3aed; /* Darker purple */
+}
+
+/* Account Creation Form Styles */
+.account-details-step {
+  position: relative;
+  padding-top: 3rem; /* Add top padding for the back button */
 }

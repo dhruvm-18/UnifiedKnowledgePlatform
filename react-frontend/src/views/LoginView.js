@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import '../styles/LoginView.css';
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGithub, FaHeart, FaMagic, FaSun, FaMoon, FaUserPlus } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGithub, FaHeart, FaMagic, FaSun, FaMoon, FaUserPlus, FaUser } from 'react-icons/fa';
 import { GITHUB_CONFIG } from '../config/github';
 import CustomAuthAnimation from '../components/CustomAuthAnimation';
-import OTPVerification from '../components/OTPVerification';
-import AccountCreation from '../components/AccountCreation';
 import AnimatedScene from '../components/AnimatedScene';
 
 const APP_NAME = 'Unified Knowledge Platform';
@@ -45,6 +43,13 @@ function LoginView({ onLogin }) {
   const [otpError, setOtpError] = useState('');
   const [otpSuccess, setOtpSuccess] = useState('');
   const [showAccountCreation, setShowAccountCreation] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const getUsers = () => JSON.parse(localStorage.getItem(USERS_KEY)) || [];
   const saveUsers = (users) => localStorage.setItem(USERS_KEY, JSON.stringify(users));
@@ -315,6 +320,46 @@ function LoginView({ onLogin }) {
     setTimeout(() => setSuccess(''), 5000);
   };
 
+  const handleCreateAccount = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccess('');
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    if (!formData.name || !formData.email || !formData.password) {
+      setError('Please fill in all fields.');
+      return;
+    }
+
+    const users = getUsers();
+    if (users.some(u => u.email === formData.email)) {
+      setError('An account with this email already exists.');
+      return;
+    }
+
+    const newUser = {
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      avatar: null, // Avatar will be handled by the file input
+      isAdmin: false,
+      role: 'User',
+      createdAt: new Date().toISOString()
+    };
+    users.push(newUser);
+    saveUsers(users);
+    localStorage.setItem('ukpUser', JSON.stringify(newUser));
+    onLogin && onLogin({ email: newUser.email, name: newUser.name, avatar: newUser.avatar, isAdmin: newUser.isAdmin, role: newUser.role });
+    setShowAccountCreation(false);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
   const handleGitHubLogin = () => {
     setLoading(true);
     
@@ -454,10 +499,113 @@ function LoginView({ onLogin }) {
                 onSuccess={handleOTPSuccess}
               />
             ) : showAccountCreation ? (
-              <AccountCreation
-                onBack={handleAccountCreationBack}
-                onSuccess={handleAccountCreationSuccess}
-              />
+              <div className="account-creation-form">
+                <div className="form-header">
+                  <button type="button" className="back-button" onClick={() => setShowAccountCreation(false)}>
+                    <span>←</span> Back
+                  </button>
+                  <h2>Create Account</h2>
+                  <p>Enter your details to create a new account</p>
+                </div>
+
+                <form className="form">
+                  <div className="input-group">
+                    <label>Full Name</label>
+                    <div className="input-wrapper">
+                      <FaUser className="input-icon" />
+                      <input
+                        type="text"
+                        name="name"
+                        placeholder="Enter your full name"
+                        value={formData.name}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="input-group">
+                    <label>Email</label>
+                    <div className="input-wrapper">
+                      <FaEnvelope className="input-icon" />
+                      <input
+                        type="email"
+                        name="email"
+                        placeholder="Enter your email"
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="input-group">
+                    <label>Password</label>
+                    <div className="input-wrapper">
+                      <FaLock className="input-icon" />
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        name="password"
+                        placeholder="Enter your password"
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="input-group">
+                    <label>Confirm Password</label>
+                    <div className="input-wrapper">
+                      <FaLock className="input-icon" />
+                      <input
+                        type={showConfirmPassword ? "text" : "password"}
+                        name="confirmPassword"
+                        placeholder="Confirm your password"
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="password-toggle"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {error && <div className="error-message">{error}</div>}
+                  {success && <div className="success-message">{success}</div>}
+
+                  <button
+                    type="button"
+                    className="submit-button"
+                    onClick={handleCreateAccount}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <div className="loading-content">
+                        <div className="spinner"></div>
+                        <span>Creating Account...</span>
+                      </div>
+                    ) : (
+                      <div className="button-content">
+                        <FaUser />
+                        <span>Create Account</span>
+                      </div>
+                    )}
+                  </button>
+                </form>
+              </div>
             ) : showAuthAnimation ? (
               <div className="auth-animation-container">
                 <CustomAuthAnimation />

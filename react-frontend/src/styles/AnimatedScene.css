@@ -11,6 +11,7 @@
   position: relative;
   transition: all 0.5s ease;
   background: linear-gradient(to bottom, #eff6ff, #dbeafe);
+  z-index: 1;
 }
 
 .animated-scene .slide-card {
@@ -31,16 +32,8 @@
   color: #1f2937;
 }
 
-.animated-scene .message-left {
+.animated-scene .message-content {
   background: #eff6ff;
-}
-
-.animated-scene .message-center {
-  background: #faf5ff;
-}
-
-.animated-scene .message-right {
-  background: #f9fafb;
 }
 
 .animated-scene .indicator-active {
@@ -82,16 +75,8 @@
   color: #e5e7eb;
 }
 
-.dark-mode .animated-scene .message-left {
+.dark-mode .animated-scene .message-content {
   background: rgba(59, 130, 246, 0.2);
-}
-
-.dark-mode .animated-scene .message-center {
-  background: rgba(147, 51, 234, 0.2);
-}
-
-.dark-mode .animated-scene .message-right {
-  background: rgba(75, 85, 99, 0.4);
 }
 
 .dark-mode .animated-scene .indicator-active {
@@ -111,14 +96,14 @@
 }
 
 /* Logo Section */
-.logo-section {
+.animated-scene .logo-section {
   position: absolute;
   top: 48px;
   right: 48px;
   z-index: 10;
 }
 
-.logo-image {
+.animated-scene .logo-image {
   width: 120px;
   height: 80px;
   border-radius: 12px;
@@ -127,168 +112,183 @@
 }
 
 /* Slideshow Container */
-.slideshow-container {
+.animated-scene .slideshow-container {
   position: relative;
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  padding: 0 40px;
+  overflow: visible;
+  padding: 0 60px;
+  z-index: 1;
 }
 
-.slides-container {
-  position: absolute;
+.animated-scene .slides-container {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
   max-width: 1200px;
-  gap: 30px;
+  height: 320px;
+  overflow: visible;
+  z-index: 1;
 }
 
 /* Chat Windows */
-.chat-window {
-  position: relative;
+.animated-scene .chat-window {
+  position: absolute;
+  width: 100%;
   flex-shrink: 0;
+  left: 0;
+  top: 0;
+  z-index: 1;
 }
 
-.slide-card {
+.animated-scene .current-slide {
+  z-index: 2;
+}
+
+.animated-scene .next-slide {
+  z-index: 1;
+}
+
+.animated-scene .slide-card {
   border-radius: 1rem;
   backdrop-filter: blur(8px);
   transition: all 0.5s ease;
-  width: 350px;
-  height: 380px;
+  width: 100%;
+  height: 320px;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 /* Slide Header */
-.slide-header {
+.animated-scene .slide-header {
   padding: 1rem;
   transition: all 0.5s ease;
   flex-shrink: 0;
 }
 
-.header-content {
+.animated-scene .header-content {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
-.status-indicator {
+.animated-scene .status-indicator {
   width: 10px;
   height: 10px;
   border-radius: 50%;
   animation: pulse 2s infinite;
 }
 
-.status-indicator.green {
+.animated-scene .status-indicator.green {
   background: #10b981;
 }
 
-.status-indicator.purple {
-  background: #8b5cf6;
+.animated-scene .status-indicator.purple {
+  background: var(--accent-color);
 }
 
-.status-indicator.cyan {
+.animated-scene .status-indicator.cyan {
   background: #06b6d4;
 }
 
 /* Slide Content */
-.slide-content {
+.animated-scene .slide-content {
   padding: 1rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   flex: 1;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
-.slide-title {
-  font-size: 0.875rem;
+.animated-scene .slide-title {
+  font-size: 1rem;
   font-weight: 600;
   transition: all 0.5s ease;
 }
 
-.slide-message {
-  font-size: 0.875rem;
+.animated-scene .slide-message {
+  font-size: 0.9rem;
   line-height: 1.5;
   transition: all 0.5s ease;
-  white-space: pre-line;
-  overflow-y: auto;
-  flex: 1;
+  white-space: pre-wrap;
+  word-wrap: break-word;
   word-break: break-word;
+  overflow-wrap: break-word;
   hyphens: auto;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* Message Areas */
-.message-left,
-.message-center,
-.message-right {
+.animated-scene .message-content {
   border-radius: 0.5rem;
-  padding: 0.75rem;
+  padding: 1rem;
   transition: all 0.5s ease;
   width: 100%;
+  max-width: 100%;
   word-wrap: break-word;
   overflow-wrap: break-word;
-}
-
-.message-right {
-  margin-left: auto;
+  word-break: break-word;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* Typing Indicator */
-.typing-indicator {
+.animated-scene .typing-indicator {
   display: flex;
-  gap: 6px;
+  gap: 5px;
   margin-top: 0.5rem;
 }
 
-.right-typing {
-  justify-content: flex-end;
-}
-
-.typing-dot {
-  width: 6px;
-  height: 6px;
+.animated-scene .typing-dot {
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: #3b82f6;
   animation: bounce 1.4s infinite;
 }
 
-.typing-dot:nth-child(2) {
+.animated-scene .typing-dot:nth-child(2) {
   animation-delay: 0.1s;
 }
 
-.typing-dot:nth-child(3) {
+.animated-scene .typing-dot:nth-child(3) {
   animation-delay: 0.2s;
 }
 
 /* Slide Indicator */
-.slide-indicator {
+.animated-scene .slide-indicator {
   position: absolute;
   bottom: 140px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   gap: 8px;
+  z-index: 10;
 }
 
-.indicator-dot {
+.animated-scene .indicator-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   transition: all 0.3s ease;
 }
 
-.indicator-active {
+.animated-scene .indicator-active {
   transform: scale(1.25);
 }
 
 /* Scene Title */
-.scene-title {
+.animated-scene .scene-title {
   position: absolute;
   bottom: 48px;
   left: 50%;
@@ -296,9 +296,10 @@
   text-align: center;
   width: 100%;
   max-width: 600px;
+  z-index: 10;
 }
 
-.main-title {
+.animated-scene .main-title {
   font-size: 2.5rem;
   font-weight: 700;
   margin-bottom: 0.75rem;
@@ -308,7 +309,7 @@
   line-height: 1.2;
 }
 
-.subtitle {
+.animated-scene .subtitle {
   font-size: 1.25rem;
   font-weight: 400;
   transition: all 0.5s ease;
@@ -317,23 +318,19 @@
 }
 
 /* Animation Classes */
-.animate-chat-float {
+.animated-scene .animate-chat-float {
   animation: chatFloat 6s ease-in-out infinite;
 }
 
-.animate-chat-float-center {
-  animation: chatFloatCenter 6s ease-in-out infinite 1s;
-}
-
-.animate-logo-subtle {
+.animated-scene .animate-logo-subtle {
   animation: logoSubtle 8s ease-in-out infinite;
 }
 
-.animate-title-subtle {
+.animated-scene .animate-title-subtle {
   animation: titleSubtle 8s ease-in-out infinite;
 }
 
-.animate-subtitle-subtle {
+.animated-scene .animate-subtitle-subtle {
   animation: subtitleSubtle 8s ease-in-out infinite 1s;
 }
 
@@ -344,15 +341,6 @@
   }
   50% {
     transform: translateY(-8px);
-  }
-}
-
-@keyframes chatFloatCenter {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-12px);
   }
 }
 

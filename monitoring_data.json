@@ -987,6 +987,92 @@
                 "userName": "Dhruv Mendiratta"
             },
             "timestamp": "2025-08-01T00:26:40.098710"
+        },
+        {
+            "id": "467927f9-187f-4096-a33e-833082a86c3d",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-01T11:43:41.348966"
+        },
+        {
+            "id": "dfa31ddd-b26e-44c7-9269-cf6d446d32b2",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-01T11:45:23.796908"
+        },
+        {
+            "id": "b7a20017-6997-4c7c-b8dd-da482189cf67",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "create_session",
+            "session_id": "04636e03-a5bd-462a-be91-db4793c062d9",
+            "agent_id": null,
+            "details": null,
+            "timestamp": "2025-08-01T11:45:27.949795"
+        },
+        {
+            "id": "5dfb6597-2bde-49a6-a085-2b06713f16c1",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-01T11:48:45.755552"
+        },
+        {
+            "id": "c8db62a5-3bc5-46e7-bb42-748b94cb3ae6",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-01T12:02:22.744846"
+        },
+        {
+            "id": "a36e49c7-7460-4b4f-8350-4589c0d6da49",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-01T12:07:28.858456"
+        },
+        {
+            "id": "953ba69b-5fa2-4799-8317-abf2c9818759",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-01T12:08:10.046269"
+        },
+        {
+            "id": "2a815d54-d2de-47c0-b221-09cc692ac961",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-01T12:29:43.653539"
         }
     ],
     "session_metrics": [

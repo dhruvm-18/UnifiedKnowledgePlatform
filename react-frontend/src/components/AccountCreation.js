@@ -300,111 +300,111 @@ const AccountCreation = ({ onBack, onSuccess }) => {
 
   const renderAccountDetailsStep = () => (
     <div className="account-details-step" style={{ animation: 'fadeInScale 0.6s ease' }}>
-      <div className="step-header">
-        <h2 style={{ 
-          background: 'linear-gradient(135deg, #6c2eb7 0%, #8b5cf6 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          backgroundClip: 'text',
-          animation: 'textGlow 2s ease-in-out infinite alternate'
-        }}>
-          Create Account
-        </h2>
-        <p style={{ animation: 'fadeInUp 0.5s ease 0.1s both' }}>
-          Enter your details to create a new account
-        </p>
-      </div>
-
-      <div className="form-group">
-        <div className="input-container">
-          <FaUser className="input-icon" />
-          <input
-            type="text"
-            name="name"
-            placeholder="Full Name"
-            value={formData.name}
-            onChange={handleInputChange}
-            className="form-input"
-          />
-        </div>
-      </div>
-
-      <div className="form-group">
-        <div className="input-container">
-          <FaEnvelope className="input-icon" />
-          <input
-            type="email"
-            name="email"
-            placeholder="Email Address"
-            value={formData.email}
-            onChange={handleInputChange}
-            className="form-input"
-          />
-        </div>
-      </div>
-
-      <div className="form-group">
-        <div className="input-container">
-          <FaLock className="input-icon" />
-          <input
-            type={showPassword ? "text" : "password"}
-            name="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={handleInputChange}
-            className="form-input"
-          />
-          <button
-            type="button"
-            className="toggle-password"
-            onClick={() => setShowPassword(!showPassword)}
-          >
-            {showPassword ? <FaEyeSlash /> : <FaEye />}
-          </button>
-        </div>
-      </div>
-
-      <div className="form-group">
-        <div className="input-container">
-          <FaLock className="input-icon" />
-          <input
-            type={showConfirmPassword ? "text" : "password"}
-            name="confirmPassword"
-            placeholder="Confirm Password"
-            value={formData.confirmPassword}
-            onChange={handleInputChange}
-            className="form-input"
-          />
-          <button
-            type="button"
-            className="toggle-password"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-          >
-            {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-          </button>
-        </div>
-      </div>
-
-      {error && <div className="error-message">{error}</div>}
-      {success && <div className="success-message">{success}</div>}
-
-      <div className="button-group">
-        <button
-          type="button"
-          className="back-btn"
-          onClick={onBack}
-        >
-          <FaArrowLeft /> Back to Login
+      <div className="form-header">
+        <button type="button" className="back-button" onClick={onBack}>
+          <span>←</span> Back
         </button>
+        <h2>Create Account</h2>
+        <p>Enter your details to create a new account</p>
+      </div>
+
+      <form className="form">
+        <div className="input-group">
+          <label>Full Name</label>
+          <div className="input-wrapper">
+            <FaUser className="input-icon" />
+            <input
+              type="text"
+              name="name"
+              placeholder="Enter your full name"
+              value={formData.name}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="input-group">
+          <label>Email</label>
+          <div className="input-wrapper">
+            <FaEnvelope className="input-icon" />
+            <input
+              type="email"
+              name="email"
+              placeholder="Enter your email"
+              value={formData.email}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+        </div>
+
+        <div className="input-group">
+          <label>Password</label>
+          <div className="input-wrapper">
+            <FaLock className="input-icon" />
+            <input
+              type={showPassword ? "text" : "password"}
+              name="password"
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleInputChange}
+              required
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
+        </div>
+
+        <div className="input-group">
+          <label>Confirm Password</label>
+          <div className="input-wrapper">
+            <FaLock className="input-icon" />
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              name="confirmPassword"
+              placeholder="Confirm your password"
+              value={formData.confirmPassword}
+              onChange={handleInputChange}
+              required
+            />
+            <button
+              type="button"
+              className="password-toggle"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+            </button>
+          </div>
+        </div>
+
+        {error && <div className="error-message">{error}</div>}
+        {success && <div className="success-message">{success}</div>}
+
         <button
           type="button"
-          className="create-btn"
+          className="submit-button"
           onClick={handleCreateAccount}
           disabled={loading}
         >
-          {loading ? 'Creating Account...' : 'Create Account'}
+          {loading ? (
+            <div className="loading-content">
+              <div className="spinner"></div>
+              <span>Creating Account...</span>
+            </div>
+          ) : (
+            <div className="button-content">
+              <FaUser />
+              <span>Create Account</span>
+            </div>
+          )}
         </button>
-      </div>
+      </form>
     </div>
   );
 
