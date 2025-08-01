@@ -1172,6 +1172,28 @@
                 "userName": "Dhruv Mendiratta"
             },
             "timestamp": "2025-08-01T13:15:42.775183"
+        },
+        {
+            "id": "05244a27-e2a6-4215-af8f-7933aeaacb32",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-01T13:17:24.454835"
+        },
+        {
+            "id": "12ef3f7d-4085-4460-8ab1-9413827e409c",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-01T13:21:01.135976"
         }
     ],
     "session_metrics": [

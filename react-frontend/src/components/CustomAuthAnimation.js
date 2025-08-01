@@ -14,11 +14,12 @@ function CustomAuthAnimation() {
   }, [stage]);
 
   return (
-    <div className="relative flex justify-center items-center h-64 w-64 mx-auto bg-gradient-to-br from-gray-900 to-indigo-800 rounded-lg shadow-lg overflow-hidden">
+    <div className="custom-auth-animation">
       {/* Glowing Animated Ring */}
       <div className="absolute inset-0 flex justify-center items-center">
         <motion.div
-          className="absolute w-[240px] h-[240px] bg-gradient-to-br from-indigo-500 via-purple-600 to-blue-500 blur-3xl opacity-30 rounded-full"
+          className="absolute w-[240px] h-[240px] blur-3xl opacity-30 rounded-full"
+          style={{ background: 'linear-gradient(135deg, var(--accent-color, #3B82F6), var(--accent-color, #3B82F6))' }}
           animate={{
             scale: [1, 1.2, 1],
             rotate: [0, 360],
@@ -36,7 +37,8 @@ function CustomAuthAnimation() {
         {Array.from({ length: 20 }).map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-2 h-2 rounded-full bg-white opacity-30"
+            className="absolute w-2 h-2 rounded-full opacity-30"
+            style={{ backgroundColor: 'var(--accent-color, #3B82F6)' }}
             style={{
               top: `${Math.random() * 100}%`,
               left: `${Math.random() * 100}%`,
@@ -57,7 +59,8 @@ function CustomAuthAnimation() {
         {stage < stages.length - 1 && (
           <motion.div
             key={stages[stage]}
-            className="z-10 flex flex-col items-center text-center text-white"
+            className="z-10 flex flex-col items-center text-center"
+            style={{ color: 'var(--text-primary, #333)' }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -67,7 +70,7 @@ function CustomAuthAnimation() {
             <div className="relative flex items-center justify-center w-32 h-32">
               <motion.div
                 className="absolute w-full h-full border-4 rounded-full border-transparent"
-                style={{ borderTopColor: `hsl(${220 + stage * 45}, 70%, 60%)` }}
+                style={{ borderTopColor: `var(--accent-color, #3B82F6)` }}
                 animate={{
                   rotate: 360,
                 }}
@@ -85,7 +88,8 @@ function CustomAuthAnimation() {
                   duration: 1.5,
                   ease: "easeInOut",
                 }}
-                className="absolute w-10 h-10 flex items-center justify-center bg-gray-900 rounded-full shadow-inner"
+                className="absolute w-10 h-10 flex items-center justify-center rounded-full shadow-inner"
+                style={{ backgroundColor: 'var(--bg-secondary, #f8fafc)' }}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -93,7 +97,8 @@ function CustomAuthAnimation() {
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                   strokeWidth={2}
-                  className="w-6 h-6 text-white"
+                                      className="w-6 h-6"
+                    style={{ color: 'var(--accent-color, #3B82F6)' }}
                 >
                   <path
                     strokeLinecap="round"
@@ -109,7 +114,7 @@ function CustomAuthAnimation() {
             </div>
 
             {/* Stage Text */}
-            <div className="mt-4 text-lg font-medium">{stages[stage]}...</div>
+            <div className="mt-4 text-lg font-medium" style={{ color: 'var(--text-primary, #333)' }}>{stages[stage]}...</div>
           </motion.div>
         )}
 
@@ -145,7 +150,7 @@ function CustomAuthAnimation() {
                 />
               </svg>
             </div>
-            <div className="text-sm font-medium text-green-400 mt-2">
+            <div className="text-sm font-medium mt-2" style={{ color: '#10b981' }}>
               Authentication Successful
             </div>
           </motion.div>

@@ -1071,9 +1071,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(99, 102, 241, 0.1));
   border-radius: 20px;
   overflow: hidden;
+  border: 1px solid rgba(59, 130, 246, 0.2);
 }
 
 /* Animated Background Rings */
@@ -1374,7 +1375,8 @@
 
 /* Dark Mode Support */
 .dark-mode .custom-auth-animation {
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+  background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(139, 92, 246, 0.1));
+  border: 1px solid rgba(156, 39, 176, 0.2);
 }
 
 .dark-mode .stage-text h3 {
