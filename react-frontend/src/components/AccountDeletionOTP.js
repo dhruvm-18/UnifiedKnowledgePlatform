@@ -183,7 +183,7 @@ const AccountDeletionOTP = ({ email, onBack, onSuccess }) => {
         
         setTimeout(() => {
           onSuccess && onSuccess();
-        }, 2000);
+        }, 3000);
       } else {
         setError(data.error || 'Failed to verify OTP');
       }
@@ -396,6 +396,7 @@ const AccountDeletionOTP = ({ email, onBack, onSuccess }) => {
       }}>
         You can always create a new account if you change your mind.
       </p>
+
     </div>
   );
 

@@ -4,6 +4,7 @@ import Switch from 'react-switch';
 import { FaSun, FaMoon, FaKey, FaTrash, FaCheckCircle, FaTimesCircle, FaEdit, FaSave, FaTimes, FaGithub, FaLink, FaUnlink, FaCrown, FaUser, FaThumbsUp } from 'react-icons/fa';
 import { GITHUB_CONFIG } from '../config/github';
 import { getUserRoleInfo } from '../utils/permissions';
+import AccountDeletionOTP from './AccountDeletionOTP';
 
 const USERS_KEY = 'ukpUsers';
 const ACCENT_COLOR = '#6c2eb7';
@@ -29,6 +30,7 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
   const [success, setSuccess] = useState('');
   const [saving, setSaving] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDeleteOTP, setShowDeleteOTP] = useState(false);
   const modalRef = useRef(null);
   const [editingName, setEditingName] = useState(false);
   const fileInputRef = useRef(null);
@@ -210,6 +212,10 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
   };
 
   const handleDeleteAccount = () => {
+    setShowDeleteOTP(true);
+  };
+
+  const handleDeleteAccountSuccess = () => {
     const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
     const filtered = users.filter(u => u.email !== user.email);
     localStorage.setItem(USERS_KEY, JSON.stringify(filtered));
@@ -218,6 +224,10 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
     localStorage.removeItem('userEmail');
     onSave && onSave({ deleted: true });
     onClose && onClose();
+  };
+
+  const handleDeleteAccountBack = () => {
+    setShowDeleteOTP(false);
   };
 
   const handleGitHubConnect = () => {
@@ -668,6 +678,19 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
                       onClick={handleDeleteAccount}
                     ><FaTrash /> Delete</button>
                   </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Account Deletion OTP Modal */}
+            {showDeleteOTP && (
+              <div className="modal-overlay" style={{ zIndex: 3000, background: theme === 'dark' ? 'rgba(35,33,54,0.85)' : 'rgba(60, 30, 90, 0.35)', backdropFilter: 'blur(2px)' }}>
+                <div className="modal-content" style={{ maxWidth: 480, width: '100%', borderRadius: 20, background: theme === 'dark' ? DARK_CARD : LIGHT_CARD, boxShadow: '0 8px 40px #ff5858', padding: '2rem', position: 'relative', animation: 'fadeInScale 0.7s cubic-bezier(.23,1.01,.32,1)', color: theme === 'dark' ? DARK_TEXT : LIGHT_TEXT }}>
+                  <AccountDeletionOTP
+                    email={user.email}
+                    onBack={handleDeleteAccountBack}
+                    onSuccess={handleDeleteAccountSuccess}
+                  />
                 </div>
               </div>
             )}

@@ -3,6 +3,8 @@ import '../styles/LoginView.css';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGithub, FaHeart, FaMagic, FaSun, FaMoon, FaUserPlus, FaUser } from 'react-icons/fa';
 import { GITHUB_CONFIG } from '../config/github';
 import CustomAuthAnimation from '../components/CustomAuthAnimation';
+import OTPVerification from '../components/OTPVerification';
+import AccountCreation from '../components/AccountCreation';
 import AnimatedScene from '../components/AnimatedScene';
 
 const APP_NAME = 'Unified Knowledge Platform';
@@ -43,6 +45,7 @@ function LoginView({ onLogin }) {
   const [otpError, setOtpError] = useState('');
   const [otpSuccess, setOtpSuccess] = useState('');
   const [showAccountCreation, setShowAccountCreation] = useState(false);
+  const [otpType, setOtpType] = useState('password_reset');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -264,6 +267,7 @@ function LoginView({ onLogin }) {
     setOtpError('');
     setOtpSuccess('');
     setOtpLoading(true);
+    setOtpType('password_reset'); // Set type for forgot password
 
     try {
       const response = await fetch('http://localhost:5000/api/otp/send', {
@@ -271,7 +275,7 @@ function LoginView({ onLogin }) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: fpEmail }),
+        body: JSON.stringify({ email: fpEmail, type: 'password_reset' }),
       });
 
       const data = await response.json();
@@ -287,7 +291,7 @@ function LoginView({ onLogin }) {
       setOtpError('Network error. Please try again.');
     } finally {
       setOtpLoading(false);
-      }
+    }
   };
 
   const handleOTPBack = () => {
@@ -295,6 +299,7 @@ function LoginView({ onLogin }) {
     setOtpEmail('');
     setOtpError('');
     setOtpSuccess('');
+    setOtpType('password_reset');
   };
 
   const handleOTPSuccess = () => {
@@ -303,6 +308,7 @@ function LoginView({ onLogin }) {
     setOtpEmail('');
     setOtpError('');
     setOtpSuccess('');
+    setOtpType('password_reset');
     setFpEmail('');
     setFpOldPassword('');
     setFpNewPassword('');
@@ -311,10 +317,29 @@ function LoginView({ onLogin }) {
 
   const handleAccountCreationBack = () => {
     setShowAccountCreation(false);
+    setFormData({
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    });
+    setError('');
+    setSuccess('');
   };
 
   const handleAccountCreationSuccess = (accountData) => {
     setShowAccountCreation(false);
+    setShowOTP(false);
+    setOtpEmail('');
+    setOtpError('');
+    setOtpSuccess('');
+    setOtpType('password_reset');
+    setFormData({
+      name: '',
+      email: '',
+      password: '',
+      confirmPassword: '',
+    });
     setError(''); // Clear any existing errors
     setSuccess(`Account created successfully! Welcome ${accountData.name}! You can now login.`);
     setTimeout(() => setSuccess(''), 5000);
@@ -339,20 +364,32 @@ function LoginView({ onLogin }) {
       return;
     }
 
-    const newUser = {
-      name: formData.name,
-      email: formData.email,
-      password: formData.password,
-      avatar: null, // Avatar will be handled by the file input
-      isAdmin: false,
-      role: 'User',
-      createdAt: new Date().toISOString()
-    };
-    users.push(newUser);
-    saveUsers(users);
-    localStorage.setItem('ukpUser', JSON.stringify(newUser));
-    onLogin && onLogin({ email: newUser.email, name: newUser.name, avatar: newUser.avatar, isAdmin: newUser.isAdmin, role: newUser.role });
-    setShowAccountCreation(false);
+    // Send OTP for account creation instead of directly creating account
+    setLoading(true);
+    setOtpType('account_creation'); // Set type for account creation
+    try {
+      const response = await fetch('http://localhost:5000/api/otp/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: formData.email, type: 'account_creation' }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setOtpEmail(formData.email);
+        setShowOTP(true);
+        setOtpSuccess('OTP sent successfully! Check your email.');
+      } else {
+        setError(data.error || 'Failed to send OTP');
+      }
+    } catch (err) {
+      setError('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleInputChange = (e) => {
@@ -497,17 +534,19 @@ function LoginView({ onLogin }) {
                 email={otpEmail}
                 onBack={handleOTPBack}
                 onSuccess={handleOTPSuccess}
+                type={otpType}
+                accountData={otpType === 'account_creation' ? formData : null}
               />
             ) : showAccountCreation ? (
-              <div className="account-creation-form">
+              <div className="forgot-password-form">
                 <div className="form-header">
-                  <button type="button" className="back-button" onClick={() => setShowAccountCreation(false)}>
+                  <button type="button" className="back-button" onClick={handleAccountCreationBack}>
                     <span>←</span> Back
                   </button>
                   <h2>Create Account</h2>
                   <p>Enter your details to create a new account</p>
                 </div>
-
+                
                 <form className="form">
                   <div className="input-group">
                     <label>Full Name</label>
@@ -595,7 +634,7 @@ function LoginView({ onLogin }) {
                     {loading ? (
                       <div className="loading-content">
                         <div className="spinner"></div>
-                        <span>Creating Account...</span>
+                        <span>Sending OTP...</span>
                       </div>
                     ) : (
                       <div className="button-content">

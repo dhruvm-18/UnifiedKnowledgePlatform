@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaArrowLeft, FaCheck, FaTimes } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaArrowLeft, FaCheck, FaTimes, FaUser } from 'react-icons/fa';
 
-const OTPVerification = ({ email, onBack, onSuccess }) => {
+const OTPVerification = ({ email, onBack, onSuccess, type = 'password_reset', accountData = null }) => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -157,16 +157,23 @@ const OTPVerification = ({ email, onBack, onSuccess }) => {
         },
         body: JSON.stringify({
           email: email,
-          otp: otpString
+          otp: otpString,
+          type: type
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        setResetToken(data.reset_token);
-        setStep('password');
-        setSuccess('OTP verified successfully! Please enter your new password.');
+        if (type === 'account_creation') {
+          // For account creation, directly create the account after OTP verification
+          await createAccount();
+        } else {
+          // For password reset, proceed to password change step
+          setResetToken(data.reset_token);
+          setStep('password');
+          setSuccess('OTP verified successfully! Please enter your new password.');
+        }
       } else {
         setError(data.error || 'Failed to verify OTP');
       }
@@ -174,6 +181,39 @@ const OTPVerification = ({ email, onBack, onSuccess }) => {
       setError('Network error. Please try again.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createAccount = async () => {
+    if (!accountData) {
+      setError('Account data is missing');
+      return;
+    }
+
+    try {
+      // Create the account in localStorage
+      const users = JSON.parse(localStorage.getItem('ukpUsers')) || [];
+      const newUser = {
+        name: accountData.name,
+        email: accountData.email,
+        password: accountData.password,
+        avatar: null,
+        isAdmin: false,
+        role: 'User',
+        createdAt: new Date().toISOString()
+      };
+      users.push(newUser);
+      localStorage.setItem('ukpUsers', JSON.stringify(users));
+      
+      setStep('success');
+      setSuccess('Account created successfully!');
+      
+      // Auto-redirect to login after 3 seconds
+      setTimeout(() => {
+        onSuccess && onSuccess(newUser);
+      }, 3000);
+    } catch (err) {
+      setError('Failed to create account');
     }
   };
 
@@ -249,6 +289,11 @@ const OTPVerification = ({ email, onBack, onSuccess }) => {
 
         setStep('success');
         setSuccess('Password reset successful! You can now login with your new password.');
+        
+        // Auto-redirect to login after 3 seconds
+        setTimeout(() => {
+          onSuccess && onSuccess();
+        }, 3000);
       } else {
         setError(data.error || 'Failed to reset password');
       }
@@ -404,11 +449,8 @@ const OTPVerification = ({ email, onBack, onSuccess }) => {
       <div className="success-icon">
         <FaCheck />
       </div>
-      <h2>Password Reset Successful!</h2>
-      <p>Your password has been updated successfully. You can now login with your new password.</p>
-      <button onClick={onSuccess} className="login-btn">
-        Back to Login
-      </button>
+      <h2>{type === 'account_creation' ? 'Account Created Successfully!' : 'Password Reset Successful!'}</h2>
+      <p>{type === 'account_creation' ? 'Your account has been created successfully. You can now login with your credentials.' : 'Your password has been updated successfully. You can now login with your new password.'}</p>
     </div>
   );
 

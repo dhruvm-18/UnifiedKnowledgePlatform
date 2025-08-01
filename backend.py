@@ -3236,6 +3236,7 @@ def send_otp():
     try:
         data = request.get_json()
         email = data.get('email')
+        email_type = data.get('type', 'password_reset')  # Default to password_reset
         
         if not email:
             return jsonify({'error': 'Email is required'}), 400
@@ -3247,15 +3248,16 @@ def send_otp():
         otp = generate_otp()
         expiry_time = datetime.now() + timedelta(minutes=10)
         
-        # Store OTP with expiry
+        # Store OTP with expiry and type
         otp_storage[email] = {
             'otp': otp,
             'expiry': expiry_time,
-            'attempts': 0
+            'attempts': 0,
+            'type': email_type
         }
         
-        # Send OTP via email
-        if send_otp_email(email, otp):
+        # Send OTP via email with the correct type
+        if send_otp_email(email, otp, email_type):
             return jsonify({
                 'message': 'OTP sent successfully',
                 'email': email
@@ -3274,6 +3276,7 @@ def verify_otp():
         data = request.get_json()
         email = data.get('email')
         otp = data.get('otp')
+        otp_type = data.get('type', 'password_reset')  # Default to password_reset
         
         if not email or not otp:
             return jsonify({'error': 'Email and OTP are required'}), 400
@@ -3283,6 +3286,10 @@ def verify_otp():
             return jsonify({'error': 'OTP not found or expired'}), 400
         
         otp_data = otp_storage[email]
+        
+        # Check if OTP type matches
+        if otp_data.get('type') != otp_type:
+            return jsonify({'error': 'Invalid OTP type'}), 400
         
         # Check if OTP is expired
         if datetime.now() > otp_data['expiry']:
@@ -3303,7 +3310,8 @@ def verify_otp():
             
             return jsonify({
                 'message': 'OTP verified successfully',
-                'reset_token': reset_token
+                'reset_token': reset_token,
+                'type': otp_type
             })
         else:
             # Increment attempts
