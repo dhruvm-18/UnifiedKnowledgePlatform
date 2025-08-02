@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 function CustomAuthAnimation() {
   const [stage, setStage] = useState(0);
-  const stages = ["Initializing", "Connecting", "Authenticating", "Verifying", "Success"];
+  const stages = ["Initializing", "Connecting", "Authenticating", "Verifying"];
 
   useEffect(() => {
     if (stage < stages.length - 1) {
@@ -38,8 +38,8 @@ function CustomAuthAnimation() {
           <motion.div
             key={i}
             className="absolute w-2 h-2 rounded-full opacity-30"
-            style={{ backgroundColor: 'var(--accent-color, #3B82F6)' }}
-            style={{
+            style={{ 
+              backgroundColor: 'var(--accent-color, #3B82F6)',
               top: `${Math.random() * 100}%`,
               left: `${Math.random() * 100}%`,
             }}
@@ -56,7 +56,7 @@ function CustomAuthAnimation() {
 
       <AnimatePresence>
         {/* Stage Animation */}
-        {stage < stages.length - 1 && (
+        {stage < stages.length && (
           <motion.div
             key={stages[stage]}
             className="z-10 flex flex-col items-center text-center"
@@ -97,17 +97,13 @@ function CustomAuthAnimation() {
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                   strokeWidth={2}
-                                      className="w-6 h-6"
-                    style={{ color: 'var(--accent-color, #3B82F6)' }}
+                  className="w-6 h-6"
+                  style={{ color: 'var(--accent-color, #3B82F6)' }}
                 >
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d={
-                      stage < stages.length - 1
-                        ? "M12 15l9-9m-9 9l-9-9m9 9V6.5m0 4.5c-1.5 0-3-2-3-3.5s1.5-3 3-3m0 6c1.5 0 3-2 3-3.5s1.5-3-3-3z"
-                        : "M5 13l4 4L19 7"
-                    }
+                    d="M12 15l9-9m-9 9l-9-9m9 9V6.5m0 4.5c-1.5 0-3-2-3-3.5s1.5-3 3-3m0 6c1.5 0 3-2 3-3.5s1.5-3-3-3z"
                   />
                 </svg>
               </motion.div>
@@ -115,44 +111,6 @@ function CustomAuthAnimation() {
 
             {/* Stage Text */}
             <div className="mt-4 text-lg font-medium" style={{ color: 'var(--text-primary, #333)' }}>{stages[stage]}...</div>
-          </motion.div>
-        )}
-
-        {/* Success State */}
-        {stage === stages.length - 1 && (
-          <motion.div
-            key="success"
-            className="relative z-10 flex flex-col items-center"
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.7 }}
-          >
-            <motion.div
-              className="absolute w-[200px] h-[200px] bg-green-400 rounded-full blur-2xl opacity-30"
-              initial={{ scale: 0 }}
-              animate={{ scale: 1.5, opacity: 0 }}
-              transition={{ duration: 1.5 }}
-            />
-            <div className="relative w-16 h-16 bg-green-500 rounded-full flex items-center justify-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-8 h-8 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <div className="text-sm font-medium mt-2" style={{ color: '#10b981' }}>
-              Authentication Successful
-            </div>
           </motion.div>
         )}
       </AnimatePresence>

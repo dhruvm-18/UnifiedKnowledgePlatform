@@ -203,7 +203,7 @@ export default function MyProjectsView({ refreshKey }) {
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto', padding: '2.5rem 2.5rem 2rem 2.5rem', width: '100%', minHeight: '100%' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 32 }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 700, margin: 0 }}>My Projects</h1>
+        <h1 style={{ fontSize: '2rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>My Projects</h1>
         <button
           style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 18, padding: '10px 22px', fontWeight: 600, fontSize: '1rem', cursor: 'pointer' }}
           onClick={() => { setShowNewProjectModal(true); setEditProjectId(null); setNewProjectName(''); setNewProjectDesc(''); }}
@@ -232,12 +232,12 @@ export default function MyProjectsView({ refreshKey }) {
         />
       </div>
       {loading ? (
-        <div style={{ textAlign: 'center', color: '#888', marginTop: 64, fontSize: '1.2rem' }}>Loading projects...</div>
+        <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: 64, fontSize: '1.2rem' }}>Loading projects...</div>
       ) : error ? (
         <div style={{ textAlign: 'center', color: 'var(--error-color)', marginTop: 64, fontSize: '1.2rem' }}>{error}</div>
       ) : filteredProjects.length === 0 ? (
-        <div style={{ textAlign: 'center', color: '#888', marginTop: 64, fontSize: '1.2rem' }}>
-          <FaFolderOpen size={48} style={{ opacity: 0.3, marginBottom: 16 }} />
+        <div style={{ textAlign: 'center', color: 'var(--text-secondary)', marginTop: 64, fontSize: '1.2rem' }}>
+          <FaFolderOpen size={48} style={{ opacity: 0.3, marginBottom: 16, color: 'var(--text-secondary)' }} />
           <div>No projects yet. Click <b>New Project</b> to get started!</div>
         </div>
       ) : (
@@ -246,10 +246,10 @@ export default function MyProjectsView({ refreshKey }) {
             <div key={project.id} style={{ background: 'var(--bg-secondary)', borderRadius: 18, boxShadow: '0 2px 8px var(--shadow-color)', padding: '1.5rem 1.2rem', display: 'flex', flexDirection: 'column', gap: 12, position: 'relative' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                 <FaFolderOpen size={28} style={{ color: 'var(--accent-color)' }} />
-                <div style={{ fontWeight: 700, fontSize: '1.15rem' }}>{project.name}</div>
+                <div style={{ fontWeight: 700, fontSize: '1.15rem', color: 'var(--text-primary)' }}>{project.name}</div>
               </div>
-              <div style={{ color: '#666', fontSize: '1rem', marginBottom: 8 }}>{project.description}</div>
-              <div style={{ fontSize: '0.95rem', color: '#888' }}>Last updated: {project.date} • {project.notes ? project.notes.length : 0} notes</div>
+              <div style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginBottom: 8 }}>{project.description}</div>
+              <div style={{ fontSize: '0.95rem', color: 'var(--text-secondary)' }}>Last updated: {project.date} • {project.notes ? project.notes.length : 0} notes</div>
               <div style={{ display: 'flex', gap: 10, marginTop: 10 }}>
                 <button title="Open" style={{ background: 'var(--accent-color)', color: 'white', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600, cursor: 'pointer' }} onClick={() => setSelectedProject(project)}>Open</button>
                 <button title="Edit" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)', border: 'none', borderRadius: 8, padding: '6px 16px', fontWeight: 600, cursor: 'pointer' }} onClick={() => openEditModal(project)}><FaEdit /></button>

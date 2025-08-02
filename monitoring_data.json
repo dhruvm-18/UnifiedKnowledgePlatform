@@ -1194,6 +1194,39 @@
                 "userName": "Dhruv Mendiratta"
             },
             "timestamp": "2025-08-01T13:21:01.135976"
+        },
+        {
+            "id": "72f70cb8-e30f-403c-a0f2-02cf49dc7768",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-02T19:06:17.676581"
+        },
+        {
+            "id": "0fb0ee9f-7184-40a1-ab9f-88ed807eecbe",
+            "user_email": "dhruv.mendiratta187@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Demo"
+            },
+            "timestamp": "2025-08-02T19:34:49.002678"
+        },
+        {
+            "id": "8a1d1871-ccf8-4b7a-89f0-96aa15a70060",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-02T19:35:24.268674"
         }
     ],
     "session_metrics": [
