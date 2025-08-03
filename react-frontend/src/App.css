@@ -1582,6 +1582,96 @@ html, body, #root {
   color: var(--text-tertiary); /* Icon color on hover */
 }
 
+/* Horizontal quick options row */
+.quick-options-row {
+  display: flex;
+  width: 100%;
+  margin: 0.5rem 0;
+  overflow: hidden;
+}
+
+.quick-options-scroll {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.25rem 0;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  width: 100%;
+}
+
+.quick-options-scroll::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+.quick-option-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 20px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.quick-option-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent-color);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.quick-option-btn svg {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  transition: color 0.2s ease;
+}
+
+.quick-option-btn:hover svg {
+  color: var(--accent-color);
+}
+
+/* Responsive design for quick options */
+@media (max-width: 768px) {
+  .quick-options-scroll {
+    gap: 0.4rem;
+    padding: 0.2rem 0;
+  }
+  
+  .quick-option-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+  }
+  
+  .quick-option-btn svg {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .quick-options-scroll {
+    gap: 0.3rem;
+  }
+  
+  .quick-option-btn {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .quick-option-btn svg {
+    font-size: 0.8rem;
+  }
+}
+
 /* Adjust spacing for .quick-options-col if needed */
 .quick-options-col {
   display: flex;

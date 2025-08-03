@@ -1332,6 +1332,33 @@
                 "message_length": 29
             },
             "timestamp": "2025-08-03T17:02:51.118819"
+        },
+        {
+            "id": "3af82f8e-148b-4cb7-ad42-99303af3fab8",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "create_session",
+            "session_id": "85028dbc-92da-48bf-b657-73787fbfd50e",
+            "agent_id": null,
+            "details": null,
+            "timestamp": "2025-08-03T17:21:27.446865"
+        },
+        {
+            "id": "ced02049-cb07-4559-8c56-54c2e96bf74e",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "create_session",
+            "session_id": "db981d54-8714-4304-9e02-96c6cba9ae12",
+            "agent_id": null,
+            "details": null,
+            "timestamp": "2025-08-03T17:25:11.627346"
+        },
+        {
+            "id": "661a384c-7a2e-433c-a7d9-798080763bfc",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "create_session",
+            "session_id": "c698df11-8191-451c-bd7d-1abdd89f7aff",
+            "agent_id": null,
+            "details": null,
+            "timestamp": "2025-08-03T17:27:40.597547"
         }
     ],
     "session_metrics": [

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo, useCallback } from "react";
 
 const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapsed = false, rightCollapsed = false, isThinking = false }) => {
   // Sphere and feature dimensions
@@ -28,6 +28,7 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
   const sphereRef = useRef(null);
   const blinkTimeoutRef = useRef(null);
   const thinkingRef = useRef(null);
+  const mouthStyleRef = useRef(null);
 
   // Detect dark mode
   useEffect(() => {
@@ -45,10 +46,15 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
     return () => observer.disconnect();
   }, []);
 
-  // Thinking mode animation with various positive expressions
+  // Thinking mode animation with debounced expression changes to prevent flickering
   useEffect(() => {
+    let timeoutId;
+    
     if (isThinking) {
-      setMouthExpression('thinking');
+      // Debounce the expression change to prevent rapid state updates
+      timeoutId = setTimeout(() => {
+        setMouthExpression('thinking');
+      }, 50);
       
       const animateThinking = () => {
         setThinkingAnimation(prev => (prev + 1) % 360);
@@ -58,16 +64,24 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
       thinkingRef.current = requestAnimationFrame(animateThinking);
       
       return () => {
+        clearTimeout(timeoutId);
         if (thinkingRef.current) {
           cancelAnimationFrame(thinkingRef.current);
         }
       };
     } else {
-      // Return to happy when not thinking
-      setMouthExpression('happy');
+      // Debounce the return to happy expression
+      timeoutId = setTimeout(() => {
+        setMouthExpression('happy');
+      }, 50);
+      
       if (thinkingRef.current) {
         cancelAnimationFrame(thinkingRef.current);
       }
+      
+      return () => {
+        clearTimeout(timeoutId);
+      };
     }
   }, [isThinking]);
 
@@ -262,7 +276,7 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
     };
   }, [visible, isThinking]);
 
-  // Smooth eye and mouth movement with improved animation
+  // Smooth eye and mouth movement with improved animation and reduced lag
   useEffect(() => {
     if (!visible) return; // Don't animate when not visible
     
@@ -272,29 +286,30 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
       }
       
       const deltaTime = currentTime - lastTimeRef.current;
-      const smoothingFactor = Math.min(0.2, deltaTime / 16);
+      // Improved smoothing factor calculation for more responsive movement
+      const smoothingFactor = Math.min(0.15, deltaTime / 16); // Reduced from 0.2 to 0.15 for faster response
       
       // Calculate target positions for eyes and mouth
       const leftTarget = calculateEyeOffset(mousePosition, 'left');
       const rightTarget = calculateEyeOffset(mousePosition, 'right');
       const mouthTarget = calculateMouthOffset(mousePosition);
       
-      // Smooth interpolation for left eye
+      // Smooth interpolation for left eye with improved responsiveness
       setLeftEyeOffset(prev => ({
         x: prev.x + (leftTarget.x - prev.x) * smoothingFactor,
         y: prev.y + (leftTarget.y - prev.y) * smoothingFactor,
       }));
       
-      // Smooth interpolation for right eye
+      // Smooth interpolation for right eye with improved responsiveness
       setRightEyeOffset(prev => ({
         x: prev.x + (rightTarget.x - prev.x) * smoothingFactor,
         y: prev.y + (rightTarget.y - prev.y) * smoothingFactor,
       }));
 
-      // Smooth interpolation for mouth
+      // Smooth interpolation for mouth with faster response
       setMouthOffset(prev => ({
-        x: prev.x + (mouthTarget.x - prev.x) * smoothingFactor,
-        y: prev.y + (mouthTarget.y - prev.y) * smoothingFactor,
+        x: prev.x + (mouthTarget.x - prev.x) * (smoothingFactor * 1.2), // 20% faster than eyes
+        y: prev.y + (mouthTarget.y - prev.y) * (smoothingFactor * 1.2),
       }));
       
       lastTimeRef.current = currentTime;
@@ -308,7 +323,7 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [mousePosition, visible]);
+  }, [mousePosition, visible, leftEyeOffset, rightEyeOffset]); // Added eye offsets as dependencies
 
   // Enhanced eye offset calculation with improved responsiveness
   const calculateEyeOffset = (cursorRelative, eyeType) => {
@@ -363,7 +378,7 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
     return clampedOffset;
   };
 
-  // Calculate mouth offset for coordinated movement
+  // Calculate mouth offset for coordinated movement with improved realism
   const calculateMouthOffset = (cursorRelative) => {
     const dx = cursorRelative.x;
     const dy = cursorRelative.y;
@@ -372,45 +387,68 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
     // Calculate the angle to the cursor
     const angle = Math.atan2(dy, dx);
     
-    // Mouth moves less than eyes for subtle effect
+    // Mouth moves more naturally with eyes - not just reduced movement
     const maxDistance = 200;
     const distanceFactor = Math.min(distance / maxDistance, 1);
-    const movementRadius = (maxEyeMovement / 2) * distanceFactor; // Half the eye movement
     
+    // Mouth movement is more subtle but follows the same direction as eyes
+    const movementRadius = maxEyeMovement * 0.3 * distanceFactor; // 30% of eye movement
+    
+    // Calculate base offset with more natural movement
     let baseOffset = {
-      x: Math.cos(angle) * movementRadius * 0.5, // Reduced movement
-      y: Math.sin(angle) * movementRadius * 0.5,
+      x: Math.cos(angle) * movementRadius,
+      y: Math.sin(angle) * movementRadius,
     };
+    
+    // Add micro-movements for more realistic behavior
+    const currentTime = Date.now();
+    const microMovementX = Math.sin(currentTime / 3000) * 0.5;
+    const microMovementY = Math.cos(currentTime / 2500) * 0.3;
+    
+    baseOffset.x += microMovementX;
+    baseOffset.y += microMovementY;
     
     // Add thinking mode behavior for mouth
     if (isThinking) {
-      // Mouth moves in a thinking pattern - subtle up and down
+      // Mouth moves in a more natural thinking pattern
       const thinkingTime = Date.now() / 1000;
-      baseOffset.y += Math.sin(thinkingTime * 3) * 1;
+      const thinkingOffsetX = Math.sin(thinkingTime * 1.5) * 1.5;
+      const thinkingOffsetY = Math.cos(thinkingTime * 2) * 1;
+      
+      baseOffset.x += thinkingOffsetX;
+      baseOffset.y += thinkingOffsetY;
+    } else {
+      // Normal mode - mouth slightly follows eye movement with delay
+      const eyeInfluenceX = (leftEyeOffset.x + rightEyeOffset.x) * 0.1; // 10% influence from eyes
+      const eyeInfluenceY = (leftEyeOffset.y + rightEyeOffset.y) * 0.1;
+      
+      baseOffset.x += eyeInfluenceX;
+      baseOffset.y += eyeInfluenceY;
     }
     
-    // Clamp the movement
+    // Clamp the movement with tighter bounds for mouth
     const clampedOffset = {
-      x: Math.max(-maxEyeMovement / 2, Math.min(maxEyeMovement / 2, baseOffset.x)),
-      y: Math.max(-maxEyeMovement / 2, Math.min(maxEyeMovement / 2, baseOffset.y)),
+      x: Math.max(-maxEyeMovement * 0.4, Math.min(maxEyeMovement * 0.4, baseOffset.x)),
+      y: Math.max(-maxEyeMovement * 0.4, Math.min(maxEyeMovement * 0.4, baseOffset.y)),
     };
     
     return clampedOffset;
   };
 
   // Get mouth style based on expression
-  const getMouthStyle = () => {
+  const getMouthStyle = useCallback(() => {
     const baseStyle = {
       position: "absolute",
       bottom: "25%",
       left: "50%",
       transform: `translateX(-50%) translate(${mouthOffset.x}px, ${mouthOffset.y}px)`,
       background: "#ffffff",
-      transition: "all 0.3s ease",
+      transition: "none", // Removed transition to eliminate lag
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       boxShadow: "inset 0px 1px 3px rgba(0, 0, 0, 0.2)", // Subtle depth
+      willChange: "transform", // Optimize for transform changes
     };
 
     switch (mouthExpression) {
@@ -420,7 +458,7 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
           width: `${mouthWidth}px`,
           height: `${mouthHeight}px`,
           borderRadius: "0 0 12px 12px",
-          animation: "happyGlow 3s ease-in-out infinite",
+          // Removed conflicting animation to prevent flickering
         };
       case 'excited':
         return {
@@ -428,7 +466,7 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
           width: `${mouthWidth + 4}px`,
           height: `${mouthHeight + 4}px`,
           borderRadius: "0 0 15px 15px",
-          animation: "excitedBounce 0.8s ease-in-out infinite",
+          // Removed conflicting animation to prevent flickering
         };
       case 'surprised':
         return {
@@ -436,7 +474,7 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
           width: `${mouthWidth / 2}px`,
           height: `${mouthHeight * 1.8}px`,
           borderRadius: "50%",
-          animation: "surprisedPulse 1.2s ease-in-out infinite",
+          // Removed conflicting animation to prevent flickering
         };
       case 'curious':
         return {
@@ -444,7 +482,7 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
           width: `${mouthWidth - 2}px`,
           height: `${mouthHeight / 2}px`,
           borderRadius: "0 0 8px 8px",
-          animation: "curiousWiggle 2s ease-in-out infinite",
+          // Removed conflicting animation to prevent flickering
         };
       case 'neutral':
         return {
@@ -452,7 +490,7 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
           width: `${mouthWidth}px`,
           height: "3px",
           borderRadius: "2px",
-          animation: "neutralBreath 4s ease-in-out infinite",
+          // Removed conflicting animation to prevent flickering
         };
       case 'thinking':
         return {
@@ -473,10 +511,15 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
           width: `${mouthWidth}px`,
           height: `${mouthHeight}px`,
           borderRadius: "0 0 12px 12px",
-          animation: "happyGlow 3s ease-in-out infinite",
+          // Removed conflicting animation to prevent flickering
         };
     }
-  };
+  }, [mouthExpression, mouthOffset.x, mouthOffset.y, mouthWidth, mouthHeight]);
+
+  // Memoized mouth style to prevent flickering
+  const memoizedMouthStyle = useMemo(() => {
+    return getMouthStyle();
+  }, [getMouthStyle]);
 
   // Get accent color based on theme
   const getAccentColor = () => {
@@ -676,7 +719,7 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
             <path d="M2,8 Q6,2 10,8 Q14,14 18,8" stroke="#fff" strokeWidth="2.5" fill="none" />
           </svg>
         ) : (
-          <div style={getMouthStyle()}></div>
+                          <div style={memoizedMouthStyle}></div>
         )}
       </div>
     </div>

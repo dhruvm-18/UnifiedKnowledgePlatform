@@ -4,7 +4,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
 import './styles/backgrounds.css';
 import './styles/modal.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch, FaFileImage, FaFilePdf, FaEye, FaFileWord, FaFileExcel, FaFileAudio, FaFile, FaChartLine, FaExternalLinkAlt } from 'react-icons/fa';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch, FaFileImage, FaFilePdf, FaEye, FaFileWord, FaFileExcel, FaFileAudio, FaFile, FaChartLine, FaExternalLinkAlt, FaLightbulb, FaBalanceScale, FaClipboardList } from 'react-icons/fa';
 import { canAccessDeveloperOptions, getUserRoleInfo } from './utils/permissions';
 import { Image as ReactImage } from 'react-image';
 import ReactAudioPlayer from 'react-audio-player';
@@ -105,11 +105,14 @@ const FAVICON_URL = '/unified-knowledge-platform.png';
 const ASSISTANT_PREFIX_EN = 'Thanks for asking the question. As per the information available with me.';
 const ASSISTANT_PREFIX_HI = 'प्रश्न पूछने के लिए धन्यवाद। मेरे पास उपलब्ध जानकारी के अनुसार,';
 
-// Add quick chat options with associated icons
+// Add quick chat options with associated icons - specific and actionable
 const QUICK_OPTIONS = [
-  { label: 'Summarize the document', value: 'Summarize the document.', icon: <FaFileAlt /> },
-  { label: 'Show key points', value: 'Show key points of the document.', icon: <FaListUl /> },
-  { label: 'Highlight important sections', value: 'Highlight important sections of the document.', icon: <FaHighlighter /> },
+  { label: 'Summarize Content', value: 'Please provide a comprehensive summary of the main points and key information from this content.', icon: <FaFileAlt /> },
+  { label: 'Extract Key Points', value: 'What are the most important key points, main takeaways, and critical insights from this content?', icon: <FaListUl /> },
+  { label: 'Find Important Sections', value: 'Please identify and highlight the most important sections, critical information, and key details in this content.', icon: <FaHighlighter /> },
+  { label: 'Simplify Explanation', value: 'Please explain the main concepts and ideas from this content in simple, easy-to-understand terms.', icon: <FaLightbulb /> },
+  { label: 'Compare Concepts', value: 'Please compare and contrast the different concepts, ideas, or approaches mentioned in this content.', icon: <FaBalanceScale /> },
+  { label: 'Provide Examples', value: 'Please provide specific examples, use cases, and practical applications related to the concepts in this content.', icon: <FaClipboardList /> },
 ];
 
 function groupSessionsByDate(sessions) {
@@ -2692,18 +2695,6 @@ function getFileType(file) {
                           You are chatting with <span className="agent-mention">@{activeAgentDetails.fullName}</span>. Unlock insights from internal documents with our intelligent AI Assistant, transforming complex information into clear, actionable knowledge.
                         </div>
                         <h2 className="welcome-subtitle" style={{ fontSize: '1.4rem', fontWeight: 600, marginBottom: '1rem' }}>How can I help you?</h2>
-                        <div className="quick-options-col center-col">
-                          {QUICK_OPTIONS.map(opt => (
-                            <button
-                              key={opt.label}
-                              className="welcome-option-btn"
-                              onClick={() => handleQuickOption(opt.value)}
-                              type="button"
-                            >
-                              {opt.icon} {opt.label}
-                            </button>
-                          ))}
-                        </div>
                       </>
                     ) : (
                       <div className="welcome-subtitle" style={{ maxWidth: '600px', textAlign: 'center' }}>
@@ -2848,7 +2839,7 @@ function getFileType(file) {
                               <div className="message-actions">
                                 <button
                                   className="action-btn copy-btn"
-                                  title={copiedMessageId === msg.id ? "Copied!" : "Copy message"}
+                                  title={copiedMessageId === msg.id ? "Copied!" : "Copy"}
                                   onClick={() => handleCopyMessage(msg.content, msg.id)}
                                   style={{ 
                                     background: 'none', 
@@ -2862,7 +2853,7 @@ function getFileType(file) {
                                 </button>
                                 <button
                                   className="action-btn export-btn"
-                                  title="Export message"
+                                  title="Export to Word"
                                   onClick={() => handleExportMessage(msg.content)}
                                   style={{ 
                                     background: 'none', 
@@ -2875,8 +2866,8 @@ function getFileType(file) {
                                   <FaFileExport size={18} />
                                 </button>
                                 <button
-                                  className="voice-btn"
-                                  title="Read aloud"
+                                  className="action-btn voice-btn"
+                                  title="Text to Speech"
                                   onClick={() => handleSpeak(typeof msg.content === 'string' ? msg.content : String(msg.content))}
                                   style={{ 
                                     background: 'none', 
@@ -3064,6 +3055,23 @@ function getFileType(file) {
                     <span>
                       Chatting with: <span style={{ fontWeight: 700 }}>{activeAgentDetails?.fullName}</span>
                     </span>
+                  </div>
+                )}
+                {/* Quick options for dedicated chats only */}
+                {activeAgentDetails && isDedicatedChat && (
+                  <div className="quick-options-row" style={{ marginBottom: 8 }}>
+                    <div className="quick-options-scroll">
+                      {QUICK_OPTIONS.map(opt => (
+                        <button
+                          key={opt.label}
+                          className="quick-option-btn"
+                          onClick={() => handleQuickOption(opt.value)}
+                          type="button"
+                        >
+                          {opt.icon} {opt.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 )}
                 <div style={{ width: '100%', position: 'relative' }}>
