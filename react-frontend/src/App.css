@@ -3633,3 +3633,21 @@ html, body, #root {
   max-width: none;
   padding: 2rem; /* Adjust padding if necessary */
 }
+
+/* Pulse glow animation for Unified Mode button */
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 4px 15px rgba(108, 46, 183, 0.4), 0 0 0 1px rgba(108, 46, 183, 0.1);
+  }
+  100% {
+    box-shadow: 0 4px 20px rgba(108, 46, 183, 0.6), 0 0 0 1px rgba(108, 46, 183, 0.2);
+  }
+}
+
+/* Ripple effect animation for button clicks */
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}

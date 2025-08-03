@@ -86,6 +86,22 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
   const [aboutOverlayPos, setAboutOverlayPos] = useState(null);
   const aboutBtnRefs = useRef({});
 
+  // Create Unified® Mode agent
+  const createUnifiedAgent = () => {
+    return {
+      agentId: 'unified-mode',
+      name: 'Unified® Mode',
+      fullName: 'Unified® Mode',
+      description: 'Unlock the full potential of your knowledge base. Access all sources simultaneously with intelligent cross-referencing, comprehensive insights, and AI-powered analysis across your entire ecosystem.',
+      pdfSources: [], // No specific sources - accesses all
+      tileLineStartColor: '#667eea',
+      tileLineEndColor: '#764ba2',
+      iconType: 'shield',
+      isSystemAgent: true, // Mark as system agent that can't be deleted
+      capabilities: ['Cross-Source Search', 'AI Analysis', 'Smart Insights', 'Knowledge Extraction']
+    };
+  };
+
   const BACKEND_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 
   // Effect to manage scrolling of the knowledge-sources-view when overlays are active
@@ -147,6 +163,9 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
     agent.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     agent.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Add Unified® Mode agent to the beginning of the list
+  const agentsWithUnified = [createUnifiedAgent(), ...filteredAgents];
 
   const handleEditAgent = (agent) => {
     setAgentToEdit(agent);
@@ -346,10 +365,12 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
             </div>
           )}
 
-          {/* Agent Cards Grid - Add class when searching */}
+          
+
+                    {/* Agent Cards Grid - Add class when searching */}
           {agents.length > 0 && (
             <Element name="knowledge-sources-scroll-container" className={`agent-grid ${isSearching ? 'agent-cards-grid--searching' : ''}`}>
-              {filteredAgents.map((agent) => {
+              {agentsWithUnified.map((agent) => {
                 const capabilities = getCapabilitiesFromSources(agent.pdfSources);
                 // Determine main file type from first source
                 let mainType = 'Other';
@@ -391,109 +412,220 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
                     boxShadow: isDark ? '0 10px 30px rgba(0,0,0,0.2)' : '0 10px 30px rgba(0,0,0,0.08)',
                   }}
                 >
-                  {/* Kebab menu in upper right corner */}
-                  <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 3 }}>
-                    <button
-                      className="kebab-menu-btn"
-                      onClick={e => { e.stopPropagation(); setOpenKebabMenu(openKebabMenu === agent.agentId ? null : agent.agentId); }}
-                      title="More options"
-                      style={{ background: 'none', border: 'none', color: '#95a5a6', fontSize: '1.2em', cursor: 'pointer', padding: 8, borderRadius: '50%' }}
-                    >
-                      <FaEllipsisH />
-                    </button>
-                    {openKebabMenu === agent.agentId && (
-                      <div
-                        ref={kebabMenuRef}
-                        style={{
-                          position: 'absolute',
-                          top: 36,
-                          right: 0,
-                          background: 'var(--bg-secondary)',
-                          borderRadius: 10,
-                          boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-                          minWidth: 120,
-                          padding: '0.5rem 0',
-                          zIndex: 10,
-                          display: 'flex',
-                          flexDirection: 'column',
-                        }}
+                  {/* Kebab menu in upper right corner - only for non-system agents */}
+                  {!agent.isSystemAgent && (
+                    <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 3 }}>
+                      <button
+                        className="kebab-menu-btn"
+                        onClick={e => { e.stopPropagation(); setOpenKebabMenu(openKebabMenu === agent.agentId ? null : agent.agentId); }}
+                        title="More options"
+                        style={{ background: 'none', border: 'none', color: '#95a5a6', fontSize: '1.2em', cursor: 'pointer', padding: 8, borderRadius: '50%' }}
                       >
-                        <button
-                          onClick={e => { e.stopPropagation(); setAgentToEdit(agent); setEditedName(agent.name); setEditedDescription(agent.description); setEditedTileLineStartColor(colorNameToHex(agent.tileLineStartColor) || ''); setEditedTileLineEndColor(colorNameToHex(agent.tileLineEndColor) || ''); setOpenKebabMenu(null); }}
-                          style={{ background: 'none', border: 'none', color: 'var(--text-primary)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
-                        >
-                          <FaEdit style={{ marginRight: 8 }} /> Edit Tile
-                        </button>
-                        <button
-                          ref={el => aboutBtnRefs.current[agent.agentId] = el}
-                          onClick={e => {
-                            e.stopPropagation();
-                            setAgentToEdit(null);
-                            setAboutAgent(agent);
-                            setShowAboutModal(true);
-                            setOpenKebabMenu(null);
+                        <FaEllipsisH />
+                      </button>
+                      {openKebabMenu === agent.agentId && (
+                        <div
+                          ref={kebabMenuRef}
+                          style={{
+                            position: 'absolute',
+                            top: 36,
+                            right: 0,
+                            background: 'var(--bg-secondary)',
+                            borderRadius: 10,
+                            boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                            minWidth: 120,
+                            padding: '0.5rem 0',
+                            zIndex: 10,
+                            display: 'flex',
+                            flexDirection: 'column',
                           }}
-                          style={{ background: 'none', border: 'none', color: 'var(--text-primary)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
                         >
-                          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%', background: '#3498db', color: 'white', fontWeight: 700, fontSize: 13, marginRight: 8 }}>i</span> About
-                        </button>
-                        <button
-                          onClick={e => { e.stopPropagation(); handleDeleteAgentClick(agent.agentId); setOpenKebabMenu(null); }}
-                          style={{ background: 'none', border: 'none', color: 'var(--error-color)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
-                        >
-                          <FaTrash style={{ marginRight: 8 }} /> Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                          <button
+                            onClick={e => { e.stopPropagation(); setAgentToEdit(agent); setEditedName(agent.name); setEditedDescription(agent.description); setEditedTileLineStartColor(colorNameToHex(agent.tileLineStartColor) || ''); setEditedTileLineEndColor(colorNameToHex(agent.tileLineEndColor) || ''); setOpenKebabMenu(null); }}
+                            style={{ background: 'none', border: 'none', color: 'var(--text-primary)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
+                          >
+                            <FaEdit style={{ marginRight: 8 }} /> Edit Tile
+                          </button>
+                          <button
+                            ref={el => aboutBtnRefs.current[agent.agentId] = el}
+                            onClick={e => {
+                              e.stopPropagation();
+                              setAgentToEdit(null);
+                              setAboutAgent(agent);
+                              setShowAboutModal(true);
+                              setOpenKebabMenu(null);
+                            }}
+                            style={{ background: 'none', border: 'none', color: 'var(--text-primary)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
+                          >
+                            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%', background: '#3498db', color: 'white', fontWeight: 700, fontSize: 13, marginRight: 8 }}>i</span> About
+                          </button>
+                          <button
+                            onClick={e => { e.stopPropagation(); handleDeleteAgentClick(agent.agentId); setOpenKebabMenu(null); }}
+                            style={{ background: 'none', border: 'none', color: 'var(--error-color)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
+                          >
+                            <FaTrash style={{ marginRight: 8 }} /> Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
-                    {/* Minimalist file type icon badge with tooltip */}
-                    {firstSource && (
-                      <div
-                        title={mainType}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          background: isDark ? darkBg : '#fff',
-                          borderRadius: '50%',
-                          width: 22,
-                          height: 22,
-                          boxShadow: isDark ? '0 1px 4px #111' : '0 1px 4px rgba(0,0,0,0.08)',
-                          marginRight: 2,
-                          border: `1px solid ${isDark ? '#222' : '#eee'}`,
-                          cursor: 'default',
-                        }}
-                      >
-                        {React.cloneElement(mainIcon, { size: 14, style: { verticalAlign: 'middle', color: isDark ? 'var(--accent-color-dark, #6c2eb7)' : mainIcon.props.color } })}
+                    {/* Agent type label */}
+                    {agent.isSystemAgent ? (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <FaShieldAlt style={{ color: '#667eea', marginRight: 4 }} />
+                        <span style={{ fontSize: '0.8rem', color: '#888', fontWeight: '500' }}>Unified® exclusive</span>
                       </div>
+                    ) : (
+                      <>
+                        {/* Minimalist file type icon badge with tooltip */}
+                        {firstSource && (
+                          <div
+                            title={mainType}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              background: isDark ? darkBg : '#fff',
+                              borderRadius: '50%',
+                              width: 22,
+                              height: 22,
+                              boxShadow: isDark ? '0 1px 4px #111' : '0 1px 4px rgba(0,0,0,0.08)',
+                              marginRight: 2,
+                              border: `1px solid ${isDark ? '#222' : '#eee'}`,
+                              cursor: 'default',
+                            }}
+                          >
+                            {React.cloneElement(mainIcon, { size: 14, style: { verticalAlign: 'middle', color: isDark ? 'var(--accent-color-dark, #6c2eb7)' : mainIcon.props.color } })}
+                          </div>
+                        )}
+                        <div className="agent-tag" style={{ background: isDark ? '#222' : '#eee', color: isDark ? '#bdbdbd' : '#333' }}>Agent</div>
+                      </>
                     )}
-                    <div className="agent-tag" style={{ background: isDark ? '#222' : '#eee', color: isDark ? '#bdbdbd' : '#333' }}>Agent</div>
                   </div>
-                  <div className="agent-icon" style={{ color: isDark ? 'var(--accent-color-dark, #6c2eb7)' : 'var(--accent-color, #6c2eb7)' }}>{getIconComponent(agent.iconType)}</div>
+                  <div className="agent-icon" style={{ color: isDark ? 'var(--accent-color-dark, #6c2eb7)' : 'var(--accent-color, #6c2eb7)' }}>
+                    {agent.isSystemAgent ? (
+                      <img 
+                        src="/unified-knowledge-platform.png" 
+                        alt="Unified Knowledge Platform" 
+                        style={{ 
+                          width: '48px', 
+                          height: '48px', 
+                          filter: isDark ? 'grayscale(1) brightness(0.8)' : 'grayscale(1) brightness(0.3)', // Black and white, not pure black or white
+                          opacity: 0.9
+                        }} 
+                      />
+                    ) : (
+                      getIconComponent(agent.iconType)
+                    )}
+                  </div>
                   <h3 style={{ color: isDark ? '#fff' : '#2c3e50' }}>{agent.name}</h3>
                   <p style={{ color: isDark ? '#b0b0b0' : '#888' }}>{agent.description}</p>
                   {/* Capabilities pills */}
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '8px 0' }}>
-                    {capabilities.map((cap, idx) => (
-                      <span key={idx} style={{ background: isDark ? darkBg : '#f4f4f4', color: isDark ? '#f5f7fa' : '#333', borderRadius: 16, padding: '4px 12px', fontSize: 13, fontWeight: 500, display: 'inline-block' }}>{cap}</span>
+                    {(agent.isSystemAgent ? agent.capabilities : capabilities).map((cap, idx) => (
+                      <span key={idx} style={{ 
+                        background: agent.isSystemAgent ? (isDark ? 'rgba(102, 126, 234, 0.1)' : 'rgba(102, 126, 234, 0.1)') : (isDark ? darkBg : '#f4f4f4'), 
+                        color: agent.isSystemAgent ? (isDark ? '#a78bfa' : '#6c2eb7') : (isDark ? '#f5f7fa' : '#333'), 
+                        borderRadius: 16, 
+                        padding: '4px 12px', 
+                        fontSize: 13, 
+                        fontWeight: 500, 
+                        display: 'inline-block' 
+                      }}>{cap}</span>
                     ))}
                   </div>
-                  <div className="agent-card-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {/* File count */}
-                      <span style={{ color: '#666', fontSize: 13 }}>{agent.pdfSources ? `${agent.pdfSources.length} files trained` : 'No files'}</span>
+                  <div className="agent-card-footer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
+                      {/* File count or status */}
+                      {agent.isSystemAgent ? (
+                        <span style={{ color: isDark ? '#a1a1aa' : '#666', fontSize: 13 }}>All sources available</span>
+                      ) : (
+                        <span style={{ color: isDark ? '#a1a1aa' : '#666', fontSize: 13 }}>{agent.pdfSources ? `${agent.pdfSources.length} files trained` : 'No files'}</span>
+                      )}
                       {/* Status */}
                       <span style={{ color: '#4caf50', fontWeight: 600, fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <span style={{ width: 8, height: 8, background: '#4caf50', borderRadius: '50%', display: 'inline-block' }}></span> Active
                       </span>
                     </div>
-                    <div className="agent-actions-right">
-                      <button
-                        className="start-chat-btn"
-                        onClick={() => onStartChatWithAgent(agent.agentId)}
+                    <div className="agent-actions-right" style={{ marginLeft: 'auto' }}>
+                                             <button
+                         className="start-chat-btn"
+                        style={agent.isSystemAgent ? {
+                          background: 'linear-gradient(135deg, var(--accent-color) 0%, #8b5cf6 50%, var(--accent-color) 100%)',
+                          border: 'none',
+                          borderRadius: '12px',
+                          padding: '0.7rem 1.2rem',
+                          color: 'white',
+                          fontSize: '0.95rem',
+                          fontWeight: '700',
+                          cursor: 'pointer',
+                          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.6rem',
+                          boxShadow: '0 4px 15px rgba(108, 46, 183, 0.4), 0 0 0 1px rgba(108, 46, 183, 0.1)',
+                          position: 'relative',
+                          overflow: 'hidden',
+                          textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+                          letterSpacing: '0.5px',
+                          transform: 'translateY(0)',
+                          animation: 'pulseGlow 2s ease-in-out infinite alternate'
+                        } : {
+                          background: 'var(--accent-color)',
+                          border: 'none',
+                          borderRadius: '8px',
+                          padding: '0.6rem 1rem',
+                          color: 'white',
+                          fontSize: '0.9rem',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}
+                                                 onMouseEnter={agent.isSystemAgent ? (e) => {
+                           e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
+                           e.currentTarget.style.boxShadow = '0 8px 25px rgba(108, 46, 183, 0.6), 0 0 0 2px rgba(108, 46, 183, 0.2)';
+                           e.currentTarget.style.background = 'linear-gradient(135deg, #8b5cf6 0%, var(--accent-color) 50%, #8b5cf6 100%)';
+                           e.currentTarget.style.animation = 'none';
+                         } : undefined}
+                         onMouseLeave={agent.isSystemAgent ? (e) => {
+                           e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                           e.currentTarget.style.boxShadow = '0 4px 15px rgba(108, 46, 183, 0.4), 0 0 0 1px rgba(108, 46, 183, 0.1)';
+                           e.currentTarget.style.background = 'linear-gradient(135deg, var(--accent-color) 0%, #8b5cf6 50%, var(--accent-color) 100%)';
+                           e.currentTarget.style.animation = 'pulseGlow 2s ease-in-out infinite alternate';
+                         } : undefined}
+                         onClick={(e) => {
+                           if (agent.isSystemAgent) {
+                             // Add ripple effect
+                             const ripple = document.createElement('span');
+                             const rect = e.currentTarget.getBoundingClientRect();
+                             const size = Math.max(rect.width, rect.height);
+                             const x = e.clientX - rect.left - size / 2;
+                             const y = e.clientY - rect.top - size / 2;
+                             
+                             ripple.style.cssText = `
+                               position: absolute;
+                               width: ${size}px;
+                               height: ${size}px;
+                               left: ${x}px;
+                               top: ${y}px;
+                               background: rgba(255, 255, 255, 0.3);
+                               border-radius: 50%;
+                               transform: scale(0);
+                               animation: ripple 0.6s linear;
+                               pointer-events: none;
+                             `;
+                             
+                             e.currentTarget.appendChild(ripple);
+                             setTimeout(() => ripple.remove(), 600);
+                           }
+                           onStartChatWithAgent(agent.agentId);
+                         }}
                       >
-                        <span>Try Out</span>
+                        <span>{agent.isSystemAgent ? 'Unlock Everything' : 'Try Out'}</span>
                         <FaArrowRight className="start-chat-arrow" />
                       </button>
                     </div>

@@ -1542,7 +1542,26 @@ function getFileType(file) {
 
   // Update Knowledge Source Start Chat to use dedicated chat logic
   const handleStartChatWithAgent = async (agentId) => {
-    await startDedicatedAgentChat(agentId);
+    if (agentId === 'unified-mode') {
+      // Handle Unified® Mode agent - create a special agent object
+      const unifiedAgent = {
+        agentId: 'unified-mode',
+        name: 'Unified® Mode',
+        fullName: 'Unified® Mode',
+        description: 'Unlock the full potential of your knowledge base. Access all sources simultaneously with intelligent cross-referencing, comprehensive insights, and AI-powered analysis across your entire ecosystem.',
+        iconType: 'shield',
+        isSystemAgent: true
+      };
+      setActiveAgentDetails(unifiedAgent);
+      setIsDedicatedChat(true);
+      localStorage.setItem('activeAgentDetails', JSON.stringify(unifiedAgent));
+      localStorage.setItem('isDedicatedChat', 'true');
+      setCurrentView('chat');
+      await startNewSession();
+    } else {
+      // Handle regular agent chat
+      await startDedicatedAgentChat(agentId);
+    }
   };
 
   const [copiedMessageId, setCopiedMessageId] = useState(null);
