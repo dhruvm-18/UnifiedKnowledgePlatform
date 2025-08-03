@@ -210,16 +210,20 @@ const DeveloperDashboard = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  width: '2.5rem',
-                  height: '2.5rem',
+                  width: '40px',
+                  height: '40px',
+                  minWidth: '40px',
+                  minHeight: '40px',
                   background: 'var(--bg-secondary)',
                   border: '1px solid var(--border-color)',
                   borderRadius: '50%',
                   color: 'var(--text-primary)',
                   cursor: 'pointer',
-                  fontSize: '1rem',
                   transition: 'all 0.2s',
-                  padding: 0
+                  padding: '0',
+                  margin: '0',
+                  boxSizing: 'border-box',
+                  flexShrink: 0
                 }}
                 onMouseEnter={(e) => {
                   e.target.style.background = 'var(--bg-tertiary)';
@@ -231,7 +235,7 @@ const DeveloperDashboard = () => {
                 }}
                 title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
               >
-                {isDarkMode ? '☀️' : '🌙'}
+                {isDarkMode ? <FaSun size={18} /> : <FaMoon size={18} />}
               </button>
             </div>
         </div>

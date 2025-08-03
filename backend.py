@@ -42,6 +42,7 @@ from prompts import (
     generate_source_link
 )
 from backend.utils import initialize_faiss_index, update_faiss_index
+from banner_utils import save_banner_file, load_banner_file, remove_banner_file, get_banner_storage_info
 import logging
 import faiss
 import warnings
@@ -3568,6 +3569,77 @@ def verify_deletion_otp():
     except Exception as e:
         logger.error(f"Error verifying deletion OTP: {e}")
         return jsonify({'error': 'Failed to verify deletion OTP'}), 500
+
+# Banner management endpoints
+@app.route('/api/banners/upload', methods=['POST', 'OPTIONS'])
+def upload_banner():
+    """Upload banner for a user"""
+    if request.method == 'OPTIONS':
+        return jsonify({'success': True})
+    
+    try:
+        data = request.get_json()
+        user_email = data.get('user_email')
+        file_data = data.get('file_data')
+        file_type = data.get('file_type')
+        
+        if not user_email or not file_data or not file_type:
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        
+        result = save_banner_file(user_email, file_data, file_type)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/banners/<user_email>', methods=['GET'])
+def get_banner(user_email):
+    """Get banner for a user"""
+    try:
+        result = load_banner_file(user_email)
+        
+        if result and result.get('success'):
+            return jsonify(result)
+        else:
+            return jsonify({'success': False, 'error': 'Banner not found'}), 404
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/banners/<user_email>', methods=['DELETE', 'OPTIONS'])
+def delete_banner(user_email):
+    """Delete banner for a user"""
+    if request.method == 'OPTIONS':
+        return jsonify({'success': True})
+    
+    try:
+        result = remove_banner_file(user_email)
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/banners/storage/info', methods=['GET'])
+def get_banner_storage():
+    """Get banner storage information"""
+    try:
+        result = get_banner_storage_info()
+        
+        if result['success']:
+            return jsonify(result)
+        else:
+            return jsonify(result), 400
+            
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("Starting Flask app...")

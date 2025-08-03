@@ -4,6 +4,7 @@ import Switch from 'react-switch';
 import { FaSun, FaMoon, FaKey, FaTrash, FaCheckCircle, FaTimesCircle, FaEdit, FaSave, FaTimes, FaGithub, FaLink, FaUnlink, FaCrown, FaUser, FaThumbsUp, FaDatabase } from 'react-icons/fa';
 import { GITHUB_CONFIG } from '../config/github';
 import { getUserRoleInfo } from '../utils/permissions';
+import { saveBannerToFolder, loadBannerFromFolder, removeBannerFromFolder, BANNER_CONFIG } from '../utils/bannerStorage';
 import AccountDeletionOTP from './AccountDeletionOTP';
 
 const USERS_KEY = 'ukpUsers';
@@ -34,8 +35,13 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
   const modalRef = useRef(null);
   const [editingName, setEditingName] = useState(false);
   const fileInputRef = useRef(null);
+  const bannerFileInputRef = useRef(null);
   const [showGitHubDisconnectConfirm, setShowGitHubDisconnectConfirm] = useState(false);
   const [showGitHubConnectWarning, setShowGitHubConnectWarning] = useState(false);
+  const [userBanner, setUserBanner] = useState(null);
+  const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [bannerError, setBannerError] = useState(null);
+  const [bannerPreview, setBannerPreview] = useState(null);
 
   // Check if user is connected to GitHub
   const isGitHubConnected = user.githubId && user.githubUsername;
@@ -50,6 +56,27 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
       setAvatar(savedPhoto);
     }
   }, [user.email, avatar]);
+
+  // Load banner from dedicated folder
+  useEffect(() => {
+    const loadBanner = async () => {
+      if (user?.email) {
+        try {
+          const bannerData = await loadBannerFromFolder(user.email);
+          if (bannerData) {
+            setUserBanner(bannerData.dataUrl);
+          } else {
+            setUserBanner(null);
+          }
+        } catch (error) {
+          console.error('Error loading banner:', error);
+          setUserBanner(null);
+        }
+      }
+    };
+
+    loadBanner();
+  }, [user?.email]);
 
   // Close modal on outside click
   useEffect(() => {
@@ -414,6 +441,84 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
     onSave && onSave(updatedUser);
   };
 
+  // Banner upload handlers
+  const handleBannerChange = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file
+    if (!BANNER_CONFIG.supportedFormats.includes(file.type)) {
+      setBannerError('Unsupported file format. Please use JPEG, PNG, GIF, or WebP.');
+      return;
+    }
+
+    if (file.size > BANNER_CONFIG.maxSize) {
+      setBannerError(`File size too large. Maximum size is ${BANNER_CONFIG.maxSize / (1024 * 1024)}MB.`);
+      return;
+    }
+
+    if (file.type.includes('gif') && file.size > BANNER_CONFIG.maxGifSize) {
+      setBannerError(`GIF file too large. Maximum size is ${BANNER_CONFIG.maxGifSize / (1024 * 1024)}MB.`);
+      return;
+    }
+
+    // Create preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setBannerPreview(e.target.result);
+      setBannerError(null);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleBannerUpload = async () => {
+    if (!bannerPreview) return;
+
+    setIsUploadingBanner(true);
+    setBannerError(null);
+
+    try {
+      // Convert preview back to file
+      const response = await fetch(bannerPreview);
+      const blob = await response.blob();
+      const file = new File([blob], 'banner.jpg', { type: blob.type });
+
+      const result = await saveBannerToFolder(user.email, file);
+      if (result.success) {
+        setUserBanner(result.dataUrl);
+        setBannerPreview(null);
+        setSuccess('Banner uploaded successfully!');
+        setTimeout(() => setSuccess(''), 3000);
+        
+        // Dispatch event to notify ProfileOverlay
+        window.dispatchEvent(new CustomEvent('bannerUpdated'));
+      } else {
+        throw new Error(result.error || 'Failed to upload banner');
+      }
+    } catch (error) {
+      setBannerError(error.message);
+      console.error('Error uploading banner:', error);
+    } finally {
+      setIsUploadingBanner(false);
+    }
+  };
+
+  const handleRemoveBanner = async () => {
+    try {
+      await removeBannerFromFolder(user.email);
+      setUserBanner(null);
+      setBannerPreview(null);
+      setSuccess('Banner removed successfully!');
+      setTimeout(() => setSuccess(''), 3000);
+      
+      // Dispatch event to notify ProfileOverlay
+      window.dispatchEvent(new CustomEvent('bannerUpdated'));
+    } catch (error) {
+      setBannerError('Failed to remove banner');
+      console.error('Error removing banner:', error);
+    }
+  };
+
   return (
     <div className="modal-overlay animated-bg" style={{
       zIndex: 2000,
@@ -573,6 +678,176 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
                 </button>
               )}
             </div>
+            
+            {/* Banner Section */}
+            <div style={{ 
+              width: '100%', 
+              marginTop: 16,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 8
+            }}>
+              <div style={{
+                fontSize: '0.9rem',
+                color: theme === 'dark' ? '#bbb' : '#888',
+                fontWeight: 600
+              }}>
+                Profile Banner
+              </div>
+              
+              <div style={{
+                position: 'relative',
+                width: '100%',
+                maxWidth: 400,
+                minHeight: 60,
+                maxHeight: 200,
+                borderRadius: 8,
+                overflow: 'hidden',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                border: `2px solid ${theme === 'dark' ? 'var(--accent-color-dark, #6c2eb7)' : 'var(--accent-color, #6c2eb7)'}`,
+                background: (userBanner || bannerPreview) ? 'none' : (theme === 'dark' ? 'rgba(108, 46, 183, 0.1)' : 'rgba(108, 46, 183, 0.05)'),
+                aspectRatio: (userBanner || bannerPreview) ? 'auto' : '3.33 / 1'
+              }}
+              onClick={() => bannerFileInputRef.current && bannerFileInputRef.current.click()}
+              title="Change Profile Banner"
+              >
+                {(userBanner || bannerPreview) ? (
+                  <img 
+                    src={bannerPreview || userBanner} 
+                    alt="Banner" 
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      objectFit: 'cover',
+                      display: 'block'
+                    }} 
+                    onLoad={(e) => {
+                      const img = e.target;
+                      const container = img.parentElement;
+                      const aspectRatio = img.naturalWidth / img.naturalHeight;
+                      const containerWidth = container.offsetWidth;
+                      
+                      if (aspectRatio > 2) {
+                        container.style.height = `${containerWidth / aspectRatio}px`;
+                      } else if (aspectRatio < 0.5) {
+                        container.style.height = '200px';
+                      } else {
+                        container.style.height = `${containerWidth / aspectRatio}px`;
+                      }
+                      
+                      const calculatedHeight = parseFloat(container.style.height);
+                      if (calculatedHeight < 60) {
+                        container.style.height = '60px';
+                      } else if (calculatedHeight > 200) {
+                        container.style.height = '200px';
+                      }
+                    }}
+                  />
+                ) : (
+                  <div style={{
+                    width: '100%',
+                    height: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: theme === 'dark' ? 'var(--accent-color-dark, #6c2eb7)' : 'var(--accent-color, #6c2eb7)',
+                    fontSize: 12,
+                    fontWeight: 600
+                  }}>
+                    Click to add banner
+                  </div>
+                )}
+                
+                <input
+                  ref={bannerFileInputRef}
+                  id="profileBanner"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleBannerChange}
+                  style={{ display: 'none' }}
+                />
+              </div>
+              
+              {/* Banner Action Buttons */}
+              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                {bannerPreview && (
+                  <button
+                    onClick={handleBannerUpload}
+                    disabled={isUploadingBanner}
+                    style={{
+                      background: SUCCESS_COLOR,
+                      border: 'none',
+                      borderRadius: 6,
+                      padding: '6px 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      color: 'white',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                      transition: 'transform 0.2s',
+                      opacity: isUploadingBanner ? 0.7 : 1
+                    }}
+                    title="Save Banner"
+                    onMouseEnter={e => !isUploadingBanner && (e.target.style.transform = 'scale(1.05)')}
+                    onMouseLeave={e => e.target.style.transform = 'scale(1)'}
+                  >
+                    {isUploadingBanner ? (
+                      <div style={{ width: 12, height: 12, border: '2px solid white', borderTop: '2px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+                    ) : (
+                      'Save Banner'
+                    )}
+                  </button>
+                )}
+                
+                {(userBanner || bannerPreview) && (
+                  <button
+                    onClick={bannerPreview ? () => setBannerPreview(null) : handleRemoveBanner}
+                    style={{
+                      background: ERROR_COLOR,
+                      border: 'none',
+                      borderRadius: 6,
+                      padding: '6px 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      cursor: 'pointer',
+                      color: 'white',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                      transition: 'transform 0.2s'
+                    }}
+                    title={bannerPreview ? "Cancel Preview" : "Remove Banner"}
+                    onMouseEnter={e => e.target.style.transform = 'scale(1.05)'}
+                    onMouseLeave={e => e.target.style.transform = 'scale(1)'}
+                  >
+                    {bannerPreview ? 'Cancel' : 'Remove'}
+                  </button>
+                )}
+              </div>
+              
+              {/* Banner Error */}
+              {bannerError && (
+                <div style={{
+                  marginTop: 8,
+                  padding: 8,
+                  background: '#fee',
+                  border: '1px solid #fcc',
+                  borderRadius: 6,
+                  color: '#c33',
+                  fontSize: '0.8rem',
+                  textAlign: 'center'
+                }}>
+                  {bannerError}
+                </div>
+              )}
+            </div>
+            
             {/* Inline editable name */}
             <div style={{ width: '100%', textAlign: 'center', marginBottom: 4 }}>
               {editMode ? (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FaCrown, FaUser, FaThumbsUp, FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaShieldAlt, FaUsers, FaChartLine, FaCog, FaEye, FaEyeSlash, FaGithub, FaChevronDown, FaCheck } from 'react-icons/fa';
-import { assignRoleToUser, getAllRoles, getRoleData, getUserRole, DEFAULT_ROLES } from '../utils/permissions';
+import { FaCrown, FaUser, FaThumbsUp, FaPlus, FaEdit, FaTrash, FaSave, FaTimes, FaShieldAlt, FaUsers, FaChartLine, FaCog, FaEye, FaEyeSlash, FaGithub, FaChevronDown, FaCheck, FaSort } from 'react-icons/fa';
+import { assignRoleToUser, removeRoleFromUser, getAllRoles, getRoleData, getUserRole, getUserRoles, DEFAULT_ROLES } from '../utils/permissions';
 
 
 
@@ -55,6 +55,7 @@ const AVAILABLE_PERMISSIONS = {
 
 const IAMSystem = ({ onClose, currentUser }) => {
   const [activeTab, setActiveTab] = useState('roles'); // 'roles' or 'users'
+  const [activeSubTab, setActiveSubTab] = useState('roles-list'); // 'roles-list' or 'priority-management'
   const [roles, setRoles] = useState({});
   const [showCreateRole, setShowCreateRole] = useState(false);
   const [editingRole, setEditingRole] = useState(null);
@@ -66,14 +67,30 @@ const IAMSystem = ({ onClose, currentUser }) => {
     permissions: {}
   });
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(null);
+  const [roleSelectionOverlay, setRoleSelectionOverlay] = useState(null);
+  const [selectedRoles, setSelectedRoles] = useState({});
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [globalRoleOrder, setGlobalRoleOrder] = useState([]);
 
   // Load roles from localStorage
   useEffect(() => {
     const savedRoles = JSON.parse(localStorage.getItem('ukpRoles') || '{}');
     setRoles({ ...DEFAULT_ROLES, ...savedRoles });
+  }, []);
+
+  // Load global role order
+  useEffect(() => {
+    const savedOrder = JSON.parse(localStorage.getItem('ukpRoleOrder') || '[]');
+    if (savedOrder.length > 0) {
+      setGlobalRoleOrder(savedOrder);
+    } else {
+      // Initialize with default order
+      const defaultOrder = Object.keys(DEFAULT_ROLES);
+      setGlobalRoleOrder(defaultOrder);
+      localStorage.setItem('ukpRoleOrder', JSON.stringify(defaultOrder));
+    }
   }, []);
 
   // Close dropdown when clicking outside
@@ -237,17 +254,19 @@ const IAMSystem = ({ onClose, currentUser }) => {
     }
     
     return allUsers.map(user => {
-      // Try to get role from user object first, then fall back to getUserRole
-      let userRole = user.roleKey || getUserRole(user.email);
-      const roleData = getRoleData(userRole);
+      // Get multiple roles for the user
+      const userRoles = getUserRoles(user.email);
+      const roleDataList = userRoles.map(roleKey => getRoleData(roleKey)).filter(Boolean);
       
       // Debug logging
-      console.log(`User: ${user.email}, Role: ${userRole}, RoleData:`, roleData);
+      console.log(`User: ${user.email}, Roles: ${userRoles}, RoleData:`, roleDataList);
       
       return {
         ...user,
-        roleData,
-        roleKey: userRole
+        roles: userRoles,
+        roleDataList,
+        primaryRole: userRoles[0] || 'user',
+        primaryRoleData: getRoleData(userRoles[0] || 'user')
       };
     });
   };
@@ -260,6 +279,95 @@ const IAMSystem = ({ onClose, currentUser }) => {
       case 'FaThumbsUp': return FaThumbsUp;
       default: return FaUser;
     }
+  };
+
+  // Handle global role reordering
+  const handleGlobalRoleReorder = (draggedRole, targetRole) => {
+    if (draggedRole === targetRole) return;
+    
+    const updatedOrder = [...globalRoleOrder];
+    const draggedIndex = updatedOrder.indexOf(draggedRole);
+    const targetIndex = updatedOrder.indexOf(targetRole);
+    
+    updatedOrder.splice(draggedIndex, 1);
+    updatedOrder.splice(targetIndex, 0, draggedRole);
+    
+    setGlobalRoleOrder(updatedOrder);
+    localStorage.setItem('ukpRoleOrder', JSON.stringify(updatedOrder));
+    
+    setSuccessMessage('Role priority updated successfully!');
+    setShowSuccessMessage(true);
+    setTimeout(() => setShowSuccessMessage(false), 3000);
+  };
+
+  // Handle priority change with arrow buttons
+  const handlePriorityChange = (roleKey, direction) => {
+    const currentIndex = globalRoleOrder.indexOf(roleKey);
+    if (currentIndex === -1) return;
+    
+    const updatedOrder = [...globalRoleOrder];
+    
+    if (direction === 'up' && currentIndex > 0) {
+      // Move up
+      [updatedOrder[currentIndex], updatedOrder[currentIndex - 1]] = 
+      [updatedOrder[currentIndex - 1], updatedOrder[currentIndex]];
+    } else if (direction === 'down' && currentIndex < updatedOrder.length - 1) {
+      // Move down
+      [updatedOrder[currentIndex], updatedOrder[currentIndex + 1]] = 
+      [updatedOrder[currentIndex + 1], updatedOrder[currentIndex]];
+    } else {
+      return; // Can't move further
+    }
+    
+    setGlobalRoleOrder(updatedOrder);
+    localStorage.setItem('ukpRoleOrder', JSON.stringify(updatedOrder));
+    
+    setSuccessMessage('Role priority updated successfully!');
+    setShowSuccessMessage(true);
+    setTimeout(() => setShowSuccessMessage(false), 3000);
+  };
+
+  // Open role selection overlay
+  const openRoleSelection = (userEmail) => {
+    const userRoles = getUserRoles(userEmail);
+    const initialSelection = {};
+    
+    // Pre-select existing roles
+    userRoles.forEach(roleKey => {
+      initialSelection[roleKey] = true;
+    });
+    
+    setSelectedRoles(initialSelection);
+    setRoleSelectionOverlay(userEmail);
+  };
+
+  // Handle role selection change
+  const handleRoleSelectionChange = (roleKey, checked) => {
+    setSelectedRoles(prev => ({
+      ...prev,
+      [roleKey]: checked
+    }));
+  };
+
+  // Save role selections
+  const saveRoleSelections = (userEmail) => {
+    const selectedRoleKeys = Object.keys(selectedRoles).filter(key => selectedRoles[key]);
+    
+    // Clear existing roles
+    localStorage.removeItem(`userRoles_${userEmail}`);
+    
+    // Assign selected roles
+    selectedRoleKeys.forEach(roleKey => {
+      assignRoleToUser(userEmail, roleKey);
+    });
+    
+    setRoleSelectionOverlay(null);
+    setSelectedRoles({});
+    setRefreshTrigger(prev => prev + 1);
+    
+    setSuccessMessage(`Roles updated for ${userEmail}`);
+    setShowSuccessMessage(true);
+    setTimeout(() => setShowSuccessMessage(false), 3000);
   };
 
   // Force refresh of users when refreshTrigger changes
@@ -432,27 +540,90 @@ const IAMSystem = ({ onClose, currentUser }) => {
           Roles & Permissions
         </h2>
         
+        {/* Sub Navigation */}
         <div style={{
-          display: 'grid',
-          gap: '1rem'
+          display: 'flex',
+          gap: '1rem',
+          marginBottom: '1.5rem',
+          padding: '0.5rem',
+          background: 'var(--bg-primary)',
+          borderRadius: '0.5rem',
+          border: '1px solid var(--border-color)'
         }}>
-          {Object.entries(roles).map(([roleKey, role]) => {
-                            const IconComponent = typeof role.icon === 'string' ? getIconComponent(role.icon) : (role.icon || FaUser);
+          <button
+            onClick={() => setActiveSubTab('roles-list')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: activeSubTab === 'roles-list' ? 'var(--accent-color)' : 'transparent',
+              color: activeSubTab === 'roles-list' ? 'white' : 'var(--text-primary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '0.5rem',
+              padding: '0.5rem 1rem',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            <FaShieldAlt />
+            Roles List
+          </button>
+          <button
+            onClick={() => setActiveSubTab('priority-management')}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: activeSubTab === 'priority-management' ? 'var(--accent-color)' : 'transparent',
+              color: activeSubTab === 'priority-management' ? 'white' : 'var(--text-primary)',
+              border: '1px solid var(--border-color)',
+              borderRadius: '0.5rem',
+              padding: '0.5rem 1rem',
+              fontSize: '0.9rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            <FaSort />
+            Priority Management
+          </button>
+        </div>
+        
+        {/* Roles List Content */}
+        {activeSubTab === 'roles-list' && (
+          <div style={{
+            display: 'grid',
+            gap: '1rem'
+          }}>
+          {globalRoleOrder.map((roleKey, index) => {
+            const role = roles[roleKey];
+            if (!role) return null;
+            
+            const IconComponent = typeof role.icon === 'string' ? getIconComponent(role.icon) : (role.icon || FaUser);
             const isDefault = DEFAULT_ROLES[roleKey];
             
             return (
-              <div key={roleKey} style={{
-                background: 'var(--bg-primary)',
-                borderRadius: '0.5rem',
-                padding: '1rem',
-                border: '1px solid var(--border-color)'
-              }}>
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'flex-start',
-                  marginBottom: '0.5rem'
-                }}>
+              <div 
+                key={roleKey} 
+                style={{
+                  background: 'var(--bg-primary)',
+                  borderRadius: '0.5rem',
+                  padding: '1rem',
+                  border: '1px solid var(--border-color)',
+                  transition: 'all 0.2s ease',
+                  position: 'relative'
+                }}
+              >
+                                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    marginBottom: '0.5rem'
+                  }}>
+
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -587,6 +758,139 @@ const IAMSystem = ({ onClose, currentUser }) => {
             );
           })}
         </div>
+        )}
+        
+        {/* Role Priority Management Content */}
+        {activeSubTab === 'priority-management' && (
+          <div style={{
+            background: 'var(--bg-secondary)',
+            borderRadius: '0.75rem',
+            padding: '1.5rem',
+            border: '1px solid var(--border-color)'
+          }}>
+          <h3 style={{
+            margin: '0 0 1rem 0',
+            color: 'var(--text-primary)',
+            fontSize: '1.1rem',
+            fontWeight: 600
+          }}>
+            Role Priority Management
+          </h3>
+          <p style={{
+            margin: '0 0 1rem 0',
+            color: 'var(--text-secondary)',
+            fontSize: '0.9rem'
+          }}>
+            Use the arrow buttons to adjust role priority. Higher priority roles will appear first in user profiles and role lists.
+          </p>
+          
+          <div style={{
+            background: 'var(--bg-primary)',
+            borderRadius: '0.5rem',
+            border: '1px solid var(--border-color)',
+            overflow: 'hidden'
+          }}>
+            {globalRoleOrder.map((roleKey, index) => {
+              const role = roles[roleKey];
+              if (!role) return null;
+              
+              const IconComponent = typeof role.icon === 'string' ? getIconComponent(role.icon) : (role.icon || FaUser);
+              
+              return (
+                <div
+                  key={roleKey}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '0.75rem 1rem',
+                    borderBottom: index < globalRoleOrder.length - 1 ? '1px solid var(--border-color)' : 'none',
+                    background: 'var(--bg-primary)',
+                    transition: 'background 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => e.target.style.background = 'var(--bg-secondary)'}
+                  onMouseLeave={(e) => e.target.style.background = 'var(--bg-primary)'}
+                >
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '2rem',
+                      height: '2rem',
+                      borderRadius: '50%',
+                      background: role.color,
+                      color: 'white',
+                      fontSize: '0.8rem'
+                    }}>
+                      <IconComponent />
+                    </div>
+                    <div>
+                      <div style={{
+                        fontWeight: 600,
+                        color: 'var(--text-primary)',
+                        fontSize: '0.9rem'
+                      }}>
+                        {role.name}
+                      </div>
+                      <div style={{
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.8rem'
+                      }}>
+                        Priority #{index + 1}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div style={{
+                    display: 'flex',
+                    gap: '0.25rem'
+                  }}>
+                    <button
+                      onClick={() => handlePriorityChange(roleKey, 'up')}
+                      disabled={index === 0}
+                      style={{
+                        background: index === 0 ? 'var(--bg-tertiary)' : 'var(--accent-color)',
+                        color: index === 0 ? 'var(--text-secondary)' : 'white',
+                        border: 'none',
+                        borderRadius: '0.25rem',
+                        padding: '0.5rem',
+                        cursor: index === 0 ? 'not-allowed' : 'pointer',
+                        fontSize: '0.8rem',
+                        transition: 'all 0.2s ease'
+                      }}
+                      title="Move Up"
+                    >
+                      ↑
+                    </button>
+                    <button
+                      onClick={() => handlePriorityChange(roleKey, 'down')}
+                      disabled={index === globalRoleOrder.length - 1}
+                      style={{
+                        background: index === globalRoleOrder.length - 1 ? 'var(--bg-tertiary)' : 'var(--accent-color)',
+                        color: index === globalRoleOrder.length - 1 ? 'var(--text-secondary)' : 'white',
+                        border: 'none',
+                        borderRadius: '0.25rem',
+                        padding: '0.5rem',
+                        cursor: index === globalRoleOrder.length - 1 ? 'not-allowed' : 'pointer',
+                        fontSize: '0.8rem',
+                        transition: 'all 0.2s ease'
+                      }}
+                      title="Move Down"
+                    >
+                      ↓
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        )}
       </div>
       )}
 
@@ -622,11 +926,12 @@ const IAMSystem = ({ onClose, currentUser }) => {
                   padding: '1rem',
                   border: '1px solid var(--border-color)'
                 }}>
+                  {/* User Info Section */}
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    marginBottom: '0.75rem'
+                    marginBottom: '1rem'
                   }}>
                     <div style={{
                       display: 'flex',
@@ -669,15 +974,25 @@ const IAMSystem = ({ onClose, currentUser }) => {
                         }}>
                           {user.email}
                         </div>
+                        {/* GitHub Connection Status */}
+                        {user.githubId && user.githubUsername && (
+                          <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.5rem',
+                            fontSize: '0.8rem',
+                            color: '#10b981',
+                            marginTop: '0.25rem'
+                          }}>
+                            <FaGithub />
+                            GitHub: @{user.githubUsername} (ID: {user.githubId})
+                          </div>
+                        )}
                       </div>
                     </div>
                     
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.75rem'
-                    }}>
-                      {/* GitHub Connection Status */}
+                    {/* GitHub Connection Status Badge */}
+                    <div>
                       {user.githubId && user.githubUsername ? (
                         <div style={{
                           display: 'flex',
@@ -709,114 +1024,125 @@ const IAMSystem = ({ onClose, currentUser }) => {
                           Not Connected
                         </div>
                       )}
+                    </div>
+                  </div>
                       
-                      {/* Current Role Badge */}
-                      <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.5rem',
-                        padding: '0.5rem 0.75rem',
-                        background: roleData?.color || '#6b7280',
-                        color: 'white',
-                        borderRadius: '0.5rem',
-                        fontSize: '0.9rem',
-                        fontWeight: 600
-                      }}>
-                        <IconComponent style={{ fontSize: '0.8rem' }} />
-                        {roleData?.name || 'User'}
-                      </div>
-                      
-                      {/* Role Assignment Dropdown */}
-                      {(hasPermission(currentUser.email, 'assignRoles') || isOwner) && (
-                        <div style={{ position: 'relative' }} className="role-dropdown">
-                          <button
-                            onClick={() => setRoleDropdownOpen(roleDropdownOpen === user.email ? null : user.email)}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '0.25rem',
-                              background: 'var(--accent-color)',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '0.25rem',
-                              padding: '0.5rem',
-                              cursor: 'pointer',
-                              fontSize: '0.8rem'
-                            }}
-                          >
-                            <FaPlus />
-                            <FaChevronDown />
-                          </button>
+                  {/* Roles Section */}
+                  <div style={{
+                    marginTop: '1rem'
+                  }}>
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      flexWrap: 'wrap'
+                    }}>
+                      {user.roles && user.roles.length > 0 ? (
+                        user.roles.map((roleKey, index) => {
+                          const roleData = getRoleData(roleKey);
+                          const IconComponent = typeof roleData?.icon === 'string' ? getIconComponent(roleData.icon) : (roleData?.icon || FaUser);
                           
-                          {roleDropdownOpen === user.email && (
-                            <div style={{
-                              position: 'absolute',
-                              top: '100%',
-                              right: 0,
-                              background: 'var(--bg-primary)',
-                              border: '1px solid var(--border-color)',
-                              borderRadius: '0.5rem',
-                              padding: '0.5rem',
-                              minWidth: '200px',
-                              zIndex: 1000,
-                              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)'
-                            }}>
-                                                            {Object.entries(allRoles).map(([roleKey, role]) => {
-                                const RoleIcon = typeof role.icon === 'string' ? getIconComponent(role.icon) : (role.icon || FaUser);
-                                return (
-                                  <div
-                                    key={roleKey}
-                                   onClick={() => {
-                                     console.log(`Assigning role ${roleKey} to user ${user.email}`);
-                                     const success = assignRoleToUser(user.email, roleKey);
-                                     console.log(`Role assignment result:`, success);
-                                     setRoleDropdownOpen(null);
-                                     // Trigger UI refresh
-                                     setRefreshTrigger(prev => prev + 1);
-                                     
-                                     // Show success message
-                                     setSuccessMessage(`Role "${role.name}" assigned to ${user.name || user.email}`);
-                                     setShowSuccessMessage(true);
-                                     setTimeout(() => setShowSuccessMessage(false), 3000);
-                                   }}
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      gap: '0.5rem',
-                                      padding: '0.5rem',
-                                      cursor: 'pointer',
-                                      borderRadius: '0.25rem',
-                                      transition: 'background 0.2s'
-                                    }}
-                                    onMouseEnter={(e) => e.target.style.background = 'var(--bg-secondary)'}
-                                    onMouseLeave={(e) => e.target.style.background = 'transparent'}
-                                  >
-                                    <RoleIcon style={{ color: role.color, fontSize: '0.9rem' }} />
-                                    <span style={{ color: 'var(--text-primary)', fontSize: '0.9rem' }}>
-                                      {role.name}
-                                    </span>
-                                  </div>
-                                );
-                              })}
+                          return (
+                            <div
+                              key={roleKey}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                padding: '0.5rem 0.75rem',
+                                background: roleData?.color || '#6b7280',
+                                color: 'white',
+                                borderRadius: '0.5rem',
+                                fontSize: '0.9rem',
+                                fontWeight: 600,
+                                position: 'relative'
+                              }}
+                            >
+                              <IconComponent style={{ fontSize: '0.8rem' }} />
+                              <span>{roleData?.name || 'User'}</span>
+                              <span style={{ fontSize: '0.7rem', opacity: 0.8 }}>#{index + 1}</span>
+                              
+                              {/* Remove Role Button */}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (user.roles.length > 1) {
+                                    removeRoleFromUser(user.email, roleKey);
+                                    setRefreshTrigger(prev => prev + 1);
+                                    setSuccessMessage(`Role "${roleData?.name}" removed from ${user.name || user.email}`);
+                                    setShowSuccessMessage(true);
+                                    setTimeout(() => setShowSuccessMessage(false), 3000);
+                                  }
+                                }}
+                                style={{
+                                  background: 'none',
+                                  border: 'none',
+                                  color: 'white',
+                                  cursor: 'pointer',
+                                  marginLeft: '0.25rem',
+                                  fontSize: '0.7rem',
+                                  padding: '0.1rem',
+                                  borderRadius: '50%',
+                                  width: '1.2rem',
+                                  height: '1.2rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  transition: 'background 0.2s'
+                                }}
+                                onMouseEnter={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
+                                onMouseLeave={(e) => e.target.style.background = 'none'}
+                                title="Remove Role"
+                              >
+                                <FaTimes />
+                              </button>
                             </div>
-                          )}
+                          );
+                        })
+                      ) : (
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          padding: '0.5rem 0.75rem',
+                          background: '#6b7280',
+                          color: 'white',
+                          borderRadius: '0.5rem',
+                          fontSize: '0.9rem',
+                          fontWeight: 600,
+                          opacity: 0.7
+                        }}>
+                          <FaUser style={{ fontSize: '0.8rem' }} />
+                          No roles assigned
                         </div>
+                      )}
+                      
+                      {/* Add Role Button */}
+                      {(hasPermission(currentUser.email, 'assignRoles') || isOwner) && (
+                        <button
+                          onClick={() => openRoleSelection(user.email)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.25rem',
+                            background: 'var(--accent-color)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '0.25rem',
+                            padding: '0.5rem',
+                            cursor: 'pointer',
+                            fontSize: '0.8rem',
+                            transition: 'background 0.2s'
+                          }}
+                          onMouseEnter={(e) => e.target.style.background = 'var(--accent-color-dark)'}
+                          onMouseLeave={(e) => e.target.style.background = 'var(--accent-color)'}
+                          title="Add/Edit Roles"
+                        >
+                          <FaPlus />
+                        </button>
                       )}
                     </div>
                   </div>
-                  
-                  {/* GitHub Details */}
-                  {user.githubId && user.githubUsername && (
-                    <div style={{
-                      background: 'var(--bg-secondary)',
-                      borderRadius: '0.25rem',
-                      padding: '0.5rem',
-                      fontSize: '0.8rem',
-                      color: 'var(--text-secondary)'
-                    }}>
-                      <strong>GitHub:</strong> @{user.githubUsername} (ID: {user.githubId})
-                    </div>
-                  )}
                 </div>
               );
             })}
@@ -1150,6 +1476,160 @@ const IAMSystem = ({ onClose, currentUser }) => {
                 }}
               >
                 {editingRole ? 'Save Changes' : 'Create Role'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Role Selection Overlay */}
+      {roleSelectionOverlay && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            setRoleSelectionOverlay(null);
+            setSelectedRoles({});
+          }
+        }}
+        >
+          <div style={{
+            background: 'var(--bg-primary)',
+            borderRadius: '1rem',
+            padding: '2rem',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '80vh',
+            overflow: 'auto'
+          }}>
+            <h3 style={{
+              margin: '0 0 1.5rem 0',
+              color: 'var(--text-primary)',
+              fontSize: '1.3rem',
+              fontWeight: 600
+            }}>
+              Manage Roles for {roleSelectionOverlay}
+            </h3>
+            
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.75rem',
+              marginBottom: '2rem'
+            }}>
+              {Object.entries(roles).map(([roleKey, role]) => {
+                const RoleIcon = typeof role.icon === 'string' ? getIconComponent(role.icon) : (role.icon || FaUser);
+                const isSelected = selectedRoles[roleKey] || false;
+                
+                return (
+                  <div
+                    key={roleKey}
+                    onClick={() => handleRoleSelectionChange(roleKey, !isSelected)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      padding: '0.75rem',
+                      background: isSelected ? 'rgba(59, 130, 246, 0.1)' : 'var(--bg-secondary)',
+                      border: `1px solid ${isSelected ? 'rgba(59, 130, 246, 0.3)' : 'var(--border-color)'}`,
+                      borderRadius: '0.5rem',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.target.style.background = isSelected ? 'rgba(59, 130, 246, 0.2)' : 'var(--bg-tertiary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.target.style.background = isSelected ? 'rgba(59, 130, 246, 0.1)' : 'var(--bg-secondary)';
+                    }}
+                  >
+                    <div style={{
+                      width: '1.2rem',
+                      height: '1.2rem',
+                      border: `2px solid ${isSelected ? 'var(--accent-color)' : 'var(--border-color)'}`,
+                      borderRadius: '0.25rem',
+                      background: isSelected ? 'var(--accent-color)' : 'transparent',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: 'white',
+                      fontSize: '0.7rem',
+                      fontWeight: 'bold'
+                    }}>
+                      {isSelected && '✓'}
+                    </div>
+                    <RoleIcon style={{ 
+                      color: role.color, 
+                      fontSize: '1rem' 
+                    }} />
+                    <div>
+                      <div style={{
+                        fontWeight: 600,
+                        color: 'var(--text-primary)',
+                        fontSize: '0.9rem'
+                      }}>
+                        {role.name}
+                      </div>
+                      <div style={{
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.8rem'
+                      }}>
+                        {role.description}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            
+            {/* Action Buttons */}
+            <div style={{
+              display: 'flex',
+              gap: '1rem',
+              justifyContent: 'flex-end'
+            }}>
+              <button
+                onClick={() => {
+                  setRoleSelectionOverlay(null);
+                  setSelectedRoles({});
+                }}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '0.5rem',
+                  background: 'var(--bg-secondary)',
+                  color: 'var(--text-primary)',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: 600
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => saveRoleSelections(roleSelectionOverlay)}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  border: 'none',
+                  borderRadius: '0.5rem',
+                  background: 'var(--accent-color)',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  fontWeight: 600
+                }}
+              >
+                Save Changes
               </button>
             </div>
           </div>

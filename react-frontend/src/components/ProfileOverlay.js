@@ -1,44 +1,80 @@
-import React, { useState, useEffect } from 'react';
-import { FaUser, FaRobot, FaCog, FaShieldAlt, FaCrown, FaCheck, FaUserTie, FaStar, FaPlus, FaEdit, FaTrash, FaCircle, FaMoon, FaMinus, FaTimes } from 'react-icons/fa';
-import { getAllRoles, getUserRole, assignRoleToUser, canAssignRoles } from '../utils/permissions';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  FaTimes, 
+  FaCircle, 
+  FaMoon, 
+  FaMinus, 
+  FaUser, 
+  FaCrown, 
+  FaShieldAlt, 
+  FaUserTie,
+  FaGithub,
+  FaCalendarAlt,
+  FaUserFriends,
+  FaStar,
+  FaRobot,
+  FaCheck,
+  FaEdit,
+  FaUpload,
+  FaTrash
+} from 'react-icons/fa';
+import { getAllRoles, getUserRoles } from '../utils/permissions';
+import { loadBannerFromFolder } from '../utils/bannerStorage';
+import '../styles/ProfileOverlay.css';
 
 const ProfileOverlay = ({ isOpen, onClose, profileData, type = 'user' }) => {
-  const [roles, setRoles] = useState({});
-  const [userCurrentRole, setUserCurrentRole] = useState(null);
-  const [showRoleManager, setShowRoleManager] = useState(false);
-  const [canManageRoles, setCanManageRoles] = useState(false);
+  const [userRoles, setUserRoles] = useState([]);
+
+
+  const [userBanner, setUserBanner] = useState(null);
+
   const [userStatus, setUserStatus] = useState(() => {
     return localStorage.getItem('userStatus') || 'online';
   });
 
-  // Listen for status changes from main App
-  useEffect(() => {
-    const handleStatusChange = (event) => {
-      setUserStatus(event.detail.status);
-    };
 
-    window.addEventListener('userStatusChanged', handleStatusChange);
-    return () => {
-      window.removeEventListener('userStatusChanged', handleStatusChange);
-    };
-  }, []);
 
   const isUser = type === 'user';
-  const isAssistant = type === 'assistant';
 
-  // Load roles and user's current role
+  // Load user roles
   useEffect(() => {
     if (isUser && profileData?.email) {
-      const allRoles = getAllRoles();
-      setRoles(allRoles);
-      
-      const currentRole = getUserRole(profileData.email);
-      setUserCurrentRole(currentRole);
-      
-      // Check if current user can assign roles
-      const currentUserEmail = localStorage.getItem('userEmail');
-      setCanManageRoles(canAssignRoles(currentUserEmail));
+      const userRoleList = getUserRoles(profileData.email);
+      setUserRoles(userRoleList);
     }
+  }, [isUser, profileData?.email]);
+
+
+
+  // Load banner from dedicated folder
+  useEffect(() => {
+    const loadBanner = async () => {
+      if (isUser && profileData?.email) {
+        try {
+          const bannerData = await loadBannerFromFolder(profileData.email);
+          if (bannerData) {
+            setUserBanner(bannerData.dataUrl);
+          } else {
+            setUserBanner(null);
+          }
+        } catch (error) {
+          console.error('Error loading banner:', error);
+          setUserBanner(null);
+        }
+      }
+    };
+
+    loadBanner();
+
+    // Listen for banner updates
+    const handleBannerUpdate = () => {
+      loadBanner();
+    };
+
+    window.addEventListener('bannerUpdated', handleBannerUpdate);
+    return () => {
+      window.removeEventListener('bannerUpdated', handleBannerUpdate);
+    };
   }, [isUser, profileData?.email]);
 
   if (!isOpen) return null;
@@ -54,24 +90,18 @@ const ProfileOverlay = ({ isOpen, onClose, profileData, type = 'user' }) => {
     return iconMap[iconString] || FaUser;
   };
 
-  const handleRoleChange = (newRoleKey) => {
-    if (profileData?.email && canManageRoles) {
-      assignRoleToUser(profileData.email, newRoleKey);
-      setUserCurrentRole(newRoleKey);
-      setShowRoleManager(false);
-    }
-  };
 
 
 
+
+  const getStatusIcon = (status) => {
   const statusOptions = [
     { key: 'online', name: 'Online', icon: FaCircle, color: '#43b581', description: '' },
     { key: 'idle', name: 'Idle', icon: FaMoon, color: '#faa61a', description: '' },
     { key: 'dnd', name: 'Do Not Disturb', icon: FaMinus, color: '#f04747', description: 'You will not receive desktop notifications' },
-    { key: 'invisible', name: 'Invisible', icon: FaCircle, color: '#747f8d', description: 'You will appear offline' }
+      { key: 'invisible', name: 'Invisible', icon: FaCircle, color: '#ffffff', description: 'You will appear offline' }
   ];
 
-  const getStatusIcon = (status) => {
     const statusOption = statusOptions.find(option => option.key === status);
     if (statusOption) {
       const IconComponent = statusOption.icon;
@@ -87,15 +117,102 @@ const ProfileOverlay = ({ isOpen, onClose, profileData, type = 'user' }) => {
     { name: 'Premium', color: '#faa61a', icon: FaStar }
   ];
 
+  // Get member since date
+  const getMemberSinceDate = () => {
+    if (isUser && profileData?.email) {
+      // Get user creation date from localStorage or use current date
+      const userData = JSON.parse(localStorage.getItem('ukpUser') || '{}');
+      const creationDate = userData.createdAt || new Date().toISOString();
+      return new Date(creationDate).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
+    }
+    return new Date().toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  // Get GitHub profile info
+  const getGitHubInfo = () => {
+    if (isUser && profileData?.email) {
+      const userData = JSON.parse(localStorage.getItem('ukpUser') || '{}');
+      return {
+        isLinked: userData.githubUsername && userData.githubId,
+        username: userData.githubUsername,
+        profileUrl: userData.githubUsername ? `https://github.com/${userData.githubUsername}` : null
+      };
+    }
+    return { isLinked: false, username: null, profileUrl: null };
+  };
+
+  const githubInfo = getGitHubInfo();
+
+
+
   return (
     <div className="profile-overlay">
       <div className="profile-overlay-backdrop" onClick={onClose}></div>
       <div className="profile-card">
-        <div className="profile-banner">
+        <div className="profile-banner" style={{
+          background: userBanner && isUser ? 'none' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          position: 'relative',
+          overflow: 'hidden',
+          width: '100%',
+          minHeight: '120px',
+          maxHeight: '200px',
+          height: userBanner && isUser ? 'auto' : '120px'
+        }}>
+          {userBanner && isUser && (
+            <img 
+              src={userBanner} 
+              alt="Profile Banner" 
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                zIndex: 1
+              }}
+              onLoad={(e) => {
+                const img = e.target;
+                const bannerElement = img.parentElement;
+                const aspectRatio = img.naturalWidth / img.naturalHeight;
+                const containerWidth = bannerElement.offsetWidth;
+                
+                if (aspectRatio > 2) {
+                  bannerElement.style.height = `${containerWidth / aspectRatio}px`;
+                } else if (aspectRatio < 0.5) {
+                  bannerElement.style.height = '200px';
+                } else {
+                  bannerElement.style.height = `${containerWidth / aspectRatio}px`;
+                }
+                
+                const calculatedHeight = parseFloat(bannerElement.style.height);
+                if (calculatedHeight < 120) {
+                  bannerElement.style.height = '120px';
+                } else if (calculatedHeight > 200) {
+                  bannerElement.style.height = '200px';
+                }
+              }}
+            />
+          )}
+          
+
+        </div>
+        
+        <div className="profile-content">
           <div className="profile-avatar-large">
             {isUser ? (
               profileData?.avatar ? (
-                profileData.avatar.toLowerCase().endsWith('.gif') ? (
                   <img 
                     src={profileData.avatar} 
                     alt={profileData.name || 'User'} 
@@ -103,187 +220,180 @@ const ProfileOverlay = ({ isOpen, onClose, profileData, type = 'user' }) => {
                       width: '100%', 
                       height: '100%', 
                       borderRadius: '50%',
-                      objectFit: 'cover'
-                    }}
-                  />
-                ) : (
-                  <img 
-                    src={profileData.avatar} 
-                    alt={profileData.name || 'User'} 
-                  />
-                )
+                    objectFit: 'cover',
+                    display: 'block'
+                  }}
+                />
               ) : (
-                <span style={{ color: '#fff', fontWeight: 700, fontSize: 24 }}>
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: 24,
+                  fontWeight: 700
+                }}>
                   {profileData?.name?.charAt(0) || 'U'}
-                </span>
+                </div>
               )
             ) : (
-              <img 
-                src="/unified-knowledge-platform.png" 
-                alt="Unified Knowledge Platform" 
-                style={{ filter: 'grayscale(100%) brightness(0.7)' }}
-              />
-            )}
-            {/* Status indicator on profile picture */}
-            {isUser && (
               <div style={{
-                position: 'absolute',
-                bottom: '8px',
-                right: '8px',
-                width: '16px',
-                height: '16px',
-                background: userStatus === 'online' ? '#43b581' : 
-                           userStatus === 'idle' ? '#faa61a' : 
-                           userStatus === 'dnd' ? '#f04747' : '#747f8d',
+                width: '100%',
+                height: '100%',
                 borderRadius: '50%',
-                border: '2px solid white',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
-                zIndex: 10
+                color: 'white',
+                fontSize: 24,
+                fontWeight: 700
               }}>
-                {userStatus === 'idle' && <FaMoon size={7} style={{ color: 'white' }} />}
-                {userStatus === 'dnd' && <FaMinus size={7} style={{ color: 'white' }} />}
+                {profileData?.name?.charAt(0) || 'A'}
               </div>
             )}
           </div>
-        </div>
-        
-        <div className="profile-content">
           <div className="profile-username">
-            {isUser ? (profileData?.name || 'User') : 'Unified Knowledge Platform'}
+            {profileData?.name || (isUser ? 'User' : 'Agent')}
           </div>
-          
           <div className="profile-userid">
-            {isUser ? (profileData?.email || 'user@example.com') : 'AI Assistant'}
+            {profileData?.email || 'No email provided'}
           </div>
 
-
-          
-          <div className="profile-badges">
-            {isUser ? (
-              // Show user's current role
-              userCurrentRole && roles[userCurrentRole] ? (
-                <div className="profile-role-tile" style={{ backgroundColor: roles[userCurrentRole].color }}>
-                  {React.createElement(getIconComponent(roles[userCurrentRole].icon), { size: 12 })}
-                  <span>{roles[userCurrentRole].name}</span>
-                  {canManageRoles && (
-                    <button 
-                      onClick={() => setShowRoleManager(!showRoleManager)}
-                      style={{ 
-                        background: 'none', 
-                        border: 'none', 
-                        color: 'white', 
-                        cursor: 'pointer',
-                        marginLeft: '8px',
-                        fontSize: '10px'
-                      }}
-                    >
-                      <FaEdit size={10} />
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div className="profile-role-tile" style={{ backgroundColor: '#6b7280' }}>
-                  <FaUser size={12} />
-                  <span>User</span>
-                </div>
-              )
-            ) : (
-              // Bot badges as tiles
-              botBadges.map((badge, index) => {
-                const IconComponent = badge.icon;
-                return (
-                  <div key={index} className="profile-badge-tile" style={{ backgroundColor: badge.color }}>
-                    <IconComponent size={12} />
-                    <span>{badge.name}</span>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          {/* Role Manager */}
-          {isUser && showRoleManager && canManageRoles && (
-            <div className="role-manager" style={{ 
-              marginTop: '12px', 
-              padding: '12px', 
-              background: 'var(--bg-primary)', 
-              borderRadius: '8px',
-              border: '1px solid var(--border-color)'
-            }}>
-              <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: '8px', color: 'var(--text-primary)' }}>
-                Change Role
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                {Object.entries(roles).map(([roleKey, roleData]) => (
-                  <button
-                    key={roleKey}
-                    onClick={() => handleRoleChange(roleKey)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '6px 8px',
-                      background: roleKey === userCurrentRole ? 'var(--accent-color)' : 'var(--bg-secondary)',
-                      border: '1px solid var(--border-color)',
-                      borderRadius: '6px',
-                      color: roleKey === userCurrentRole ? 'white' : 'var(--text-primary)',
-                      cursor: 'pointer',
-                      fontSize: '0.8rem',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    {React.createElement(getIconComponent(roleData.icon), { size: 12 })}
-                    <span>{roleData.name}</span>
-                    {roleKey === userCurrentRole && <FaCheck size={10} />}
-                  </button>
-                ))}
-              </div>
+          {/* Member Since Section */}
+          <div style={{ 
+            marginBottom: 20, 
+            padding: 12, 
+            background: 'var(--bg-tertiary)', 
+            borderRadius: 8, 
+            borderLeft: '4px solid var(--accent-color)',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: 4 }}>
+              Member of Unified® since
             </div>
-          )}
-          
-          <div className="profile-details">
-            {isUser ? (
-              <>
-                <div className="profile-detail-item">
-                  <div className="profile-detail-icon">
-                    <FaUser />
-                  </div>
-                  <div className="profile-detail-label">Role:</div>
-                  <div className="profile-detail-value">
-                    {userCurrentRole && roles[userCurrentRole] ? roles[userCurrentRole].name : 'User'}
-                  </div>
-                </div>
+            <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', fontWeight: 600 }}>
+              <FaCalendarAlt style={{ marginRight: 8, color: 'var(--accent-color)' }} />
+              {getMemberSinceDate()}
+            </div>
+          </div>
 
-              </>
+          {/* Roles Section */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 8, color: 'var(--text-primary)' }}>
+              Roles
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
+              {isUser && userRoles.length > 0 ? (
+                userRoles.map((roleKey, index) => {
+                  const allRoles = getAllRoles();
+                  const roleData = allRoles[roleKey];
+                  if (!roleData) return null;
+                  
+                  const IconComponent = typeof roleData.icon === 'string' ? getIconComponent(roleData.icon) : (roleData.icon || FaUser);
+                  
+                  return (
+                                                              <div
+                       key={roleKey}
+                       style={{
+                         display: 'inline-flex',
+                         alignItems: 'center',
+                         gap: 6,
+                         padding: '6px 12px',
+                         borderRadius: 20,
+                         backgroundColor: roleData.color,
+                         color: 'white',
+                         fontSize: '0.8rem',
+                         fontWeight: 600,
+                         whiteSpace: 'nowrap',
+                         boxShadow: '0 1px 3px rgba(0, 0, 0, 0.2)',
+                         transition: 'all 0.2s ease'
+                       }}
+                     >
+                       <IconComponent style={{ color: 'white' }} />
+                       {roleData.name}
+                     </div>
+                  );
+                })
+              ) : (
+                <div style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 12px',
+                  borderRadius: 20,
+                  backgroundColor: '#6b7280',
+                  color: 'white',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  opacity: 0.8
+                }}>
+                  <FaUser style={{ color: 'white' }} />
+                  {isUser ? 'No roles assigned' : 'Agent Role'}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* GitHub Section */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 8, color: 'var(--text-primary)' }}>
+              GitHub Profile
+            </div>
+            {githubInfo.isLinked ? (
+              <a 
+                href={githubInfo.profileUrl} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
+                  padding: 8,
+                  background: 'var(--bg-tertiary)',
+                  borderRadius: 6,
+                  textDecoration: 'none',
+                  color: 'var(--text-primary)',
+                  transition: 'all 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.target.style.background = 'var(--accent-color)'}
+                onMouseLeave={(e) => e.target.style.background = 'var(--bg-tertiary)'}
+              >
+                <FaGithub style={{ color: 'var(--accent-color)' }} />
+                <div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>
+                    {githubInfo.username}
+                  </div>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>
+                    Linked
+                  </div>
+                </div>
+              </a>
             ) : (
-              <>
-                <div className="profile-detail-item">
-                  <div className="profile-detail-icon">
-                    <FaRobot />
-                  </div>
-                  <div className="profile-detail-label">Model:</div>
-                  <div className="profile-detail-value">{profileData?.model || 'Gemini 2.5 Flash'}</div>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: 8,
+                background: 'var(--bg-tertiary)',
+                borderRadius: 6,
+                color: 'var(--text-secondary)'
+              }}>
+                <FaGithub />
+                <div style={{ fontSize: '0.9rem' }}>
+                  GitHub not linked
                 </div>
-                <div className="profile-detail-item">
-                  <div className="profile-detail-icon">
-                    <FaShieldAlt />
                   </div>
-                  <div className="profile-detail-label">Agent:</div>
-                  <div className="profile-detail-value">{profileData?.agent || 'Unified® Mode'}</div>
-                </div>
-                <div className="profile-detail-item">
-                  <div className="profile-detail-icon">
-                    <FaCog />
-                  </div>
-                  <div className="profile-detail-label">Status:</div>
-                  <div className="profile-detail-value">Active</div>
-                </div>
-              </>
             )}
           </div>
+
+          
+          
+          
         </div>
       </div>
     </div>
