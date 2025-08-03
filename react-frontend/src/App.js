@@ -4,7 +4,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
 import './styles/backgrounds.css';
 import './styles/modal.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch, FaFileImage, FaFilePdf, FaEye, FaFileWord, FaFileExcel, FaFileAudio, FaFile, FaChartLine, FaExternalLinkAlt, FaLightbulb, FaBalanceScale, FaClipboardList } from 'react-icons/fa';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch, FaFileImage, FaFilePdf, FaEye, FaFileWord, FaFileExcel, FaFileAudio, FaFile, FaChartLine, FaExternalLinkAlt, FaLightbulb, FaBalanceScale, FaClipboardList, FaCircle, FaMinus } from 'react-icons/fa';
 import { canAccessDeveloperOptions, getUserRoleInfo } from './utils/permissions';
 import { Image as ReactImage } from 'react-image';
 import ReactAudioPlayer from 'react-audio-player';
@@ -31,6 +31,7 @@ import ProfileModal from './components/ProfileModal';
 import FeedbackDashboard from './components/FeedbackDashboard';
 import MonitoringDashboard from './components/MonitoringDashboard';
 import DeveloperDashboard from './components/DeveloperDashboard';
+import ProfileOverlay from './components/ProfileOverlay';
 import { renderAsync as renderDocxPreview } from 'docx-preview';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
@@ -193,6 +194,44 @@ function App() {
     const userData = JSON.parse(localStorage.getItem('ukpUser'));
     return userData?.email || 'dhruv.mendiratta4@gmail.com';
   });
+  const [userStatus, setUserStatus] = useState(() => {
+    return localStorage.getItem('userStatus') || 'online';
+  });
+  const [showStatusMenu, setShowStatusMenu] = useState(false);
+  const [statusMenuTimeout, setStatusMenuTimeout] = useState(null);
+
+  // Listen for status changes from ProfileOverlay
+  useEffect(() => {
+    const handleStatusChange = (event) => {
+      setUserStatus(event.detail.status);
+    };
+
+    window.addEventListener('userStatusChanged', handleStatusChange);
+    return () => {
+      window.removeEventListener('userStatusChanged', handleStatusChange);
+    };
+  }, []);
+
+
+
+  const handleStatusChange = (newStatus) => {
+    setUserStatus(newStatus);
+    localStorage.setItem('userStatus', newStatus);
+    setShowStatusMenu(false);
+    if (statusMenuTimeout) {
+      clearTimeout(statusMenuTimeout);
+      setStatusMenuTimeout(null);
+    }
+    // Dispatch custom event to notify ProfileOverlay
+    window.dispatchEvent(new CustomEvent('userStatusChanged', { detail: { status: newStatus } }));
+  };
+
+  const statusOptions = [
+    { key: 'online', name: 'Online', icon: FaCircle, color: '#43b581', description: '' },
+    { key: 'idle', name: 'Idle', icon: FaMoon, color: '#faa61a', description: '' },
+    { key: 'dnd', name: 'Do Not Disturb', icon: FaMinus, color: '#f04747', description: 'You will not receive desktop notifications' },
+    { key: 'invisible', name: 'Invisible', icon: FaCircle, color: '#747f8d', description: 'You will appear offline' }
+  ];
   const [editingUserName, setEditingUserName] = useState(false);
   const userNameInputRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -227,6 +266,11 @@ function App() {
   const userDetailsMenuRef = useRef(null);
 
   const [inputValue, setInputValue] = useState('');
+  
+  // Profile overlay state
+  const [showProfileOverlay, setShowProfileOverlay] = useState(false);
+  const [profileOverlayData, setProfileOverlayData] = useState(null);
+  const [profileOverlayType, setProfileOverlayType] = useState('user');
   
   useEffect(() => {
     if (preferredModel) {
@@ -808,6 +852,10 @@ function getFileType(file) {
               } else {
                 console.warn(`Agent details not found in agentList for agentId: ${msg.agentId}`);
               }
+            } else {
+              // If no agent is specified, show Unified® Mode
+              processedMsg.agentName = "Unified® Mode";
+              processedMsg.agentIcon = "unified-mode";
             }
           } else if (msg.sender === 'assistant') { // New block for assistant messages
             if (msg.agentId) {
@@ -821,6 +869,10 @@ function getFileType(file) {
               } else {
                 console.warn(`Agent details not found in agentList for assistant agentId: ${msg.agentId}`);
               }
+            } else {
+              // If no agent is specified, show Unified® Mode
+              processedMsg.agentName = "Unified® Mode";
+              processedMsg.agentIcon = "unified-mode";
             }
             processedMsg.modelUsed = msg.modelUsed || msg.model_used;
             if (processedMsg.modelUsed) {
@@ -1108,9 +1160,10 @@ function getFileType(file) {
         agentIconToSend = activeAgentDetails.iconType;
         pdfSourceToSend = activeAgentDetails.pdfSource;
       } else {
+        // If no agent is selected, use Unified® Mode
         agentIdToSend = null;
-        agentFullNameToSend = null;
-        agentIconToSend = null;
+        agentFullNameToSend = "Unified® Mode";
+        agentIconToSend = "unified-mode";
         pdfSourceToSend = null;
       }
     }
@@ -2471,6 +2524,30 @@ function getFileType(file) {
     setShowNewAgentOverlay(false);
   };
 
+  const handleAvatarClick = (type, data = null) => {
+    if (type === 'user') {
+      setProfileOverlayData({
+        name: userName,
+        email: userEmail,
+        avatar: userAvatar,
+        role: 'User'
+      });
+      setProfileOverlayType('user');
+    } else if (type === 'assistant') {
+      setProfileOverlayData({
+        model: preferredModel,
+        agent: activeAgentDetails?.fullName || 'Unified® Mode'
+      });
+      setProfileOverlayType('assistant');
+    }
+    setShowProfileOverlay(true);
+  };
+
+  const handleCloseProfileOverlay = () => {
+    setShowProfileOverlay(false);
+    setProfileOverlayData(null);
+  };
+
   // Handler to remove a file from selectedPdfs
   function handleRemoveFile(idx) {
     setSelectedPdfs(prev => prev.filter((_, i) => i !== idx));
@@ -2546,6 +2623,37 @@ function getFileType(file) {
               }}>
                 {userAvatar && <img src={userAvatar} alt="avatar" style={{ width: 40, height: 40, borderRadius: '50%' }} />}
                 {!userAvatar && <div className="user-avatar-initial">{userName.charAt(0)}</div>}
+                {/* Status Indicator */}
+                <div 
+                  style={{
+                    position: 'absolute',
+                    bottom: -4,
+                    right: -4,
+                    width: 14,
+                    height: 14,
+                    background: userStatus === 'online' ? '#43b581' : 
+                               userStatus === 'idle' ? '#faa61a' : 
+                               userStatus === 'dnd' ? '#f04747' : '#747f8d',
+                    borderRadius: '50%',
+                    border: '3px solid var(--bg-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    transition: 'transform 0.2s ease',
+                    zIndex: 10
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleAvatarClick('user', { name: userName, email: userEmail, avatar: userAvatar });
+                  }}
+                  onMouseEnter={(e) => e.target.style.transform = 'scale(1.2)'}
+                  onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                  title="Click to view profile and change status"
+                >
+                  {userStatus === 'idle' && <FaMoon size={7} style={{ color: 'white' }} />}
+                  {userStatus === 'dnd' && <FaMinus size={7} style={{ color: 'white' }} />}
+                </div>
                 {showUserDetailsMenu && (
                   <div style={{
                     position: 'absolute',
@@ -2618,6 +2726,8 @@ function getFileType(file) {
                   }
                   return null;
                 })()}
+                
+
               </div>
               {showUserDetailsMenu && (
                 <div className="user-details-menu" ref={userDetailsMenuRef}>
@@ -2652,6 +2762,53 @@ function getFileType(file) {
                     <span style={{ fontWeight: 500 }}>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
                   </div>
                   <div className="menu-item" onClick={() => { setShowProfileModal(true); setProfileModalFromSidebar(true); setShowUserDetailsMenu(false); }}>Profile</div>
+                  
+                  {/* Status Options */}
+                  <div 
+                    className="menu-item" 
+                    style={{ position: 'relative' }}
+                    onMouseEnter={() => {
+                      if (statusMenuTimeout) {
+                        clearTimeout(statusMenuTimeout);
+                        setStatusMenuTimeout(null);
+                      }
+                      setShowStatusMenu(true);
+                    }}
+                    onMouseLeave={() => {
+                      const timeout = setTimeout(() => setShowStatusMenu(false), 300);
+                      setStatusMenuTimeout(timeout);
+                    }}
+                  >
+                    <div 
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          background: userStatus === 'online' ? '#43b581' : 
+                                     userStatus === 'idle' ? '#faa61a' : 
+                                     userStatus === 'dnd' ? '#f04747' : '#747f8d',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}>
+                          {userStatus === 'idle' && <FaMoon size={4} style={{ color: 'white' }} />}
+                          {userStatus === 'dnd' && <FaMinus size={4} style={{ color: 'white' }} />}
+                        </div>
+                        <span>{statusOptions.find(option => option.key === userStatus)?.name || 'Online'}</span>
+                      </div>
+                      <FaChevronRight size={8} style={{ color: 'var(--text-secondary)' }} />
+                    </div>
+                  </div>
+
                   {/* Developer Options - Only visible to users with developer options permission */}
                   {canAccessDeveloperOptions(userEmail) && (
                   <div className="menu-item" onClick={() => { 
@@ -2751,7 +2908,7 @@ function getFileType(file) {
                     <div key={msg.id || idx} className={`chat-message ${msg.sender}`}>
                       {msg.sender === 'assistant' && (
                         <>
-                          <div className="avatar assistant"><img src="/unified-knowledge-platform.png" alt="avatar" /></div>
+                          <div className="avatar assistant" onClick={() => handleAvatarClick('assistant')}><img src="/unified-knowledge-platform.png" alt="avatar" /></div>
                           <div className="bubble assistant">
                             <div className="message-content">
                               {/* Model name and icon above agent name */}
@@ -2769,7 +2926,19 @@ function getFileType(file) {
                               )}
                               {!msg.agentName && (
                                 <div className="agent-info-display">
-                                  <span className="agent-info-icon"><img src="/unified-knowledge-platform.png" alt="avatar" style={{ width: '24px', height: '24px', borderRadius: '50%' }} /></span>
+                                  <span className="agent-info-icon">
+                                    <img 
+                                      src="/unified-knowledge-platform.png" 
+                                      alt="Unified® Mode" 
+                                      style={{ 
+                                        width: '16px', 
+                                        height: '16px', 
+                                        borderRadius: '50%',
+                                        filter: 'grayscale(100%) brightness(0.7)'
+                                      }} 
+                                    />
+                                  </span>
+                                  <span className="agent-info-name">Unified® Mode</span>
                                 </div>
                               )}
                               {(() => {
@@ -2923,10 +3092,13 @@ function getFileType(file) {
                       {msg.sender === 'user' && (
                         <>
                           <div className="bubble user">
-                            {msg.agentName && msg.agentId && (
+                            {msg.agentName && (
                               <div className="agent-info-display agent-info-display-user">
                                 <span className="agent-info-icon">
-                                  {getIconComponent(currentAgents.find(a => a.id === msg.agentId)?.iconType)}
+                                  {msg.agentId ? 
+                                    getIconComponent(currentAgents.find(a => a.id === msg.agentId)?.iconType) :
+                                    getIconComponent('unified-mode')
+                                  }
                                 </span>
                                 <span className="agent-info-name">{msg.agentName}</span>
                               </div>
@@ -2946,7 +3118,7 @@ function getFileType(file) {
                               }
                             })()}
                           </div>
-                          <div className="avatar user">
+                          <div className="avatar user" onClick={() => handleAvatarClick('user')}>
                             {userAvatar ? (
                               <img src={userAvatar} alt="User Avatar" />
                             ) : (
@@ -4364,6 +4536,93 @@ function getFileType(file) {
             )}
           </div>
         </Modal>
+      )}
+      
+      {/* Profile Overlay */}
+      <ProfileOverlay
+        isOpen={showProfileOverlay}
+        onClose={handleCloseProfileOverlay}
+        profileData={profileOverlayData}
+        type={profileOverlayType}
+      />
+
+      {/* Status Menu - Positioned to appear fully on screen */}
+      {showStatusMenu && (
+        <div 
+          style={{
+            position: 'fixed',
+            left: '280px', // Position relative to sidebar
+            top: '50%',
+            transform: 'translateY(-50%)',
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '8px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+            zIndex: 1001,
+            width: '280px',
+            maxHeight: '300px',
+            overflow: 'hidden'
+          }}
+          onMouseEnter={() => {
+            if (statusMenuTimeout) {
+              clearTimeout(statusMenuTimeout);
+              setStatusMenuTimeout(null);
+            }
+            setShowStatusMenu(true);
+          }}
+          onMouseLeave={() => {
+            const timeout = setTimeout(() => setShowStatusMenu(false), 300);
+            setStatusMenuTimeout(timeout);
+          }}
+        >
+          <div style={{
+            padding: '8px 0',
+            maxHeight: '300px',
+            overflowY: 'auto'
+          }}>
+            {statusOptions.map((option) => (
+              <div
+                key={option.key}
+                onClick={() => handleStatusChange(option.key)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '10px 16px',
+                  cursor: 'pointer',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.9rem',
+                  borderBottom: option.key !== 'invisible' ? '1px solid var(--border-color)' : 'none',
+                  transition: 'background-color 0.2s ease'
+                }}
+                onMouseEnter={(e) => e.target.style.backgroundColor = 'var(--bg-primary)'}
+                onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+              >
+                <div style={{
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: '50%',
+                  background: option.color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  {option.key === 'idle' && <FaMoon size={7} style={{ color: 'white' }} />}
+                  {option.key === 'dnd' && <FaMinus size={7} style={{ color: 'white' }} />}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 500 }}>{option.name}</div>
+                  {option.description && (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                      {option.description}
+                    </div>
+                  )}
+                </div>
+                <FaChevronRight size={10} style={{ color: 'var(--text-secondary)' }} />
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

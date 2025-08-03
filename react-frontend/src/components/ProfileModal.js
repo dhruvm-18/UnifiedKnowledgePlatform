@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import '../styles/LoginView.css';
 import Switch from 'react-switch';
-import { FaSun, FaMoon, FaKey, FaTrash, FaCheckCircle, FaTimesCircle, FaEdit, FaSave, FaTimes, FaGithub, FaLink, FaUnlink, FaCrown, FaUser, FaThumbsUp } from 'react-icons/fa';
+import { FaSun, FaMoon, FaKey, FaTrash, FaCheckCircle, FaTimesCircle, FaEdit, FaSave, FaTimes, FaGithub, FaLink, FaUnlink, FaCrown, FaUser, FaThumbsUp, FaDatabase } from 'react-icons/fa';
 import { GITHUB_CONFIG } from '../config/github';
 import { getUserRoleInfo } from '../utils/permissions';
 import AccountDeletionOTP from './AccountDeletionOTP';
@@ -72,38 +72,139 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
       return;
     }
     
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image size should be less than 5MB.');
+    // Validate file size (max 2MB for better storage management)
+    if (file.size > 2 * 1024 * 1024) {
+      setError('Image size should be less than 2MB. Please compress your image or choose a smaller file.');
       return;
     }
     
     const reader = new FileReader();
     reader.onload = (ev) => {
       const imageData = ev.target.result;
-      setAvatar(imageData);
       
-      // Save to localStorage immediately
-      const userEmail = user.email;
-      const profilePhotoKey = `profilePhoto_${userEmail}`;
-      localStorage.setItem(profilePhotoKey, imageData);
-      
-      // Update user object in localStorage
-      const updatedUser = { ...user, avatar: imageData };
-      localStorage.setItem('ukpUser', JSON.stringify(updatedUser));
-      
-      // Update in users array
-      const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
-      const idx = users.findIndex(u => u.email === user.email);
-      if (idx !== -1) {
-        users[idx] = { ...users[idx], avatar: imageData };
-        localStorage.setItem(USERS_KEY, JSON.stringify(users));
+      // Compress image if it's not a GIF (GIFs should remain as-is for animation)
+      if (!file.type.includes('gif')) {
+        compressImage(imageData, (compressedData) => {
+          saveAvatarToStorage(compressedData);
+        });
+      } else {
+        // For GIFs, check if they're too large and warn user
+        if (imageData.length > 500000) { // ~500KB limit for GIFs
+          setError('GIF is too large. Please choose a smaller GIF file (under 500KB) or convert to a static image.');
+          return;
+        }
+        saveAvatarToStorage(imageData);
       }
-      
-      setSuccess('Profile photo updated!');
-      setTimeout(() => setSuccess(''), 3000);
     };
     reader.readAsDataURL(file);
+  };
+
+  // Image compression function
+  const compressImage = (imageData, callback) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Calculate new dimensions (max 200x200 for profile photos)
+      const maxSize = 200;
+      let { width, height } = img;
+      
+      if (width > height) {
+        if (width > maxSize) {
+          height = (height * maxSize) / width;
+          width = maxSize;
+        }
+      } else {
+        if (height > maxSize) {
+          width = (width * maxSize) / height;
+          height = maxSize;
+        }
+      }
+      
+      canvas.width = width;
+      canvas.height = height;
+      
+      // Draw and compress
+      ctx.drawImage(img, 0, 0, width, height);
+      const compressedData = canvas.toDataURL('image/jpeg', 0.7); // 70% quality
+      
+      callback(compressedData);
+    };
+    img.src = imageData;
+  };
+
+  // Save avatar to storage with error handling
+  const saveAvatarToStorage = (imageData) => {
+    try {
+      // Check localStorage quota before saving
+      const testKey = 'quota_test';
+      const testData = 'x'.repeat(1024 * 1024); // 1MB test
+      
+      try {
+        localStorage.setItem(testKey, testData);
+        localStorage.removeItem(testKey);
+      } catch (quotaError) {
+        // Clear old profile photos to make space
+        clearOldProfilePhotos();
+        
+        // Try again with smaller test
+        try {
+          localStorage.setItem(testKey, 'x'.repeat(100 * 1024)); // 100KB test
+          localStorage.removeItem(testKey);
+        } catch (finalError) {
+          setError('Storage is full. Please clear some data or use a smaller image.');
+          return;
+        }
+      }
+      
+      setAvatar(imageData);
+      
+      // Save to localStorage with error handling
+      const userEmail = user.email;
+      const profilePhotoKey = `profilePhoto_${userEmail}`;
+      
+      try {
+        localStorage.setItem(profilePhotoKey, imageData);
+        
+        // Update user object in localStorage
+        const updatedUser = { ...user, avatar: imageData };
+        localStorage.setItem('ukpUser', JSON.stringify(updatedUser));
+        
+        // Update in users array
+        const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+        const idx = users.findIndex(u => u.email === user.email);
+        if (idx !== -1) {
+          users[idx] = { ...users[idx], avatar: imageData };
+          localStorage.setItem(USERS_KEY, JSON.stringify(users));
+        }
+        
+        setSuccess('Profile photo updated!');
+        setTimeout(() => setSuccess(''), 3000);
+      } catch (storageError) {
+        console.error('Storage error:', storageError);
+        setError('Failed to save profile photo. Please try a smaller image or clear some data.');
+      }
+    } catch (error) {
+      console.error('Avatar save error:', error);
+      setError('Failed to process image. Please try again.');
+    }
+  };
+
+  // Clear old profile photos to free up space
+  const clearOldProfilePhotos = () => {
+    const keys = Object.keys(localStorage);
+    const profilePhotoKeys = keys.filter(key => key.startsWith('profilePhoto_'));
+    
+    // Keep only the current user's photo and remove others
+    const currentUserKey = `profilePhoto_${user.email}`;
+    profilePhotoKeys.forEach(key => {
+      if (key !== currentUserKey) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    console.log('Cleared old profile photos to free up storage space');
   };
 
   const handleRemoveAvatar = () => {
@@ -136,6 +237,59 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
     const profilePhotoKeys = keys.filter(key => key.startsWith('profilePhoto_'));
     profilePhotoKeys.forEach(key => localStorage.removeItem(key));
     console.log('All profile photos cleared from localStorage');
+  };
+
+  // Storage management utilities
+  const getStorageUsage = () => {
+    let totalSize = 0;
+    let profilePhotoSize = 0;
+    let otherDataSize = 0;
+    const keys = Object.keys(localStorage);
+    
+    keys.forEach(key => {
+      const value = localStorage.getItem(key);
+      const itemSize = key.length + value.length;
+      totalSize += itemSize;
+      
+      if (key.startsWith('profilePhoto_')) {
+        profilePhotoSize += itemSize;
+      } else {
+        otherDataSize += itemSize;
+      }
+    });
+    
+    return {
+      totalSize,
+      totalSizeMB: (totalSize / (1024 * 1024)).toFixed(2),
+      profilePhotoSizeMB: (profilePhotoSize / (1024 * 1024)).toFixed(2),
+      otherDataSizeMB: (otherDataSize / (1024 * 1024)).toFixed(2),
+      keyCount: keys.length,
+      profilePhotoCount: keys.filter(key => key.startsWith('profilePhoto_')).length
+    };
+  };
+
+  const clearStorageData = (type = 'all') => {
+    const keys = Object.keys(localStorage);
+    
+    keys.forEach(key => {
+      if (type === 'all') {
+        // Keep essential data
+        if (!key.includes('profilePhoto_') && 
+            key !== 'theme' && 
+            key !== 'isLoggedIn' && 
+            key !== 'userEmail' && 
+            !key.includes('ukpUser')) {
+          localStorage.removeItem(key);
+        }
+      } else if (type === 'profilePhotos') {
+        if (key.startsWith('profilePhoto_')) {
+          localStorage.removeItem(key);
+        }
+      }
+    });
+    
+    setSuccess(`Storage cleared successfully!`);
+    setTimeout(() => setSuccess(''), 3000);
   };
 
   const handleProfileSave = (e) => {
@@ -598,6 +752,108 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
                 return null;
               })()}
             </div>
+            {/* Storage Management Section */}
+            {!editMode && !showPasswordForm && (
+              <div style={{ 
+                marginTop: 20, 
+                padding: '16px', 
+                background: theme === 'dark' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)', 
+                borderRadius: 12, 
+                border: `1px solid ${theme === 'dark' ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'}` 
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between', 
+                  marginBottom: 12 
+                }}>
+                  <div style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 8, 
+                    fontWeight: 600, 
+                    color: theme === 'dark' ? DARK_TEXT : LIGHT_TEXT 
+                  }}>
+                    <FaDatabase style={{ fontSize: 16, color: ACCENT_COLOR }} />
+                    <span>Storage Usage</span>
+                  </div>
+                  <div style={{ 
+                    fontSize: '0.9rem', 
+                    color: theme === 'dark' ? '#bbb' : '#888',
+                    fontWeight: 500
+                  }}>
+                    {getStorageUsage().totalSizeMB} MB
+                  </div>
+                </div>
+                
+                <div style={{ 
+                  fontSize: '0.8rem', 
+                  color: theme === 'dark' ? '#999' : '#666',
+                  marginBottom: 12,
+                  lineHeight: 1.4
+                }}>
+                  <div>📸 Photos: {getStorageUsage().profilePhotoSizeMB} MB ({getStorageUsage().profilePhotoCount} files)</div>
+                  <div>📊 Other: {getStorageUsage().otherDataSizeMB} MB</div>
+                </div>
+                
+                <div style={{ 
+                  display: 'flex', 
+                  gap: 8, 
+                  flexWrap: 'wrap' 
+                }}>
+                  <button
+                    style={{
+                      padding: '6px 12px',
+                      background: theme === 'dark' ? 'rgba(255, 152, 0, 0.1)' : 'rgba(255, 152, 0, 0.05)',
+                      color: '#ff9800',
+                      border: `1px solid ${theme === 'dark' ? 'rgba(255, 152, 0, 0.3)' : 'rgba(255, 152, 0, 0.2)'}`,
+                      borderRadius: 6,
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={() => clearStorageData('profilePhotos')}
+                    title="Clear all profile photos except yours"
+                  >
+                    Clear Photos
+                  </button>
+                  <button
+                    style={{
+                      padding: '6px 12px',
+                      background: theme === 'dark' ? 'rgba(255, 88, 88, 0.1)' : 'rgba(255, 88, 88, 0.05)',
+                      color: '#f44336',
+                      border: `1px solid ${theme === 'dark' ? 'rgba(255, 88, 88, 0.3)' : 'rgba(255, 88, 88, 0.2)'}`,
+                      borderRadius: 6,
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onClick={() => clearStorageData('all')}
+                    title="Clear all non-essential data"
+                  >
+                    Clear All Data
+                  </button>
+                </div>
+                
+                {getStorageUsage().totalSizeMB > 4 && (
+                  <div style={{ 
+                    marginTop: 8, 
+                    padding: '8px 12px', 
+                    background: theme === 'dark' ? 'rgba(255, 152, 0, 0.1)' : 'rgba(255, 152, 0, 0.05)', 
+                    borderRadius: 6, 
+                    border: `1px solid ${theme === 'dark' ? 'rgba(255, 152, 0, 0.2)' : 'rgba(255, 152, 0, 0.1)'}`,
+                    fontSize: '0.8rem',
+                    color: '#ff9800',
+                    fontWeight: 500
+                  }}>
+                    ⚠️ Storage usage is high. Consider clearing some data.
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Accent color buttons with icons always visible */}
             {/* Only show Change Password and Delete Account buttons when not in edit mode and not in password form */}
             {!editMode && !showPasswordForm && (

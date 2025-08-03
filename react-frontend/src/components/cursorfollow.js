@@ -53,7 +53,7 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
     if (isThinking) {
       // Debounce the expression change to prevent rapid state updates
       timeoutId = setTimeout(() => {
-        setMouthExpression('thinking');
+      setMouthExpression('thinking');
       }, 50);
       
       const animateThinking = () => {
@@ -72,7 +72,7 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
     } else {
       // Debounce the return to happy expression
       timeoutId = setTimeout(() => {
-        setMouthExpression('happy');
+      setMouthExpression('happy');
       }, 50);
       
       if (thinkingRef.current) {

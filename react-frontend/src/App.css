@@ -548,6 +548,23 @@ html, body, #root {
 .avatar.assistant {
   order: 0;
   /* margin handled by gap on chat-message.assistant */
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.avatar.assistant:hover {
+  transform: scale(1.05);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 15px rgba(108, 46, 183, 0.3);
 }
 .avatar.user {
   order: 1;
@@ -560,6 +577,7 @@ html, body, #root {
   background: none;
   box-shadow: none;
   object-fit: cover;
+  border: 2px solid var(--border-color);
 }
 .avatar.user {
   background: var(--accent-color); /* Use accent color for background */
@@ -574,6 +592,16 @@ html, body, #root {
   display: flex; /* Ensure flex properties apply */
   align-items: center; /* Center content */
   justify-content: center; /* Center content */
+  border: 2px solid var(--border-color);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.avatar.user:hover {
+  transform: scale(1.05);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 15px rgba(108, 46, 183, 0.3);
 }
 .chat-message.user .avatar {
   background: var(--bg-primary);
@@ -3650,4 +3678,241 @@ html, body, #root {
     transform: scale(4);
     opacity: 0;
   }
+}
+
+/* Profile Overlay Styles */
+.profile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+.profile-overlay-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.profile-card {
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  width: 320px;
+  max-width: 90vw;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+  position: relative;
+  z-index: 1001;
+}
+
+.profile-banner {
+  height: 80px;
+  background: linear-gradient(135deg, var(--accent-color) 0%, #8b5cf6 100%);
+  position: relative;
+}
+
+.profile-avatar-large {
+  position: absolute;
+  bottom: -30px;
+  left: 20px;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 4px solid var(--bg-secondary);
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.profile-avatar-large img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.profile-content {
+  padding: 40px 20px 20px 20px;
+}
+
+.profile-username {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.profile-userid {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.profile-badges {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.profile-role-tile {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.profile-badge-tile {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: white;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.profile-details {
+  margin-bottom: 20px;
+}
+
+.profile-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.profile-detail-item:last-child {
+  border-bottom: none;
+}
+
+.profile-detail-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-color);
+}
+
+.profile-detail-label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  min-width: 80px;
+}
+
+.profile-detail-value {
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Agent Info Display Styles */
+.agent-info-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--accent-color);
+}
+
+.agent-info-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.agent-info-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.agent-info-name {
+  font-weight: 600;
+  color: var(--accent-color);
+  letter-spacing: 0.2px;
+}
+
+.agent-info-display-user {
+  color: var(--text-primary);
+}
+
+.agent-info-display-user .agent-info-name {
+  color: var(--text-primary);
+}
+
+/* Model Info Display Styles */
+.model-info-display {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 0.85rem;
+}
+
+.model-info-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.model-info-name {
+  font-weight: 600;
+  color: var(--accent-color);
+  font-size: 0.85rem;
 }

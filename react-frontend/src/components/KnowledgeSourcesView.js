@@ -367,7 +367,7 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
 
           
 
-                    {/* Agent Cards Grid - Add class when searching */}
+          {/* Agent Cards Grid - Add class when searching */}
           {agents.length > 0 && (
             <Element name="knowledge-sources-scroll-container" className={`agent-grid ${isSearching ? 'agent-cards-grid--searching' : ''}`}>
               {agentsWithUnified.map((agent) => {
@@ -414,60 +414,60 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
                 >
                   {/* Kebab menu in upper right corner - only for non-system agents */}
                   {!agent.isSystemAgent && (
-                    <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 3 }}>
-                      <button
-                        className="kebab-menu-btn"
-                        onClick={e => { e.stopPropagation(); setOpenKebabMenu(openKebabMenu === agent.agentId ? null : agent.agentId); }}
-                        title="More options"
-                        style={{ background: 'none', border: 'none', color: '#95a5a6', fontSize: '1.2em', cursor: 'pointer', padding: 8, borderRadius: '50%' }}
+                  <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 3 }}>
+                    <button
+                      className="kebab-menu-btn"
+                      onClick={e => { e.stopPropagation(); setOpenKebabMenu(openKebabMenu === agent.agentId ? null : agent.agentId); }}
+                      title="More options"
+                      style={{ background: 'none', border: 'none', color: '#95a5a6', fontSize: '1.2em', cursor: 'pointer', padding: 8, borderRadius: '50%' }}
+                    >
+                      <FaEllipsisH />
+                    </button>
+                    {openKebabMenu === agent.agentId && (
+                      <div
+                        ref={kebabMenuRef}
+                        style={{
+                          position: 'absolute',
+                          top: 36,
+                          right: 0,
+                          background: 'var(--bg-secondary)',
+                          borderRadius: 10,
+                          boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                          minWidth: 120,
+                          padding: '0.5rem 0',
+                          zIndex: 10,
+                          display: 'flex',
+                          flexDirection: 'column',
+                        }}
                       >
-                        <FaEllipsisH />
-                      </button>
-                      {openKebabMenu === agent.agentId && (
-                        <div
-                          ref={kebabMenuRef}
-                          style={{
-                            position: 'absolute',
-                            top: 36,
-                            right: 0,
-                            background: 'var(--bg-secondary)',
-                            borderRadius: 10,
-                            boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-                            minWidth: 120,
-                            padding: '0.5rem 0',
-                            zIndex: 10,
-                            display: 'flex',
-                            flexDirection: 'column',
-                          }}
+                        <button
+                          onClick={e => { e.stopPropagation(); setAgentToEdit(agent); setEditedName(agent.name); setEditedDescription(agent.description); setEditedTileLineStartColor(colorNameToHex(agent.tileLineStartColor) || ''); setEditedTileLineEndColor(colorNameToHex(agent.tileLineEndColor) || ''); setOpenKebabMenu(null); }}
+                          style={{ background: 'none', border: 'none', color: 'var(--text-primary)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
                         >
-                          <button
-                            onClick={e => { e.stopPropagation(); setAgentToEdit(agent); setEditedName(agent.name); setEditedDescription(agent.description); setEditedTileLineStartColor(colorNameToHex(agent.tileLineStartColor) || ''); setEditedTileLineEndColor(colorNameToHex(agent.tileLineEndColor) || ''); setOpenKebabMenu(null); }}
-                            style={{ background: 'none', border: 'none', color: 'var(--text-primary)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
-                          >
-                            <FaEdit style={{ marginRight: 8 }} /> Edit Tile
-                          </button>
-                          <button
-                            ref={el => aboutBtnRefs.current[agent.agentId] = el}
-                            onClick={e => {
-                              e.stopPropagation();
-                              setAgentToEdit(null);
-                              setAboutAgent(agent);
-                              setShowAboutModal(true);
-                              setOpenKebabMenu(null);
-                            }}
-                            style={{ background: 'none', border: 'none', color: 'var(--text-primary)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
-                          >
-                            <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%', background: '#3498db', color: 'white', fontWeight: 700, fontSize: 13, marginRight: 8 }}>i</span> About
-                          </button>
-                          <button
-                            onClick={e => { e.stopPropagation(); handleDeleteAgentClick(agent.agentId); setOpenKebabMenu(null); }}
-                            style={{ background: 'none', border: 'none', color: 'var(--error-color)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
-                          >
-                            <FaTrash style={{ marginRight: 8 }} /> Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                          <FaEdit style={{ marginRight: 8 }} /> Edit Tile
+                        </button>
+                        <button
+                          ref={el => aboutBtnRefs.current[agent.agentId] = el}
+                          onClick={e => {
+                            e.stopPropagation();
+                            setAgentToEdit(null);
+                            setAboutAgent(agent);
+                            setShowAboutModal(true);
+                            setOpenKebabMenu(null);
+                          }}
+                          style={{ background: 'none', border: 'none', color: 'var(--text-primary)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
+                        >
+                          <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 18, height: 18, borderRadius: '50%', background: '#3498db', color: 'white', fontWeight: 700, fontSize: 13, marginRight: 8 }}>i</span> About
+                        </button>
+                        <button
+                          onClick={e => { e.stopPropagation(); handleDeleteAgentClick(agent.agentId); setOpenKebabMenu(null); }}
+                          style={{ background: 'none', border: 'none', color: 'var(--error-color)', padding: '0.7rem 1.2rem', textAlign: 'left', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center' }}
+                        >
+                          <FaTrash style={{ marginRight: 8 }} /> Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   )}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 4 }}>
                     {/* Agent type label */}
@@ -478,28 +478,28 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
                       </div>
                     ) : (
                       <>
-                        {/* Minimalist file type icon badge with tooltip */}
-                        {firstSource && (
-                          <div
-                            title={mainType}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              background: isDark ? darkBg : '#fff',
-                              borderRadius: '50%',
-                              width: 22,
-                              height: 22,
-                              boxShadow: isDark ? '0 1px 4px #111' : '0 1px 4px rgba(0,0,0,0.08)',
-                              marginRight: 2,
-                              border: `1px solid ${isDark ? '#222' : '#eee'}`,
-                              cursor: 'default',
-                            }}
-                          >
-                            {React.cloneElement(mainIcon, { size: 14, style: { verticalAlign: 'middle', color: isDark ? 'var(--accent-color-dark, #6c2eb7)' : mainIcon.props.color } })}
-                          </div>
-                        )}
-                        <div className="agent-tag" style={{ background: isDark ? '#222' : '#eee', color: isDark ? '#bdbdbd' : '#333' }}>Agent</div>
+                    {/* Minimalist file type icon badge with tooltip */}
+                    {firstSource && (
+                      <div
+                        title={mainType}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: isDark ? darkBg : '#fff',
+                          borderRadius: '50%',
+                          width: 22,
+                          height: 22,
+                          boxShadow: isDark ? '0 1px 4px #111' : '0 1px 4px rgba(0,0,0,0.08)',
+                          marginRight: 2,
+                          border: `1px solid ${isDark ? '#222' : '#eee'}`,
+                          cursor: 'default',
+                        }}
+                      >
+                        {React.cloneElement(mainIcon, { size: 14, style: { verticalAlign: 'middle', color: isDark ? 'var(--accent-color-dark, #6c2eb7)' : mainIcon.props.color } })}
+                      </div>
+                    )}
+                    <div className="agent-tag" style={{ background: isDark ? '#222' : '#eee', color: isDark ? '#bdbdbd' : '#333' }}>Agent</div>
                       </>
                     )}
                   </div>
@@ -549,8 +549,8 @@ function KnowledgeSourcesView({ onStartChatWithAgent, onAgentDataChange, showNew
                       </span>
                     </div>
                     <div className="agent-actions-right" style={{ marginLeft: 'auto' }}>
-                                             <button
-                         className="start-chat-btn"
+                      <button
+                        className="start-chat-btn"
                         style={agent.isSystemAgent ? {
                           background: 'linear-gradient(135deg, var(--accent-color) 0%, #8b5cf6 50%, var(--accent-color) 100%)',
                           border: 'none',

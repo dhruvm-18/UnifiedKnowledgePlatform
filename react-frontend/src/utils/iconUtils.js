@@ -48,6 +48,19 @@ export const getIconComponent = (iconType, props) => {
       return <FaCheck {...props} />;
     case 'FaTimes':
       return <FaTimes {...props} />;
+    case 'unified-mode':
+      return (
+        <img 
+          src="/unified-knowledge-platform.png" 
+          alt="Unified® Mode" 
+          style={{ 
+            width: props?.size || '16px', 
+            height: props?.size || '16px', 
+            borderRadius: '50%',
+            filter: 'grayscale(100%) brightness(0.7)'
+          }} 
+        />
+      );
     default:
       return <FaFileAlt {...props} />;
   }

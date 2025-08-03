@@ -1495,7 +1495,7 @@
 .modal-content > button:hover {
   background: #e5e7eb;
   color: var(--text-primary);
-}
+} 
 
 /* Unified Mode Card Styles */
 .unified-mode-section {
