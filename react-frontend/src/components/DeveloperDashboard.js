@@ -162,7 +162,7 @@ const DeveloperDashboard = () => {
       >
       {/* Left Sidebar */}
       <aside className="left-sidebar" style={{ width: '280px' }}>
-          {/* UKP Header - Matching main sidebar */}
+          {/* Unified® Header - Matching main sidebar */}
         <div className="left-sidebar-header" style={{
             marginBottom: '1rem',
             cursor: 'pointer'
@@ -199,7 +199,7 @@ const DeveloperDashboard = () => {
                   color: 'var(--accent-color)',
                   marginRight: '10px'
                 }}>
-                  UKP
+                  Unified®
                 </div>
               </div>
               

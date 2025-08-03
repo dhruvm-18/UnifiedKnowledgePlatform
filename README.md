@@ -1,8 +1,8 @@
-# Unified Knowledge Platform (UKP)
+# Unified Knowledge Platform (Unified®)
 
 ## Overview
 
-The Unified Knowledge Platform (UKP) is an AI-powered web application for querying internal knowledge sources (legal documents, parliamentary rules, etc.) using natural language. It features:
+The Unified Knowledge Platform (Unified®) is an AI-powered web application for querying internal knowledge sources (legal documents, parliamentary rules, etc.) using natural language. It features:
 - **Retrieval-Augmented Generation (RAG)** with support for multiple LLMs (Gemini, Llama3, Mistral, etc.)
 - **Source-cited answers** with direct PDF linking and highlighting
 - **Modern React frontend** with chat, agent selection, PDF viewing, and voice features

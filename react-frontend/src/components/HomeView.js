@@ -440,7 +440,7 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
           }}>
             <img 
               src="/unified-knowledge-platform.png" 
-              alt="UKP Logo" 
+              alt="Unified® Logo" 
               style={{
                 width: '80px',
                 height: '80px',
@@ -594,7 +594,7 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
               color: theme === 'dark' ? '#f5f5f7' : '#1d1d1f',
               marginBottom: '1rem'
             }}>
-              See UKP in Action
+              See Unified® in Action
             </h2>
             <p style={{
               fontSize: '1.2rem',
@@ -626,7 +626,7 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
               }}>
                 <iframe
                   src="https://www.youtube.com/embed/3BW8rfzsiTI?rel=0&modestbranding=1"
-                  title="UKP Platform Demo"
+                  title="Unified® Platform Demo"
                   style={{
                     position: 'absolute',
                     top: 0,
@@ -1496,7 +1496,7 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
         }}>
           <img 
             src="/unified-knowledge-platform.png" 
-            alt="UKP Logo" 
+            alt="Unified® Logo" 
             style={{
               width: '60px',
               height: '60px',
@@ -1508,7 +1508,7 @@ function HomeView({ userName, handleQuickOption, APP_NAME, onNavigateToKnowledge
             color: theme === 'dark' ? '#86868b' : '#6e6e73',
             fontSize: '1rem'
           }}>
-            © {new Date().getFullYear()} Unified Knowledge Platform. All rights reserved.
+            © {new Date().getFullYear()} Unified®. All rights reserved.
           </p>
         </div>
       </footer>

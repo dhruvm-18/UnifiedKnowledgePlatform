@@ -2472,7 +2472,7 @@ function getFileType(file) {
           <>
             <div className="left-sidebar-header" onClick={handleNavigateToHome}>
               <img src="/unified-knowledge-platform.png" alt="Logo" className="sidebar-logo" />
-              <div className="sidebar-title-short">UKP</div>
+              <div className="sidebar-title-short">Unified®</div>
             </div>
             <button
               className="sidebar-nav-item"
@@ -2983,7 +2983,7 @@ function getFileType(file) {
                       textOverflow: 'ellipsis'
                     }}
                   >
-                    <span style={{ fontWeight: 700 }}>UKP Mode</span>
+                    <span style={{ fontWeight: 700 }}>Unified® Mode</span>
                     <span style={{ color: theme === 'dark' ? '#bbb' : '#888', fontWeight: 400, marginLeft: 8 }}>Ask anything across all knowledge sources</span>
                   </div>
                 )}

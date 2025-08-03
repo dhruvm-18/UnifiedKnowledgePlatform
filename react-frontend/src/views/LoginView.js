@@ -195,9 +195,9 @@ function LoginView({ onLogin }) {
       return;
     }
     
-    if ((loginData.email === 'demo@ukp.com' && loginData.password === 'password') || user) {
+    if ((loginData.email === 'demo@unified.com' && loginData.password === 'password') || user) {
       console.log('Regular user login detected');
-      const userData = user || { name: 'Demo User', email: 'demo@ukp.com', avatar: null, isAdmin: false, role: 'User' };
+              const userData = user || { name: 'Demo User', email: 'demo@unified.com', avatar: null, isAdmin: false, role: 'User' };
       localStorage.setItem('ukpUser', JSON.stringify(userData));
       localStorage.setItem('isLoggedIn', 'true');
       localStorage.setItem('userEmail', userData.email);

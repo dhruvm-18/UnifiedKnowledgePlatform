@@ -10,7 +10,7 @@ const AnimatedScene = () => {
     {
       title: "AI Assistant",
       status: "green",
-      message: "Welcome to UKP! I'm your intelligent AI assistant. I can help you search through documents, analyze content, and provide instant answers to your questions. How can I assist you today?",
+      message: "Welcome to Unified®! I'm your intelligent AI assistant. I can help you search through documents, analyze content, and provide instant answers to your questions. How can I assist you today?",
       typing: true
     },
     {
@@ -34,7 +34,7 @@ const AnimatedScene = () => {
     {
       title: "Team Success Story",
       status: "green",
-      message: "I've highlighted the key sections and created presentation-ready slides. You can also collaborate with your team in real-time and share insights instantly. UKP has transformed how you work with documents! The AI insights are incredibly valuable. This platform is a game-changer!",
+      message: "I've highlighted the key sections and created presentation-ready slides. You can also collaborate with your team in real-time and share insights instantly. Unified® has transformed how you work with documents! The AI insights are incredibly valuable. This platform is a game-changer!",
       typing: false
     },
     {
@@ -68,7 +68,7 @@ const AnimatedScene = () => {
       <div className="logo-section">
         <img 
           src="/unified-knowledge-platform.png" 
-          alt="UKP Logo" 
+          alt="Unified® Logo" 
           className="logo-image animate-logo-subtle"
         />
       </div>
