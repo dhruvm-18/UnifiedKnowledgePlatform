@@ -15,7 +15,8 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
   const [rightEyeOffset, setRightEyeOffset] = useState({ x: 0, y: 0 });
   const [mouthOffset, setMouthOffset] = useState({ x: 0, y: 0 });
   const [isBlinking, setIsBlinking] = useState(false);
-  const [mouthExpression, setMouthExpression] = useState('neutral'); // neutral, happy, surprised, thinking
+  const [mouthExpression, setMouthExpression] = useState('happy'); // happy, surprised, excited, curious, thinking, neutral
+  const [eyeExpression, setEyeExpression] = useState('normal'); // normal, wide, squint, curious
   const [opacity, setOpacity] = useState(0); // For fade in/out effect
   const [actualPosition, setActualPosition] = useState({ x: 0, y: 0 });
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -44,7 +45,7 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
     return () => observer.disconnect();
   }, []);
 
-  // Thinking mode animation
+  // Thinking mode animation with various positive expressions
   useEffect(() => {
     if (isThinking) {
       setMouthExpression('thinking');
@@ -62,7 +63,8 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
         }
       };
     } else {
-      setMouthExpression('neutral');
+      // Return to happy when not thinking
+      setMouthExpression('happy');
       if (thinkingRef.current) {
         cancelAnimationFrame(thinkingRef.current);
       }
@@ -208,15 +210,40 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
             
             setMousePosition({ x: relativeX, y: relativeY });
             
-            // Change mouth expression based on cursor proximity (only if not thinking)
+            // Change expression based on cursor proximity and movement
+            const distance = Math.sqrt(relativeX * relativeX + relativeY * relativeY);
+            const speed = Math.sqrt(relativeX * relativeX + relativeY * relativeY) / 16; // Approximate speed
+            
             if (!isThinking) {
-              const distance = Math.sqrt(relativeX * relativeX + relativeY * relativeY);
-              if (distance < 50) {
+              if (distance < 30) {
+                // Very close - excited!
+                setMouthExpression('excited');
+                setEyeExpression('wide');
+              } else if (distance < 80) {
+                // Close - happy
                 setMouthExpression('happy');
-              } else if (distance > 200) {
+                setEyeExpression('normal');
+              } else if (distance > 300) {
+                // Far away - surprised/curious
                 setMouthExpression('surprised');
+                setEyeExpression('wide');
+              } else if (speed > 15) {
+                // Fast movement - excited
+                setMouthExpression('excited');
+                setEyeExpression('wide');
               } else {
-                setMouthExpression('neutral');
+                // Normal distance - neutral/happy
+                const randomExp = Math.random();
+                if (randomExp > 0.8) {
+                  setMouthExpression('curious');
+                  setEyeExpression('curious');
+                } else if (randomExp > 0.6) {
+                  setMouthExpression('neutral');
+                  setEyeExpression('normal');
+                } else {
+                  setMouthExpression('happy');
+                  setEyeExpression('normal');
+                }
               }
             }
           } else {
@@ -371,7 +398,7 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
     return clampedOffset;
   };
 
-  // Get mouth style based on expression with movement
+  // Get mouth style based on expression
   const getMouthStyle = () => {
     const baseStyle = {
       position: "absolute",
@@ -379,28 +406,12 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
       left: "50%",
       transform: `translateX(-50%) translate(${mouthOffset.x}px, ${mouthOffset.y}px)`,
       background: "#ffffff",
-      borderRadius: mouthExpression === 'happy' ? "0 0 10px 10px" : "10px",
       transition: "all 0.3s ease",
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      boxShadow: "inset 0px 1px 3px rgba(0, 0, 0, 0.2)", // Subtle depth
     };
-
-    if (mouthExpression === 'thinking') {
-      // Render a squiggle SVG or a small 'o' for thinking
-      return {
-        ...baseStyle,
-        width: `${mouthWidth}px`,
-        height: `${mouthHeight}px`,
-        background: 'none',
-        borderRadius: 0,
-        boxShadow: 'none',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 0,
-      };
-    }
 
     switch (mouthExpression) {
       case 'happy':
@@ -408,21 +419,61 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
           ...baseStyle,
           width: `${mouthWidth}px`,
           height: `${mouthHeight}px`,
-          borderRadius: "0 0 10px 10px",
+          borderRadius: "0 0 12px 12px",
+          animation: "happyGlow 3s ease-in-out infinite",
+        };
+      case 'excited':
+        return {
+          ...baseStyle,
+          width: `${mouthWidth + 4}px`,
+          height: `${mouthHeight + 4}px`,
+          borderRadius: "0 0 15px 15px",
+          animation: "excitedBounce 0.8s ease-in-out infinite",
         };
       case 'surprised':
         return {
           ...baseStyle,
           width: `${mouthWidth / 2}px`,
-          height: `${mouthHeight * 1.5}px`,
+          height: `${mouthHeight * 1.8}px`,
           borderRadius: "50%",
+          animation: "surprisedPulse 1.2s ease-in-out infinite",
         };
-      default: // neutral
+      case 'curious':
+        return {
+          ...baseStyle,
+          width: `${mouthWidth - 2}px`,
+          height: `${mouthHeight / 2}px`,
+          borderRadius: "0 0 8px 8px",
+          animation: "curiousWiggle 2s ease-in-out infinite",
+        };
+      case 'neutral':
         return {
           ...baseStyle,
           width: `${mouthWidth}px`,
-          height: "2px",
-          borderRadius: "1px",
+          height: "3px",
+          borderRadius: "2px",
+          animation: "neutralBreath 4s ease-in-out infinite",
+        };
+      case 'thinking':
+        return {
+          ...baseStyle,
+          width: `${mouthWidth}px`,
+          height: `${mouthHeight}px`,
+          background: 'none',
+          borderRadius: 0,
+          boxShadow: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 0,
+        };
+      default:
+        return {
+          ...baseStyle,
+          width: `${mouthWidth}px`,
+          height: `${mouthHeight}px`,
+          borderRadius: "0 0 12px 12px",
+          animation: "happyGlow 3s ease-in-out infinite",
         };
     }
   };
@@ -475,18 +526,52 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
     borderRadius: "6px",
     boxShadow: "inset 0px 2px 5px rgba(0, 0, 0, 0.3)",
     willChange: "transform, height",
-    transition: "height 0.1s ease",
+    transition: "height 0.1s ease, width 0.3s ease",
+  };
+
+  // Get eye style based on expression
+  const getEyeStyle = (baseStyle, isLeft = true) => {
+    let width = eyeWidth;
+    let height = eyeHeight;
+    
+    if (isBlinking) {
+      height = 2;
+    } else {
+      switch (eyeExpression) {
+        case 'wide':
+          width = eyeWidth + 2;
+          height = eyeHeight + 3;
+          break;
+        case 'squint':
+          width = eyeWidth - 2;
+          height = eyeHeight - 4;
+          break;
+        case 'curious':
+          width = eyeWidth + 1;
+          height = eyeHeight + 1;
+          break;
+        default: // normal
+          width = eyeWidth;
+          height = eyeHeight;
+      }
+    }
+    
+    return {
+      ...baseStyle,
+      width: `${width}px`,
+      height: `${height}px`,
+    };
   };
 
   const leftEyeStyle = {
-    ...eyeBaseStyle,
+    ...getEyeStyle(eyeBaseStyle, true),
     top: "40%",
     left: "30%",
     transform: `translate(-50%, -50%) translate(${leftEyeOffset.x}px, ${leftEyeOffset.y}px)`,
   };
 
   const rightEyeStyle = {
-    ...eyeBaseStyle,
+    ...getEyeStyle(eyeBaseStyle, false),
     top: "40%",
     left: "70%",
     transform: `translate(-50%, -50%) translate(${rightEyeOffset.x}px, ${rightEyeOffset.y}px)`,
@@ -512,6 +597,32 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
       @keyframes thinkingPulse {
         0%, 100% { opacity: 0.7; transform: translateX(-50%) translate(${mouthOffset.x}px, ${mouthOffset.y}px) scale(1); }
         50% { opacity: 1; transform: translateX(-50%) translate(${mouthOffset.x}px, ${mouthOffset.y}px) scale(1.1); }
+      }
+      
+      @keyframes happyGlow {
+        0%, 100% { filter: brightness(1); }
+        50% { filter: brightness(1.1); }
+      }
+      
+      @keyframes excitedBounce {
+        0%, 100% { transform: translateX(-50%) translate(${mouthOffset.x}px, ${mouthOffset.y}px) scale(1); }
+        50% { transform: translateX(-50%) translate(${mouthOffset.x}px, ${mouthOffset.y}px) scale(1.15); }
+      }
+      
+      @keyframes surprisedPulse {
+        0%, 100% { transform: translateX(-50%) translate(${mouthOffset.x}px, ${mouthOffset.y}px) scale(1); }
+        50% { transform: translateX(-50%) translate(${mouthOffset.x}px, ${mouthOffset.y}px) scale(1.2); }
+      }
+      
+      @keyframes curiousWiggle {
+        0%, 100% { transform: translateX(-50%) translate(${mouthOffset.x}px, ${mouthOffset.y}px) rotate(0deg); }
+        25% { transform: translateX(-50%) translate(${mouthOffset.x}px, ${mouthOffset.y}px) rotate(-2deg); }
+        75% { transform: translateX(-50%) translate(${mouthOffset.x}px, ${mouthOffset.y}px) rotate(2deg); }
+      }
+      
+      @keyframes neutralBreath {
+        0%, 100% { opacity: 0.8; }
+        50% { opacity: 1; }
       }
     `;
     document.head.appendChild(styleSheet);
@@ -558,10 +669,10 @@ const GlowingSphere = ({ position = { x: 0, y: 0 }, visible = true, leftCollapse
       <div style={sphereStyle}>
         <div style={leftEyeStyle}></div>
         <div style={rightEyeStyle}></div>
-        {/* Render mouth: if thinking, show SVG squiggle or 'o', else use div */}
+        {/* Render mouth based on expression */}
         {mouthExpression === 'thinking' ? (
           <svg width={mouthWidth} height={mouthHeight} style={{ position: 'absolute', bottom: '25%', left: '50%', transform: `translateX(-50%) translate(${mouthOffset.x}px, ${mouthOffset.y}px)`, zIndex: 2 }}>
-            {/* Squiggle path for 'hmm' */}
+            {/* Squiggle path for thinking */}
             <path d="M2,8 Q6,2 10,8 Q14,14 18,8" stroke="#fff" strokeWidth="2.5" fill="none" />
           </svg>
         ) : (
