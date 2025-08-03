@@ -1992,9 +1992,9 @@
   --card-bg-dark: #2d2942;
   --border-color: #e1e5e9;
   --border-color-dark: #3a3655;
-  --text-primary: #333;
+  --text-primary: #1F2937;
   --text-primary-dark: #f5f7fa;
-  --text-secondary: #666;
+  --text-secondary: #374151;
   --text-secondary-dark: #a1a1aa;
   --input-bg: #fff;
   --input-bg-dark: #232136;
@@ -2103,7 +2103,7 @@
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 600;
-  color: var(--text-primary, #333);
+  color: var(--text-primary, #1F2937);
   transition: color 0.3s ease;
   position: relative;
 }
@@ -2139,7 +2139,7 @@
   font-size: 1rem;
   transition: all 0.3s ease;
   background: var(--input-bg, #fff);
-  color: var(--text-primary, #333);
+  color: var(--text-primary, #1F2937);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   position: relative;
 }
@@ -2263,7 +2263,7 @@
   border: 2px solid var(--border-color, #e1e5e9);
   border-radius: 12px;
   background: var(--input-bg, #fff);
-  color: var(--text-primary, #333);
+  color: var(--text-primary, #1F2937);
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   position: relative;
@@ -2362,11 +2362,11 @@
   text-align: center;
   padding: 2rem;
   animation: fadeInScale 0.6s ease;
-  color: var(--text-primary, #333);
+  color: var(--text-primary, #1F2937);
 }
 
 .success-step h2 {
-  color: var(--text-primary, #333);
+  color: var(--text-primary, #1F2937);
   margin-bottom: 1rem;
 }
 

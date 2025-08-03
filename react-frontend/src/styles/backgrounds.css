@@ -82,28 +82,29 @@
 .theme-toggle {
   background: none !important;
   box-shadow: none !important;
-  color: inherit !important;
+  color: var(--text-primary) !important;
   border: none !important;
 }
 
 .theme-toggle:hover {
   background: rgba(0,0,0,0.04) !important;
   box-shadow: none !important;
-  color: inherit !important;
+  color: var(--text-primary) !important;
 }
 
 .sidebar-nav-item {
   transition: background 0.2s, color 0.2s;
+  color: var(--text-primary);
 }
 
 .sidebar-nav-item:hover {
   background: rgba(0,0,0,0.04) !important;
-  color: inherit !important;
+  color: var(--text-primary) !important;
   box-shadow: none !important;
 }
 
 .dark-mode .sidebar-nav-item:hover {
   background: rgba(255,255,255,0.06) !important;
-  color: inherit !important;
+  color: var(--text-primary) !important;
   box-shadow: none !important;
 } 

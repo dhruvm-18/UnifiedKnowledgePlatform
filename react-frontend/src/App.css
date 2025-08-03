@@ -137,7 +137,7 @@
 
 .theme-toggle {
   background: inherit !important;
-  color: inherit !important;
+  color: var(--text-primary) !important;
   border: none !important;
   transition: all 0.3s ease !important;
   backdrop-filter: none;

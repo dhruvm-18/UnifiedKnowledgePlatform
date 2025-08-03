@@ -542,7 +542,7 @@ function getFileTypeIcon(file) {
   if (name.endsWith('.txt')) return <FaFileAlt style={{ color: '#616161' }} />;
   if (name.match(/\.(jpg|jpeg|png|gif|bmp|webp)$/)) return <FaFileImage style={{ color: '#6c2eb7' }} />;
   if (name.match(/\.(mp3|wav|ogg|m4a|aac)$/)) return <FaFileAudio style={{ color: '#fbc02d' }} />;
-  return <FaFile style={{ color: '#888' }} />;
+          return <FaFile style={{ color: 'var(--text-secondary)' }} />;
 }
 
 // Helper to get file type for preview
@@ -2806,7 +2806,7 @@ function getFileType(file) {
                                   }}
                                 >
                                   <FaThumbsUp 
-                                    color={feedbackState[msg.id]?.rating === 'up' ? 'var(--accent-color)' : '#bbb'} 
+                                    color={feedbackState[msg.id]?.rating === 'up' ? 'var(--accent-color)' : 'var(--text-secondary)'} 
                                     style={{ fontSize: '16px' }}
                                   />
                                 </button>
@@ -2834,7 +2834,7 @@ function getFileType(file) {
                                   }}
                                 >
                                   <FaThumbsDown 
-                                    color={feedbackState[msg.id]?.rating === 'down' ? '#e74c3c' : '#bbb'} 
+                                    color={feedbackState[msg.id]?.rating === 'down' ? '#e74c3c' : 'var(--text-secondary)'} 
                                     style={{ fontSize: '16px' }}
                                   />
                                 </button>
@@ -2984,7 +2984,7 @@ function getFileType(file) {
                     }}
                   >
                     <span style={{ fontWeight: 700 }}>Unified® Mode</span>
-                    <span style={{ color: theme === 'dark' ? '#bbb' : '#888', fontWeight: 400, marginLeft: 8 }}>Ask anything across all knowledge sources</span>
+                                                    <span style={{ color: 'var(--text-secondary)', fontWeight: 400, marginLeft: 8 }}>Ask anything across all knowledge sources</span>
                   </div>
                 )}
                 {activeAgentDetails && !isDedicatedChat && (
@@ -3075,7 +3075,7 @@ function getFileType(file) {
                       ) : chatAttachment.type === 'application/pdf' ? (
                         <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FaFilePdf color="#e74c3c" size={32} /> {chatAttachment.name}</span>
                       ) : (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FaFileAlt color="#888" size={32} /> {chatAttachment.name}</span>
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><FaFileAlt color="var(--text-secondary)" size={32} /> {chatAttachment.name}</span>
                       )}
                       <button onClick={() => setChatAttachment(null)} style={{ background: 'none', border: 'none', color: '#e74c3c', cursor: 'pointer', fontSize: 18 }} title="Remove attachment"><FaTimes /></button>
                     </div>
@@ -3821,7 +3821,7 @@ function getFileType(file) {
                         </button>
                       </React.Fragment>
                     ))
-                  : <span style={{ color: '#888', fontStyle: 'italic', lineHeight: '34px' }}>No files chosen</span>}
+                  : <span style={{ color: 'var(--text-secondary)', fontStyle: 'italic', lineHeight: '34px' }}>No files chosen</span>}
               </span>
             </div>
           </div>
@@ -3995,7 +3995,7 @@ function getFileType(file) {
             <h2 style={{ fontWeight: 700, fontSize: '1.2rem', marginBottom: 18 }}>Save Chat to My Project</h2>
             {saveError && <div style={{ color: 'var(--error-color)', marginBottom: 10 }}>{saveError}</div>}
             {saveLoading ? (
-              <div style={{ color: '#888', marginBottom: 18 }}>Loading projects...</div>
+                              <div style={{ color: 'var(--text-secondary)', marginBottom: 18 }}>Loading projects...</div>
             ) : (
               <>
                 <div style={{ marginBottom: 18 }}>
@@ -4270,7 +4270,7 @@ function getFileType(file) {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
                     <div style={{ fontSize: 48, marginBottom: 16 }}>{getFileTypeIcon(previewPdfFile)}</div>
                     <div style={{ fontSize: 18, color: '#555', wordBreak: 'break-all' }}>{previewPdfFile.name}</div>
-                    <div style={{ color: '#888', marginTop: 12 }}>No preview available</div>
+                    <div style={{ color: 'var(--text-secondary)', marginTop: 12 }}>No preview available</div>
                   </div>
                 );
               }
@@ -4305,7 +4305,7 @@ function getFileType(file) {
               <FaTimes size={20} color="#374151" />
             </button>
             {sourcePreview.loading ? (
-              <div style={{ color: '#888', fontSize: 20 }}>Loading preview...</div>
+                              <div style={{ color: 'var(--text-secondary)', fontSize: 20 }}>Loading preview...</div>
             ) : sourcePreview.error ? (
               <div style={{ color: 'red', fontSize: 18 }}>{sourcePreview.error}</div>
             ) : sourcePreview.type === 'image' ? (
@@ -4332,7 +4332,7 @@ function getFileType(file) {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
                 <div style={{ fontSize: 48, marginBottom: 16 }}><FaFile style={{ color: 'white' }} /></div>
                 <div style={{ fontSize: 18, color: '#555', wordBreak: 'break-all' }}>{sourcePreview.name}</div>
-                <div style={{ color: '#888', marginTop: 12 }}>No preview available for this file type.</div>
+                <div style={{ color: 'var(--text-secondary)', marginTop: 12 }}>No preview available for this file type.</div>
               </div>
             )}
           </div>
