@@ -189,6 +189,20 @@ Our platform offers an incredible array of features that will revolutionize how 
 
 ---
 
+## 🎬 **Video Demo**
+
+<div align="center">
+
+### 🚀 **Unified Knowledge Platform Demo**
+
+<iframe width="800" height="450" src="https://www.youtube.com/embed/YOUR_VIDEO_ID" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+
+*Watch our comprehensive demo showcasing all the amazing features of the Unified Knowledge Platform!*
+
+</div>
+
+---
+
 ## 🛠️ **Technology Stack** {#tech-stack}
 
 <div align="center">
