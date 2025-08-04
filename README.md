@@ -8,7 +8,7 @@
   [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
   [![React](https://img.shields.io/badge/React-18+-61dafb.svg)](https://reactjs.org)
   [![Flask](https://img.shields.io/badge/Flask-2.0+-000000.svg)](https://flask.palletsprojects.com)
-  [![License](https://img.shields.io/badge/License-Custom-red.svg)](LICENSE)
+  [![License](https://img.shields.io/badge/License-Non--Commercial-red.svg)](LICENSE)
 </div>
 
 ---
@@ -357,36 +357,41 @@ EY_RAG_Project/
 
 ## 📄 License
 
-This project uses a **Custom License** that protects the creator's rights while encouraging open collaboration. 
+This project uses a **Non-Commercial Software License** that protects the creator's rights while encouraging open collaboration.
 
 ### ✅ **What's Allowed:**
 - Personal, educational, and non-commercial use
 - Forking and modifying for personal/educational purposes  
-- Contributing improvements and suggestions
+- Contributing improvements and suggestions via pull requests
 - Academic research and learning
 - Open source collaboration and development
+- Sharing and redistributing for non-commercial purposes
+- Building upon the material for personal projects
 
 ### ❌ **What Requires Permission:**
 - Commercial use of any kind
-- Distribution for profit
-- Integration into commercial products or services
-- Use in commercial applications
-- Reselling or licensing to third parties
+- Selling the software or derivative works
+- Using in commercial products or services
+- Generating revenue from the software
+- Using in a business context
+- Licensing to others for commercial purposes
+- Integration into commercial applications
 
 ### 📧 **Requesting Commercial Permission:**
 For commercial use, please contact:
-- **Email**: [Your Email Address]
-- **GitHub**: [Your GitHub Profile]  
-- **LinkedIn**: [Your LinkedIn Profile]
+- **Email**: dhruv.mendiratta4@gmail.com
+- **GitHub**: [@dhruvm-18](https://github.com/dhruvm-18)
+- **LinkedIn**: [Dhruv Mendiratta](www.linkedin.com/in/dhruvmendiratta18)
 
 Include in your request:
-- Intended use case
+- Intended use case and business model
 - Company/organization details
-- Expected user base
-- Revenue model (if applicable)
+- Expected user base and scale
+- Revenue model and pricing (if applicable)
 - Timeline for implementation
+- Specific features you plan to use
 
-See the [LICENSE](LICENSE) file for complete details.
+**Full License**: See [LICENSE](LICENSE) file for complete details.
 
 ---
 
