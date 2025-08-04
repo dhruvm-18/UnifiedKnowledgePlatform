@@ -1,21 +1,51 @@
-MIT License
+Custom License - All Rights Reserved with Permission-Based Commercial Use
 
-Copyright (c) 2025 Dhruv Mendiratta
+Copyright (c) 2025 Dhruv Mendiratta. All rights reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This software and associated documentation files (the "Software") are the exclusive 
+property of Dhruv Mendiratta. The Software is protected by copyright laws and 
+international copyright treaties, as well as other intellectual property laws and treaties.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+PERMITTED USES:
+- Personal, educational, and non-commercial use
+- Forking and modifying for personal/educational purposes
+- Contributing improvements and suggestions
+- Academic research and learning
+- Open source collaboration and development
 
+RESTRICTED USES (Require Written Permission):
+- Commercial use of any kind
+- Distribution for profit
+- Integration into commercial products or services
+- Use in commercial applications
+- Reselling or licensing to third parties
+- Use in proprietary software
+
+PERMISSION REQUESTS:
+For commercial use, please contact:
+- Email: [Your Email Address]
+- GitHub: [Your GitHub Profile]
+- LinkedIn: [Your LinkedIn Profile]
+
+Include in your request:
+- Intended use case
+- Company/organization details
+- Expected user base
+- Revenue model (if applicable)
+- Timeline for implementation
+
+CONTRIBUTIONS:
+Contributions are welcome! By contributing, you agree that your contributions 
+will be licensed under the same terms as this project.
+
+DISCLAIMER:
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE. 
+SOFTWARE.
+
+This license is designed to protect the creator's rights while encouraging 
+open collaboration and learning in the community. 

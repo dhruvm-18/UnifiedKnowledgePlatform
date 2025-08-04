@@ -8,7 +8,7 @@
   [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
   [![React](https://img.shields.io/badge/React-18+-61dafb.svg)](https://reactjs.org)
   [![Flask](https://img.shields.io/badge/Flask-2.0+-000000.svg)](https://flask.palletsprojects.com)
-  [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+  [![License](https://img.shields.io/badge/License-Custom-red.svg)](LICENSE)
 </div>
 
 ---
@@ -357,7 +357,36 @@ EY_RAG_Project/
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project uses a **Custom License** that protects the creator's rights while encouraging open collaboration. 
+
+### ✅ **What's Allowed:**
+- Personal, educational, and non-commercial use
+- Forking and modifying for personal/educational purposes  
+- Contributing improvements and suggestions
+- Academic research and learning
+- Open source collaboration and development
+
+### ❌ **What Requires Permission:**
+- Commercial use of any kind
+- Distribution for profit
+- Integration into commercial products or services
+- Use in commercial applications
+- Reselling or licensing to third parties
+
+### 📧 **Requesting Commercial Permission:**
+For commercial use, please contact:
+- **Email**: [Your Email Address]
+- **GitHub**: [Your GitHub Profile]  
+- **LinkedIn**: [Your LinkedIn Profile]
+
+Include in your request:
+- Intended use case
+- Company/organization details
+- Expected user base
+- Revenue model (if applicable)
+- Timeline for implementation
+
+See the [LICENSE](LICENSE) file for complete details.
 
 ---
 
