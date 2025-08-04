@@ -1,90 +1,481 @@
-# Unified Knowledge Platform (Unified®)
+# 🚀 Unified Knowledge Platform (Unified®) 🚀
 
 <div align="center">
-  <img src="react-frontend/public/unified-knowledge-platform.png" alt="Unified Logo" width="200" height="200">
-  <h1>Unified® Knowledge Platform</h1>
-  <p><strong>AI-Powered Knowledge Management & Retrieval System</strong></p>
   
-  [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://python.org)
-  [![React](https://img.shields.io/badge/React-18+-61dafb.svg)](https://reactjs.org)
-  [![Flask](https://img.shields.io/badge/Flask-2.0+-000000.svg)](https://flask.palletsprojects.com)
-  [![License](https://img.shields.io/badge/License-Non--Commercial-red.svg)](LICENSE)
+  <!-- Animated Logo with Glow Effect -->
+  <div style="position: relative; display: inline-block;">
+    <img src="react-frontend/public/unified-knowledge-platform.png" alt="Unified Logo" width="200" height="200" style="border-radius: 50%; box-shadow: 0 0 30px #00ff88, 0 0 60px #00ff88, 0 0 90px #00ff88; animation: pulse 2s infinite;">
+  </div>
+
+  <!-- Main Title with Gradient Text -->
+  <h1 style="background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57, #ff9ff3, #54a0ff); background-size: 400% 400%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: gradient 3s ease infinite; font-size: 3.5em; margin: 20px 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+    Unified® Knowledge Platform
+  </h1>
+
+  <!-- Subtitle with Typewriter Effect -->
+  <p style="font-size: 1.5em; color: #666; margin: 10px 0 30px 0; font-weight: 300;">
+    <span style="color: #00ff88; font-weight: bold;">AI-Powered</span> Knowledge Management & Retrieval System
+  </p>
+
+  <!-- Animated Badges with Hover Effects -->
+  <div style="display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; margin: 30px 0;">
+    <a href="https://python.org" style="text-decoration: none;">
+      <img src="https://img.shields.io/badge/Python-3.9+-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python" style="transition: transform 0.3s ease; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));">
+    </a>
+    <a href="https://reactjs.org" style="text-decoration: none;">
+      <img src="https://img.shields.io/badge/React-18+-61dafb?style=for-the-badge&logo=react&logoColor=black" alt="React" style="transition: transform 0.3s ease; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));">
+    </a>
+    <a href="https://flask.palletsprojects.com" style="text-decoration: none;">
+      <img src="https://img.shields.io/badge/Flask-2.0+-000000?style=for-the-badge&logo=flask&logoColor=white" alt="Flask" style="transition: transform 0.3s ease; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));">
+    </a>
+    <a href="LICENSE" style="text-decoration: none;">
+      <img src="https://img.shields.io/badge/License-Non--Commercial-red?style=for-the-badge&logo=creative-commons&logoColor=white" alt="License" style="transition: transform 0.3s ease; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.2));">
+    </a>
+  </div>
+
+  <!-- Floating Action Buttons -->
+  <div style="display: flex; justify-content: center; gap: 20px; margin: 30px 0;">
+    <a href="#overview" style="background: linear-gradient(45deg, #ff6b6b, #ee5a24); color: white; padding: 12px 24px; border-radius: 25px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 15px rgba(255,107,107,0.4); transition: all 0.3s ease;">
+      🚀 Get Started
+    </a>
+    <a href="#features" style="background: linear-gradient(45deg, #4ecdc4, #44a08d); color: white; padding: 12px 24px; border-radius: 25px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 15px rgba(78,205,196,0.4); transition: all 0.3s ease;">
+      ✨ Features
+    </a>
+    <a href="#demo" style="background: linear-gradient(45deg, #45b7d1, #96c93d); color: white; padding: 12px 24px; border-radius: 25px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 15px rgba(69,183,209,0.4); transition: all 0.3s ease;">
+      🎬 Demo
+    </a>
+  </div>
+
+  <!-- Animated Stats -->
+  <div style="display: flex; justify-content: center; gap: 40px; margin: 40px 0; flex-wrap: wrap;">
+    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+      <div style="font-size: 2.5em; font-weight: bold; color: #00ff88; margin-bottom: 5px;">🤖</div>
+      <div style="font-size: 1.2em; color: #333; font-weight: bold;">Multi-LLM</div>
+      <div style="color: #666; font-size: 0.9em;">Gemini, Llama3, Mistral</div>
+    </div>
+    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+      <div style="font-size: 2.5em; font-weight: bold; color: #ff6b6b; margin-bottom: 5px;">🎯</div>
+      <div style="font-size: 1.2em; color: #333; font-weight: bold;">RAG-Powered</div>
+      <div style="color: #666; font-size: 0.9em;">Accurate Responses</div>
+    </div>
+    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+      <div style="font-size: 2.5em; font-weight: bold; color: #4ecdc4; margin-bottom: 5px;">🎨</div>
+      <div style="font-size: 1.2em; color: #333; font-weight: bold;">Modern UI/UX</div>
+      <div style="color: #666; font-size: 0.9em;">Beautiful Design</div>
+    </div>
+    <div style="text-align: center; padding: 20px; background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05)); border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+      <div style="font-size: 2.5em; font-weight: bold; color: #45b7d1; margin-bottom: 5px;">🎤</div>
+      <div style="font-size: 1.2em; color: #333; font-weight: bold;">Voice Integration</div>
+      <div style="color: #666; font-size: 0.9em;">Hands-free Chat</div>
+    </div>
+  </div>
+
 </div>
+
+<!-- CSS Animations -->
+<style>
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes gradient {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+/* Hover effects for badges */
+img[src*="badge"]:hover {
+  transform: translateY(-5px) scale(1.05);
+  filter: drop-shadow(0 8px 16px rgba(0,0,0,0.3));
+}
+
+/* Hover effects for buttons */
+a[href="#overview"]:hover, a[href="#features"]:hover, a[href="#demo"]:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+/* Floating animation for stats */
+div[style*="backdrop-filter"] {
+  animation: float 3s ease-in-out infinite;
+}
+</style>
 
 ---
 
-## 🚀 Overview
+---
 
-The **Unified Knowledge Platform (Unified®)** is a cutting-edge AI-powered web application designed for intelligent knowledge retrieval and management. Built with modern technologies, it provides seamless access to internal knowledge sources through natural language queries with advanced features like voice interaction, multi-modal support, and comprehensive user management.
+## 🌟 Overview
 
-### ✨ Key Highlights
-- **🤖 Multi-LLM Support**: Gemini, Llama3, Mistral, and more
-- **🎯 RAG-Powered**: Retrieval-Augmented Generation for accurate responses
-- **🎨 Modern UI/UX**: Beautiful, responsive design with dark/light themes
-- **🎤 Voice Integration**: ElevenLabs TTS/STT for hands-free interaction
-- **📱 User Management**: Complete authentication, profiles, and permissions
-- **🔄 Real-time Chat**: Multi-session conversations with source citations
-- **📄 PDF Intelligence**: Advanced document processing and highlighting
+<div align="center">
+  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; border-radius: 20px; margin: 30px 0; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
+    <h2 style="color: white; font-size: 2.5em; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+      🚀 The Future of Knowledge Management is Here! 🚀
+    </h2>
+    <p style="color: white; font-size: 1.3em; line-height: 1.6; margin-bottom: 30px;">
+      The <strong>Unified Knowledge Platform (Unified®)</strong> is a revolutionary AI-powered web application that transforms how you interact with knowledge. 
+      Built with cutting-edge technologies, it provides seamless access to internal knowledge sources through natural language queries with mind-blowing features!
+    </p>
+    
+    <!-- Animated Feature Cards -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 30px;">
+      <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); transition: transform 0.3s ease;">
+        <div style="font-size: 3em; margin-bottom: 15px;">🤖</div>
+        <h3 style="color: white; margin-bottom: 10px;">Multi-LLM Support</h3>
+        <p style="color: rgba(255,255,255,0.9);">Gemini, Llama3, Mistral, and more - choose your AI companion!</p>
+      </div>
+      
+      <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); transition: transform 0.3s ease;">
+        <div style="font-size: 3em; margin-bottom: 15px;">🎯</div>
+        <h3 style="color: white; margin-bottom: 10px;">RAG-Powered</h3>
+        <p style="color: rgba(255,255,255,0.9);">Retrieval-Augmented Generation for pinpoint accurate responses!</p>
+      </div>
+      
+      <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); transition: transform 0.3s ease;">
+        <div style="font-size: 3em; margin-bottom: 15px;">🎨</div>
+        <h3 style="color: white; margin-bottom: 10px;">Modern UI/UX</h3>
+        <p style="color: rgba(255,255,255,0.9);">Beautiful, responsive design with stunning dark/light themes!</p>
+      </div>
+      
+      <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); transition: transform 0.3s ease;">
+        <div style="font-size: 3em; margin-bottom: 15px;">🎤</div>
+        <h3 style="color: white; margin-bottom: 10px;">Voice Integration</h3>
+        <p style="color: rgba(255,255,255,0.9);">ElevenLabs TTS/STT for hands-free interaction!</p>
+      </div>
+      
+      <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); transition: transform 0.3s ease;">
+        <div style="font-size: 3em; margin-bottom: 15px;">📱</div>
+        <h3 style="color: white; margin-bottom: 10px;">User Management</h3>
+        <p style="color: rgba(255,255,255,0.9);">Complete authentication, profiles, and permissions!</p>
+      </div>
+      
+      <div style="background: rgba(255,255,255,0.1); padding: 25px; border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); transition: transform 0.3s ease;">
+        <div style="font-size: 3em; margin-bottom: 15px;">🔄</div>
+        <h3 style="color: white; margin-bottom: 10px;">Real-time Chat</h3>
+        <p style="color: rgba(255,255,255,0.9);">Multi-session conversations with source citations!</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* Hover effects for feature cards */
+div[style*="backdrop-filter"]:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+}
+</style>
 
 ---
 
 ## 🏗️ Architecture
 
-```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   React Frontend │◄──►│  Flask Backend   │◄──►│   LLM Services  │
-│                 │    │                  │    │                 │
-│ • Chat Interface│    │ • RAG Pipeline   │    │ • Gemini API    │
-│ • User Auth     │    │ • Session Mgmt   │    │ • Llama3 Local  │
-│ • Voice Features│    │ • PDF Processing │    │ • Mistral API   │
-│ • Profile Mgmt  │    │ • Agent System   │    │ • Custom Models │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-         │                       │                       │
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   LocalStorage   │    │   File System    │    │   Vector DB     │
-│                 │    │                  │    │                 │
-│ • User Data     │    │ • PDF Documents  │    │ • FAISS Index   │
-│ • Chat History  │    │ • Profile Images │    │ • Embeddings    │
-│ • Settings      │    │ • Banner Files   │    │ • Search Index  │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-```
+<div align="center">
+  <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 40px; border-radius: 20px; margin: 30px 0; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
+    <h2 style="color: white; font-size: 2.5em; margin-bottom: 30px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+      🏛️ Revolutionary System Architecture 🏛️
+    </h2>
+    
+    <!-- Interactive Architecture Diagram -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 30px 0;">
+      
+      <!-- React Frontend -->
+      <div style="background: rgba(255,255,255,0.15); padding: 25px; border-radius: 15px; backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.3); text-align: center; transition: all 0.3s ease;">
+        <div style="font-size: 4em; margin-bottom: 15px;">⚛️</div>
+        <h3 style="color: white; font-size: 1.5em; margin-bottom: 15px;">React Frontend</h3>
+        <ul style="color: rgba(255,255,255,0.9); text-align: left; list-style: none; padding: 0;">
+          <li style="margin: 8px 0; padding: 5px 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">🎨 Chat Interface</li>
+          <li style="margin: 8px 0; padding: 5px 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">🔐 User Auth</li>
+          <li style="margin: 8px 0; padding: 5px 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">🎤 Voice Features</li>
+          <li style="margin: 8px 0; padding: 5px 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">👤 Profile Mgmt</li>
+        </ul>
+      </div>
+      
+      <!-- Flask Backend -->
+      <div style="background: rgba(255,255,255,0.15); padding: 25px; border-radius: 15px; backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.3); text-align: center; transition: all 0.3s ease;">
+        <div style="font-size: 4em; margin-bottom: 15px;">🐍</div>
+        <h3 style="color: white; font-size: 1.5em; margin-bottom: 15px;">Flask Backend</h3>
+        <ul style="color: rgba(255,255,255,0.9); text-align: left; list-style: none; padding: 0;">
+          <li style="margin: 8px 0; padding: 5px 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">🎯 RAG Pipeline</li>
+          <li style="margin: 8px 0; padding: 5px 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">📊 Session Mgmt</li>
+          <li style="margin: 8px 0; padding: 5px 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">📄 PDF Processing</li>
+          <li style="margin: 8px 0; padding: 5px 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">🤖 Agent System</li>
+        </ul>
+      </div>
+      
+      <!-- LLM Services -->
+      <div style="background: rgba(255,255,255,0.15); padding: 25px; border-radius: 15px; backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.3); text-align: center; transition: all 0.3s ease;">
+        <div style="font-size: 4em; margin-bottom: 15px;">🧠</div>
+        <h3 style="color: white; font-size: 1.5em; margin-bottom: 15px;">LLM Services</h3>
+        <ul style="color: rgba(255,255,255,0.9); text-align: left; list-style: none; padding: 0;">
+          <li style="margin: 8px 0; padding: 5px 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">🔮 Gemini API</li>
+          <li style="margin: 8px 0; padding: 5px 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">🦙 Llama3 Local</li>
+          <li style="margin: 8px 0; padding: 5px 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">🌪️ Mistral API</li>
+          <li style="margin: 8px 0; padding: 5px 10px; background: rgba(255,255,255,0.1); border-radius: 8px;">⚙️ Custom Models</li>
+        </ul>
+      </div>
+    </div>
+    
+    <!-- Data Layer -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 30px;">
+      
+      <!-- LocalStorage -->
+      <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); text-align: center;">
+        <div style="font-size: 2.5em; margin-bottom: 10px;">💾</div>
+        <h4 style="color: white; margin-bottom: 10px;">LocalStorage</h4>
+        <p style="color: rgba(255,255,255,0.8); font-size: 0.9em;">User Data • Chat History • Settings</p>
+      </div>
+      
+      <!-- File System -->
+      <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); text-align: center;">
+        <div style="font-size: 2.5em; margin-bottom: 10px;">📁</div>
+        <h4 style="color: white; margin-bottom: 10px;">File System</h4>
+        <p style="color: rgba(255,255,255,0.8); font-size: 0.9em;">PDF Documents • Profile Images • Banner Files</p>
+      </div>
+      
+      <!-- Vector DB -->
+      <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 12px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); text-align: center;">
+        <div style="font-size: 2.5em; margin-bottom: 10px;">🔍</div>
+        <h4 style="color: white; margin-bottom: 10px;">Vector DB</h4>
+        <p style="color: rgba(255,255,255,0.8); font-size: 0.9em;">FAISS Index • Embeddings • Search Index</p>
+      </div>
+    </div>
+    
+    <!-- Connection Lines -->
+    <div style="position: relative; height: 20px; margin: 20px 0;">
+      <div style="position: absolute; top: 50%; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);"></div>
+    </div>
+    
+  </div>
+</div>
+
+<style>
+/* Architecture hover effects */
+div[style*="backdrop-filter"]:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 15px 30px rgba(0,0,0,0.2);
+  border-color: rgba(255,255,255,0.5);
+}
+
+/* Animated connection lines */
+div[style*="background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)"] {
+  animation: pulse 2s ease-in-out infinite;
+}
+</style>
 
 ---
 
 ## 🎯 Core Features
 
-### 🤖 **AI & Intelligence**
-- **Multi-Model LLM Support**: Seamlessly switch between Gemini, Llama3, Mistral, and custom models
-- **RAG Pipeline**: Retrieval-Augmented Generation for contextually accurate responses
-- **Source Citation**: Direct links to source documents with text highlighting
-- **Context Awareness**: Intelligent conversation memory and context management
+<div align="center">
+  <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px; border-radius: 20px; margin: 30px 0; box-shadow: 0 20px 40px rgba(0,0,0,0.1);">
+    <h2 style="color: white; font-size: 2.5em; margin-bottom: 30px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+      ⚡ Mind-Blowing Features That Will Amaze You! ⚡
+    </h2>
+    
+    <!-- Feature Categories Grid -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-top: 30px;">
+      
+      <!-- AI & Intelligence -->
+      <div style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.2); transition: all 0.3s ease;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 4em; margin-bottom: 15px;">🤖</div>
+          <h3 style="color: white; font-size: 1.8em; margin-bottom: 20px;">AI & Intelligence</h3>
+        </div>
+        <ul style="color: rgba(255,255,255,0.9); list-style: none; padding: 0;">
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #00ff88;">
+            <strong>🔮 Multi-Model LLM Support</strong><br>
+            <span style="font-size: 0.9em;">Seamlessly switch between Gemini, Llama3, Mistral, and custom models</span>
+          </li>
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #ff6b6b;">
+            <strong>🎯 RAG Pipeline</strong><br>
+            <span style="font-size: 0.9em;">Retrieval-Augmented Generation for contextually accurate responses</span>
+          </li>
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #4ecdc4;">
+            <strong>📚 Source Citation</strong><br>
+            <span style="font-size: 0.9em;">Direct links to source documents with text highlighting</span>
+          </li>
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #45b7d1;">
+            <strong>🧠 Context Awareness</strong><br>
+            <span style="font-size: 0.9em;">Intelligent conversation memory and context management</span>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- Advanced Chat System -->
+      <div style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.2); transition: all 0.3s ease;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 4em; margin-bottom: 15px;">💬</div>
+          <h3 style="color: white; font-size: 1.8em; margin-bottom: 20px;">Advanced Chat System</h3>
+        </div>
+        <ul style="color: rgba(255,255,255,0.9); list-style: none; padding: 0;">
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #96ceb4;">
+            <strong>🔄 Multi-Session Support</strong><br>
+            <span style="font-size: 0.9em;">Manage multiple conversation threads simultaneously</span>
+          </li>
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #feca57;">
+            <strong>⚡ Real-time Streaming</strong><br>
+            <span style="font-size: 0.9em;">Live response generation with typing indicators</span>
+          </li>
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #ff9ff3;">
+            <strong>📜 Message History</strong><br>
+            <span style="font-size: 0.9em;">Persistent chat history with export capabilities</span>
+          </li>
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #54a0ff;">
+            <strong>🎤 Voice Interaction</strong><br>
+            <span style="font-size: 0.9em;">Speak to chat and hear responses with ElevenLabs</span>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- User Management -->
+      <div style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.2); transition: all 0.3s ease;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 4em; margin-bottom: 15px;">👤</div>
+          <h3 style="color: white; font-size: 1.8em; margin-bottom: 20px;">User Management</h3>
+        </div>
+        <ul style="color: rgba(255,255,255,0.9); list-style: none; padding: 0;">
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #ff6b6b;">
+            <strong>🔐 Secure Authentication</strong><br>
+            <span style="font-size: 0.9em;">Email/password and OTP-based account creation</span>
+          </li>
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #4ecdc4;">
+            <strong>🎨 Profile Customization</strong><br>
+            <span style="font-size: 0.9em;">Upload profile pictures and banners (supports GIFs!)</span>
+          </li>
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #45b7d1;">
+            <strong>👑 Role-Based Access</strong><br>
+            <span style="font-size: 0.9em;">Admin, Developer, and User permission levels</span>
+          </li>
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #96ceb4;">
+            <strong>🔒 Session Management</strong><br>
+            <span style="font-size: 0.9em;">Secure login/logout with session persistence</span>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- Modern Interface -->
+      <div style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.2); transition: all 0.3s ease;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 4em; margin-bottom: 15px;">🎨</div>
+          <h3 style="color: white; font-size: 1.8em; margin-bottom: 20px;">Modern Interface</h3>
+        </div>
+        <ul style="color: rgba(255,255,255,0.9); list-style: none; padding: 0;">
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #feca57;">
+            <strong>📱 Responsive Design</strong><br>
+            <span style="font-size: 0.9em;">Works perfectly on desktop, tablet, and mobile</span>
+          </li>
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #ff9ff3;">
+            <strong>🌙 Theme Support</strong><br>
+            <span style="font-size: 0.9em;">Beautiful light and dark mode themes</span>
+          </li>
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #54a0ff;">
+            <strong>♿ Accessibility</strong><br>
+            <span style="font-size: 0.9em;">Keyboard navigation and screen reader support</span>
+          </li>
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #00ff88;">
+            <strong>✨ Animations</strong><br>
+            <span style="font-size: 0.9em;">Smooth transitions and micro-interactions</span>
+          </li>
+        </ul>
+      </div>
+      
+      <!-- Document Intelligence -->
+      <div style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.2); transition: all 0.3s ease;">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="font-size: 4em; margin-bottom: 15px;">📄</div>
+          <h3 style="color: white; font-size: 1.8em; margin-bottom: 20px;">Document Intelligence</h3>
+        </div>
+        <ul style="color: rgba(255,255,255,0.9); list-style: none; padding: 0;">
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #ff6b6b;">
+            <strong>🔍 PDF Processing</strong><br>
+            <span style="font-size: 0.9em;">Advanced text extraction and vectorization</span>
+          </li>
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #4ecdc4;">
+            <strong>✨ Source Highlighting</strong><br>
+            <span style="font-size: 0.9em;">Direct links to relevant document sections</span>
+          </li>
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #45b7d1;">
+            <strong>📖 Document Viewer</strong><br>
+            <span style="font-size: 0.9em;">Built-in PDF viewer with page navigation</span>
+          </li>
+          <li style="margin: 15px 0; padding: 12px 15px; background: rgba(255,255,255,0.1); border-radius: 10px; border-left: 4px solid #96ceb4;">
+            <strong>📁 Multi-Format Support</strong><br>
+            <span style="font-size: 0.9em;">PDF, DOCX, CSV, and more formats</span>
+          </li>
+        </ul>
+      </div>
+      
+    </div>
+    
+    <!-- Feature Stats -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 40px;">
+      <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+        <div style="font-size: 3em; color: #00ff88; margin-bottom: 10px;">🚀</div>
+        <div style="font-size: 2em; color: white; font-weight: bold; margin-bottom: 5px;">20+</div>
+        <div style="color: rgba(255,255,255,0.8);">Amazing Features</div>
+      </div>
+      <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+        <div style="font-size: 3em; color: #ff6b6b; margin-bottom: 10px;">🤖</div>
+        <div style="font-size: 2em; color: white; font-weight: bold; margin-bottom: 5px;">4+</div>
+        <div style="color: rgba(255,255,255,0.8);">AI Models</div>
+      </div>
+      <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+        <div style="font-size: 3em; color: #4ecdc4; margin-bottom: 10px;">📄</div>
+        <div style="font-size: 2em; color: white; font-weight: bold; margin-bottom: 5px;">10+</div>
+        <div style="color: rgba(255,255,255,0.8);">File Formats</div>
+      </div>
+      <div style="text-align: center; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 15px; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2);">
+        <div style="font-size: 3em; color: #45b7d1; margin-bottom: 10px;">⚡</div>
+        <div style="font-size: 2em; color: white; font-weight: bold; margin-bottom: 5px;">100%</div>
+        <div style="color: rgba(255,255,255,0.8);">Responsive</div>
+      </div>
+    </div>
+    
+  </div>
+</div>
 
-### 💬 **Advanced Chat System**
-- **Multi-Session Support**: Manage multiple conversation threads
-- **Real-time Streaming**: Live response generation with typing indicators
-- **Message History**: Persistent chat history with export capabilities
-- **Quick Actions**: Pre-defined query templates for common tasks
-- **Voice Interaction**: Speak to chat and hear responses
+<style>
+/* Feature cards hover effects */
+div[style*="backdrop-filter"]:hover {
+  transform: translateY(-10px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  border-color: rgba(255,255,255,0.4);
+}
 
-### 👤 **User Management**
-- **Secure Authentication**: Email/password and OTP-based account creation
-- **Profile Customization**: Upload profile pictures and banners (supports GIFs!)
-- **Role-Based Access**: Admin, Developer, and User permission levels
-- **Session Management**: Secure login/logout with session persistence
+/* Feature list items hover */
+li[style*="border-left: 4px solid"]:hover {
+  background: rgba(255,255,255,0.2) !important;
+  transform: translateX(5px);
+  transition: all 0.3s ease;
+}
 
-### 🎨 **Modern Interface**
-- **Responsive Design**: Works perfectly on desktop, tablet, and mobile
-- **Theme Support**: Beautiful light and dark mode themes
-- **Accessibility**: Keyboard navigation and screen reader support
-- **Animations**: Smooth transitions and micro-interactions
+/* Stats cards animation */
+div[style*="text-align: center; padding: 20px"] {
+  animation: float 3s ease-in-out infinite;
+}
 
-### 📄 **Document Intelligence**
-- **PDF Processing**: Advanced text extraction and vectorization
-- **Source Highlighting**: Direct links to relevant document sections
-- **Document Viewer**: Built-in PDF viewer with page navigation
-- **Multi-Format Support**: PDF, DOCX, CSV, and more
+div[style*="text-align: center; padding: 20px"]:nth-child(2) {
+  animation-delay: 0.5s;
+}
+
+div[style*="text-align: center; padding: 20px"]:nth-child(3) {
+  animation-delay: 1s;
+}
+
+div[style*="text-align: center; padding: 20px"]:nth-child(4) {
+  animation-delay: 1.5s;
+}
+</style>
 
 ---
 
