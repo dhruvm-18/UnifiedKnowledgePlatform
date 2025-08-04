@@ -308,6 +308,7 @@ EY_RAG_Project/
 
 ### 👤 **Profile Management**
 ![Profile Management](profile.png)
+
 *Complete profile customization with GIF support*
 
 ### 🔧 **Admin Dashboard**
