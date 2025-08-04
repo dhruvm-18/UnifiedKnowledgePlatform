@@ -174,12 +174,12 @@ Our platform offers an incredible array of features that will revolutionize how 
 *Comprehensive admin panel with user management*
 
 ### 🎯 **Knowledge Sources**
-![Knowledge Sources](Techstack.png)
+![Knowledge Sources](knowledge.png)
 *Browse and interact with different knowledge agents*
 
-### 📱 **Mobile Responsive**
-![Mobile View](UsedTech.png)
-*Perfect experience across all devices*
+### 🏗️ **Application Structure**
+![Project Structure](Techstack.png)
+*Complete project structure and organization*
 
 </div>
 
