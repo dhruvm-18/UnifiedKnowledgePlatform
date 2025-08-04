@@ -42,7 +42,7 @@ from prompts import (
     generate_source_link
 )
 from backend.utils import initialize_faiss_index, update_faiss_index
-from banner_utils import save_banner_file, load_banner_file, remove_banner_file, get_banner_storage_info
+from backend.banner_utils import save_banner_file, load_banner_file, remove_banner_file, get_banner_storage_info
 import logging
 import faiss
 import warnings

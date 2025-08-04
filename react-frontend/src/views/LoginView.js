@@ -343,6 +343,18 @@ function LoginView({ onLogin }) {
     setError(''); // Clear any existing errors
     setSuccess(`Account created successfully! Welcome ${accountData.name}! You can now login.`);
     setTimeout(() => setSuccess(''), 5000);
+    
+    // Clear any existing welcome flags for this user to ensure overlay shows
+    localStorage.removeItem(`hasSeenWelcome_${accountData.email}`);
+    localStorage.removeItem(`userFirstLogin_${accountData.email}`);
+    
+    // Dispatch event to trigger welcome overlay for new user
+    window.dispatchEvent(new CustomEvent('newUserCreated', { 
+      detail: { 
+        user: accountData,
+        shouldShowWelcome: true 
+      } 
+    }));
   };
 
   const handleCreateAccount = async (e) => {

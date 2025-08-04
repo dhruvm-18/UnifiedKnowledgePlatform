@@ -4,7 +4,7 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import './App.css';
 import './styles/backgrounds.css';
 import './styles/modal.css';
-import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch, FaFileImage, FaFilePdf, FaEye, FaFileWord, FaFileExcel, FaFileAudio, FaFile, FaChartLine, FaExternalLinkAlt, FaLightbulb, FaBalanceScale, FaClipboardList, FaCircle, FaMinus } from 'react-icons/fa';
+import { FaPlus, FaPaperPlane, FaRegFileAlt, FaPaperclip, FaVolumeUp, FaMicrophone, FaChevronLeft, FaChevronRight, FaTrash, FaRegCommentAlt, FaCube, FaHighlighter, FaSun, FaMoon, FaHome, FaShieldAlt, FaGavel, FaFileAlt, FaListUl, FaCopy, FaFileExport, FaGlobe, FaFeatherAlt, FaRobot, FaBrain, FaTimes, FaSave, FaStop, FaFolderOpen, FaFolderPlus, FaEdit, FaThumbsUp, FaThumbsDown, FaEllipsisH, FaSearch, FaFileImage, FaFilePdf, FaEye, FaFileWord, FaFileExcel, FaFileAudio, FaFile, FaChartLine, FaExternalLinkAlt, FaLightbulb, FaBalanceScale, FaClipboardList, FaCircle, FaMinus, FaPlay } from 'react-icons/fa';
 import { canAccessDeveloperOptions, getUserRoleInfo } from './utils/permissions';
 import { Image as ReactImage } from 'react-image';
 import ReactAudioPlayer from 'react-audio-player';
@@ -32,6 +32,7 @@ import FeedbackDashboard from './components/FeedbackDashboard';
 import MonitoringDashboard from './components/MonitoringDashboard';
 import DeveloperDashboard from './components/DeveloperDashboard';
 import ProfileOverlay from './components/ProfileOverlay';
+import WelcomeOverlay from './components/WelcomeOverlay';
 import { renderAsync as renderDocxPreview } from 'docx-preview';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
@@ -212,7 +213,59 @@ function App() {
     };
   }, []);
 
+  // Check if user is new and show welcome overlay
+  useEffect(() => {
+    const checkNewUser = () => {
+      const userData = JSON.parse(localStorage.getItem('ukpUser'));
+      const userEmail = userData?.email;
+      
+      if (userEmail) {
+        // Check if this is a new user (first time login)
+        const isNewUser = !localStorage.getItem(`userFirstLogin_${userEmail}`);
+        const hasSeenWelcome = localStorage.getItem(`hasSeenWelcome_${userEmail}`);
+        
+        if (isNewUser && !hasSeenWelcome) {
+          console.log('New user detected, showing welcome overlay for:', userEmail);
+          setShowWelcomeOverlay(true);
+          localStorage.setItem(`userFirstLogin_${userEmail}`, 'true');
+        }
+      }
+    };
 
+    // Check when component mounts
+    checkNewUser();
+
+    // Listen for login events
+    const handleUserLogin = () => {
+      setTimeout(checkNewUser, 500); // Small delay to ensure user data is saved
+    };
+
+    // Listen for new user creation events
+    const handleNewUserCreated = (event) => {
+      const { user, shouldShowWelcome } = event.detail;
+      if (shouldShowWelcome && user?.email) {
+        setShowWelcomeOverlay(true);
+        localStorage.setItem(`userFirstLogin_${user.email}`, 'true');
+      }
+    };
+
+    window.addEventListener('userLoggedIn', handleUserLogin);
+    window.addEventListener('newUserCreated', handleNewUserCreated);
+    window.addEventListener('bannerUpdated', () => {
+      // Refresh user data when banner is updated
+      const userData = JSON.parse(localStorage.getItem('ukpUser'));
+      if (userData) {
+        setUserName(userData.name || 'User');
+        setUserAvatar(userData.avatar || null);
+        setUserEmail(userData.email || 'user@example.com');
+      }
+    });
+    return () => {
+      window.removeEventListener('userLoggedIn', handleUserLogin);
+      window.removeEventListener('newUserCreated', handleNewUserCreated);
+      window.removeEventListener('bannerUpdated', () => {});
+    };
+  }, []);
 
   const handleStatusChange = (newStatus) => {
     setUserStatus(newStatus);
@@ -238,6 +291,7 @@ function App() {
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
   const [currentView, setCurrentView] = useState('home');
   const [showWelcome, setShowWelcome] = useState(true);
+  const [showWelcomeOverlay, setShowWelcomeOverlay] = useState(false);
   const [editingAssistantName, setEditingAssistantName] = useState(false);
   const assistantNameInputRef = useRef(null);
   const [preferredModel, setPreferredModel] = useState(() => localStorage.getItem('preferredModel') || modelOptions[0]?.name || 'Gemini 2.5 Flash');
@@ -2315,6 +2369,21 @@ function getFileType(file) {
     console.log('Setting current view to chat');
     setCurrentView('chat'); // Open to chats tab after login
     
+    // Check if this is a new user and show welcome overlay
+    const userEmail = userData?.email || user?.email;
+    if (userEmail) {
+      const isNewUser = !localStorage.getItem(`userFirstLogin_${userEmail}`);
+      if (isNewUser) {
+        setTimeout(() => {
+          setShowWelcomeOverlay(true);
+          localStorage.setItem(`userFirstLogin_${userEmail}`, 'true');
+        }, 1000); // Small delay to let the UI settle
+      }
+    }
+    
+    // Dispatch login event for other components
+    window.dispatchEvent(new CustomEvent('userLoggedIn', { detail: { user: userData || user } }));
+    
     // Force a re-render by updating localStorage and triggering a state change
     setTimeout(() => {
       console.log('Forcing re-render after login');
@@ -2546,6 +2615,44 @@ function getFileType(file) {
   const handleCloseProfileOverlay = () => {
     setShowProfileOverlay(false);
     setProfileOverlayData(null);
+  };
+
+  const handleCloseWelcomeOverlay = () => {
+    setShowWelcomeOverlay(false);
+    const userEmail = JSON.parse(localStorage.getItem('ukpUser'))?.email;
+    if (userEmail) {
+      localStorage.setItem(`hasSeenWelcome_${userEmail}`, 'true');
+    }
+    
+    // Refresh user data after welcome overlay closes to show updated profile/banner
+    const userData = JSON.parse(localStorage.getItem('ukpUser'));
+    if (userData) {
+      setUserName(userData.name || 'User');
+      setUserAvatar(userData.avatar || null);
+      setUserEmail(userData.email || 'user@example.com');
+    }
+  };
+
+  const handleTestWelcomeOverlay = () => {
+    // Clear the flag to simulate a new user
+    const userEmail = JSON.parse(localStorage.getItem('ukpUser'))?.email;
+    if (userEmail) {
+      localStorage.removeItem(`hasSeenWelcome_${userEmail}`);
+      localStorage.removeItem(`userFirstLogin_${userEmail}`);
+    }
+    setShowWelcomeOverlay(true);
+  };
+
+  const handleClearAllWelcomeFlags = () => {
+    // Clear all welcome flags for all users (for testing)
+    const keys = Object.keys(localStorage);
+    keys.forEach(key => {
+      if (key.startsWith('hasSeenWelcome_') || key.startsWith('userFirstLogin_')) {
+        localStorage.removeItem(key);
+        console.log(`Cleared: ${key}`);
+      }
+    });
+    alert('All welcome flags cleared! New accounts will now show the welcome overlay.');
   };
 
   // Handler to remove a file from selectedPdfs
@@ -2817,6 +2924,28 @@ function getFileType(file) {
                   }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span>Developer Options</span>
                     <FaExternalLinkAlt style={{ fontSize: '12px', opacity: 0.7 }} />
+                  </div>
+                  )}
+                  
+                  {/* Test Welcome Overlay - Only visible to admin users */}
+                  {canAccessDeveloperOptions(userEmail) && (
+                  <div className="menu-item" onClick={() => { 
+                    handleTestWelcomeOverlay();
+                    setShowUserDetailsMenu(false); 
+                  }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Test Welcome Overlay</span>
+                    <FaPlay style={{ fontSize: '12px', opacity: 0.7 }} />
+                  </div>
+                  )}
+                  
+                  {/* Clear All Welcome Flags - Only visible to admin users */}
+                  {canAccessDeveloperOptions(userEmail) && (
+                  <div className="menu-item" onClick={() => { 
+                    handleClearAllWelcomeFlags();
+                    setShowUserDetailsMenu(false); 
+                  }} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Clear All Welcome Flags</span>
+                    <FaTrash style={{ fontSize: '12px', opacity: 0.7 }} />
                   </div>
                   )}
                   <div className="menu-item" onClick={handleLogout}>Log out</div>
@@ -4544,6 +4673,14 @@ function getFileType(file) {
         onClose={handleCloseProfileOverlay}
         profileData={profileOverlayData}
         type={profileOverlayType}
+      />
+
+      {/* Welcome Overlay for New Users */}
+      <WelcomeOverlay
+        isVisible={showWelcomeOverlay}
+        onClose={handleCloseWelcomeOverlay}
+        userName={userName}
+        userEmail={userEmail}
       />
 
       {/* Status Menu - Positioned to appear fully on screen */}

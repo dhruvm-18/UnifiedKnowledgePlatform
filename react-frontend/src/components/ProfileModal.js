@@ -5,6 +5,7 @@ import { FaSun, FaMoon, FaKey, FaTrash, FaCheckCircle, FaTimesCircle, FaEdit, Fa
 import { GITHUB_CONFIG } from '../config/github';
 import { getUserRoleInfo } from '../utils/permissions';
 import { saveBannerToFolder, loadBannerFromFolder, removeBannerFromFolder, BANNER_CONFIG } from '../utils/bannerStorage';
+import { clearUserData } from '../utils/userCleanup';
 import AccountDeletionOTP from './AccountDeletionOTP';
 
 const USERS_KEY = 'ukpUsers';
@@ -397,12 +398,9 @@ function ProfileModal({ user, onClose, onSave, theme, setTheme, modelOptions = [
   };
 
   const handleDeleteAccountSuccess = () => {
-    const users = JSON.parse(localStorage.getItem(USERS_KEY)) || [];
-    const filtered = users.filter(u => u.email !== user.email);
-    localStorage.setItem(USERS_KEY, JSON.stringify(filtered));
-    localStorage.removeItem('ukpUser');
-    localStorage.removeItem('isLoggedIn');
-    localStorage.removeItem('userEmail');
+    // Use the utility function to clear all user data
+    clearUserData(user.email);
+    
     onSave && onSave({ deleted: true });
     onClose && onClose();
   };

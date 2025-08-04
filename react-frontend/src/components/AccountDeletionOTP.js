@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FaArrowLeft, FaCheck, FaTimes, FaTrash } from 'react-icons/fa';
 import '../styles/LoginView.css';
+import { clearUserData } from '../utils/userCleanup';
 
 const AccountDeletionOTP = ({ email, onBack, onSuccess }) => {
   const [step, setStep] = useState('otp'); // 'otp', 'success'
@@ -53,6 +54,18 @@ const AccountDeletionOTP = ({ email, onBack, onSuccess }) => {
     }
   }, [timeLeft]);
 
+  // Auto-verify when all 6 digits are entered
+  useEffect(() => {
+    const otpString = otp.join('');
+    if (otpString.length === 6 && /^\d{6}$/.test(otpString)) {
+      // Small delay to ensure state is updated
+      const timer = setTimeout(() => {
+        handleVerifyOTP();
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [otp]);
+
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -65,10 +78,6 @@ const AccountDeletionOTP = ({ email, onBack, onSuccess }) => {
       const digits = value.split('');
       setOtp(digits);
       setError('');
-      // Auto-verify after a short delay
-      setTimeout(() => {
-        handleVerifyOTP();
-      }, 500);
       return;
     }
     
@@ -83,11 +92,6 @@ const AccountDeletionOTP = ({ email, onBack, onSuccess }) => {
     // Auto-focus next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
-    } else if (value && index === 5) {
-      // Auto-verify when last digit is entered
-      setTimeout(() => {
-        handleVerifyOTP();
-      }, 300);
     }
   };
 
@@ -177,9 +181,8 @@ const AccountDeletionOTP = ({ email, onBack, onSuccess }) => {
         const filteredUsers = users.filter(u => u.email !== email);
         localStorage.setItem('ukpUsers', JSON.stringify(filteredUsers));
         
-        // Clear profile photo
-        const profilePhotoKey = `profilePhoto_${email}`;
-        localStorage.removeItem(profilePhotoKey);
+        // Use the utility function to clear all user data
+        clearUserData(email);
         
         setTimeout(() => {
           onSuccess && onSuccess();

@@ -1624,6 +1624,72 @@
             "agent_id": null,
             "details": null,
             "timestamp": "2025-08-04T02:46:57.985684"
+        },
+        {
+            "id": "051fa689-8c20-4967-8fcb-e210c4a63ec3",
+            "user_email": "cursorzeo@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Cursor"
+            },
+            "timestamp": "2025-08-04T11:16:29.501783"
+        },
+        {
+            "id": "77fde046-3b0f-4d6f-903b-86bf969199b2",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-04T11:20:49.873016"
+        },
+        {
+            "id": "e463da7f-e152-4e65-8398-53e954022364",
+            "user_email": "cursorzeo@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Tipendra"
+            },
+            "timestamp": "2025-08-04T11:33:52.142895"
+        },
+        {
+            "id": "fc315936-ed3c-449b-9ce2-85380fb53f80",
+            "user_email": "cursorzeo@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Tipendra"
+            },
+            "timestamp": "2025-08-04T12:02:05.376727"
+        },
+        {
+            "id": "91b55707-d10b-46ed-b8a5-bb5189579156",
+            "user_email": "cursorzeo@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Tipendra"
+            },
+            "timestamp": "2025-08-04T12:12:06.508132"
+        },
+        {
+            "id": "b1699326-d49d-4c82-a695-562e6735ea04",
+            "user_email": "cursorzeo@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Tipendra"
+            },
+            "timestamp": "2025-08-04T12:17:05.465202"
         }
     ],
     "session_metrics": [

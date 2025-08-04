@@ -50,6 +50,18 @@ const OTPVerification = ({ email, onBack, onSuccess, type = 'password_reset', ac
     }
   }, [canResend, resendTime]);
 
+  // Auto-verify when all 6 digits are entered
+  useEffect(() => {
+    const otpString = otp.join('');
+    if (otpString.length === 6 && /^\d{6}$/.test(otpString)) {
+      // Small delay to ensure state is updated
+      const timer = setTimeout(() => {
+        handleVerifyOTP();
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [otp]);
+
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -62,10 +74,6 @@ const OTPVerification = ({ email, onBack, onSuccess, type = 'password_reset', ac
       const digits = value.split('');
       setOtp(digits);
       setError('');
-      // Auto-verify after a short delay
-      setTimeout(() => {
-        handleVerifyOTP();
-      }, 500);
       return;
     }
     
@@ -80,11 +88,6 @@ const OTPVerification = ({ email, onBack, onSuccess, type = 'password_reset', ac
     // Auto-focus next input
     if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
-    } else if (value && index === 5) {
-      // Auto-verify when last digit is entered
-      setTimeout(() => {
-        handleVerifyOTP();
-      }, 300);
     }
   };
 
