@@ -188,9 +188,9 @@ Our platform offers an incredible array of features that will revolutionize how 
 
 ### 🚀 **Unified Knowledge Platform Demo**
 
-<iframe width="800" height="450" src="https://www.youtube.com/embed/V0kFZVpRcI4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+[![Unified Knowledge Platform Demo](https://img.youtube.com/vi/V0kFZVpRcI4/maxresdefault.jpg)](https://www.youtube.com/watch?v=V0kFZVpRcI4)
 
-*Watch our comprehensive demo showcasing all the amazing features of the Unified Knowledge Platform!*
+*🎬 Click the image above to watch our comprehensive demo showcasing all the amazing features of the Unified Knowledge Platform!*
 
 </div>
 
