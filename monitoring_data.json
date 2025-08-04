@@ -1690,6 +1690,17 @@
                 "userName": "Tipendra"
             },
             "timestamp": "2025-08-04T12:17:05.465202"
+        },
+        {
+            "id": "39a9f5fd-61cb-4b82-98a4-881f6cc95177",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-04T12:34:10.666392"
         }
     ],
     "session_metrics": [
