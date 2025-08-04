@@ -143,6 +143,54 @@
             "success": true,
             "error_message": null,
             "timestamp": "2025-08-03T18:35:11.707386"
+        },
+        {
+            "id": "4e39216a-06cc-4855-bd03-9bfdeafc94b1",
+            "user_email": "dhruv.mendiratta187@gmail.com",
+            "model_name": "gemini",
+            "session_id": "a48b4f03-b2f2-48c9-a687-df2f72697ad3",
+            "agent_id": "DPDP",
+            "response_time": null,
+            "tokens_used": null,
+            "success": true,
+            "error_message": null,
+            "timestamp": "2025-08-04T20:21:15.533662"
+        },
+        {
+            "id": "119b350f-f2c8-4676-b8bc-d213bc2f33a8",
+            "user_email": "dhruv.mendiratta187@gmail.com",
+            "model_name": "gemini",
+            "session_id": "a48b4f03-b2f2-48c9-a687-df2f72697ad3",
+            "agent_id": "DPDP",
+            "response_time": null,
+            "tokens_used": null,
+            "success": true,
+            "error_message": null,
+            "timestamp": "2025-08-04T20:21:33.619552"
+        },
+        {
+            "id": "5ef73881-464f-4674-99cd-0a2acace814a",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "model_name": "gemini",
+            "session_id": "4816ecb1-0886-4234-8754-8cce86c6e479",
+            "agent_id": "DPDP",
+            "response_time": null,
+            "tokens_used": null,
+            "success": true,
+            "error_message": null,
+            "timestamp": "2025-08-04T20:30:20.895934"
+        },
+        {
+            "id": "c7d9b3e9-def6-444c-b60c-650123ec6591",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "model_name": "gemini",
+            "session_id": "ae20d471-6fcc-4230-9971-987021b7b032",
+            "agent_id": "DPDP",
+            "response_time": null,
+            "tokens_used": null,
+            "success": true,
+            "error_message": null,
+            "timestamp": "2025-08-04T20:33:38.505926"
         }
     ],
     "user_activity": [
@@ -1712,6 +1760,165 @@
                 "userName": "Dhruv Mendiratta"
             },
             "timestamp": "2025-08-04T12:38:13.488029"
+        },
+        {
+            "id": "5530f3b7-7530-491a-91f9-9b0e09cc8b1f",
+            "user_email": "dhruv.mendiratta187@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-04T20:11:04.930325"
+        },
+        {
+            "id": "3d7899bb-4259-41bc-a7ab-89a4a0beb184",
+            "user_email": "dhruv.mendiratta187@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-04T20:16:32.221933"
+        },
+        {
+            "id": "d33f7b03-05d2-4868-9daa-7481105d6523",
+            "user_email": "dhruv.mendiratta187@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-04T20:20:20.931744"
+        },
+        {
+            "id": "325c438b-4ef8-4cf0-b887-5615ebd2c7a1",
+            "user_email": "dhruv.mendiratta187@gmail.com",
+            "action": "create_session",
+            "session_id": "a48b4f03-b2f2-48c9-a687-df2f72697ad3",
+            "agent_id": null,
+            "details": null,
+            "timestamp": "2025-08-04T20:21:05.031777"
+        },
+        {
+            "id": "5e7cc462-e2bb-42cd-88d7-7037972d54d7",
+            "user_email": "dhruv.mendiratta187@gmail.com",
+            "action": "send_message",
+            "session_id": "a48b4f03-b2f2-48c9-a687-df2f72697ad3",
+            "agent_id": "DPDP",
+            "details": {
+                "message_length": 28
+            },
+            "timestamp": "2025-08-04T20:21:15.609136"
+        },
+        {
+            "id": "1804ca0a-4684-4ed5-9c18-d480242cd0a7",
+            "user_email": "dhruv.mendiratta187@gmail.com",
+            "action": "send_message",
+            "session_id": "a48b4f03-b2f2-48c9-a687-df2f72697ad3",
+            "agent_id": "DPDP",
+            "details": {
+                "message_length": 29
+            },
+            "timestamp": "2025-08-04T20:21:33.639550"
+        },
+        {
+            "id": "40217740-2ded-4ab1-a812-3f293fed7a57",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-04T20:23:29.042657"
+        },
+        {
+            "id": "b513b650-a7a5-4daa-8fc7-6076b4cdfaa7",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-04T20:25:17.883617"
+        },
+        {
+            "id": "dd5ebd3d-6008-448d-be4b-17a124cbfe52",
+            "user_email": "dhruv.mendiratta187@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-04T20:25:57.009143"
+        },
+        {
+            "id": "baa17c5d-d784-45d6-b916-36c03b3ed3ac",
+            "user_email": "dhruv.mendiratta187@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-04T20:28:26.840811"
+        },
+        {
+            "id": "ab92f91e-8aa7-4ccc-995f-c1dc72d824fd",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-04T20:29:49.934467"
+        },
+        {
+            "id": "f5cf072b-1482-4899-93a1-41a309588fdb",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "create_session",
+            "session_id": "4816ecb1-0886-4234-8754-8cce86c6e479",
+            "agent_id": null,
+            "details": null,
+            "timestamp": "2025-08-04T20:30:03.133343"
+        },
+        {
+            "id": "076d813b-882a-411b-a7a8-a521937f33fb",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "send_message",
+            "session_id": "4816ecb1-0886-4234-8754-8cce86c6e479",
+            "agent_id": "DPDP",
+            "details": {
+                "message_length": 28
+            },
+            "timestamp": "2025-08-04T20:30:20.941533"
+        },
+        {
+            "id": "929eaa86-8a39-488f-bb5f-d5e21183ba63",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "create_session",
+            "session_id": "ae20d471-6fcc-4230-9971-987021b7b032",
+            "agent_id": null,
+            "details": null,
+            "timestamp": "2025-08-04T20:33:21.778891"
+        },
+        {
+            "id": "6206f978-6570-4332-b669-af034e9ea67f",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "send_message",
+            "session_id": "ae20d471-6fcc-4230-9971-987021b7b032",
+            "agent_id": "DPDP",
+            "details": {
+                "message_length": 29
+            },
+            "timestamp": "2025-08-04T20:33:38.525967"
         }
     ],
     "session_metrics": [
@@ -1810,6 +2017,42 @@
             "session_id": "7f0896a4-42af-49be-9f67-aa9aeba57817",
             "usage_type": "interaction",
             "timestamp": "2025-08-03T17:02:51.131815"
+        },
+        {
+            "id": "f56f66b8-a09c-454a-898d-c1db855f0510",
+            "agent_id": "DPDP",
+            "agent_name": "DPDP Knowledge Agent",
+            "user_email": "dhruv.mendiratta187@gmail.com",
+            "session_id": "a48b4f03-b2f2-48c9-a687-df2f72697ad3",
+            "usage_type": "interaction",
+            "timestamp": "2025-08-04T20:21:15.657954"
+        },
+        {
+            "id": "b8e08ed8-1ed6-4d84-9c9c-d13221813725",
+            "agent_id": "DPDP",
+            "agent_name": "DPDP Knowledge Agent",
+            "user_email": "dhruv.mendiratta187@gmail.com",
+            "session_id": "a48b4f03-b2f2-48c9-a687-df2f72697ad3",
+            "usage_type": "interaction",
+            "timestamp": "2025-08-04T20:21:33.658923"
+        },
+        {
+            "id": "0f73bfd3-37c5-4fe0-88b3-3c2816701396",
+            "agent_id": "DPDP",
+            "agent_name": "DPDP Knowledge Agent",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "session_id": "4816ecb1-0886-4234-8754-8cce86c6e479",
+            "usage_type": "interaction",
+            "timestamp": "2025-08-04T20:30:20.991678"
+        },
+        {
+            "id": "9a3bba54-7f65-4fde-b39d-da32ca617805",
+            "agent_id": "DPDP",
+            "agent_name": "DPDP Knowledge Agent",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "session_id": "ae20d471-6fcc-4230-9971-987021b7b032",
+            "usage_type": "interaction",
+            "timestamp": "2025-08-04T20:33:38.539969"
         }
     ],
     "system_metrics": []

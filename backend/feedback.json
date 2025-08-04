@@ -176,5 +176,79 @@
         "content": "Thank you for asking. As per the information available to me, the **Data Protection Act** is a legislation that aims to protect the personal data of individuals by setting out rules and guidelines for its collection, processing, storage, and sharing. The act provides individuals with various rights, including the right to access their personal data, the right to correction and erasure of their personal data, the right to have their grievances redressed, and the right to nominate another individual to exercise their rights on their behalf.\n\nAccording to **DPDP_act.pdf**, Page: 1, the act defines a Data Principal as an individual who provides her personal data for a specified purpose, and a Data Fiduciary as a person or entity that processes the personal data of such individuals. The act also sets out various obligations and responsibilities for Data Principals and Data Fiduciaries, including the requirement to obtain consent before processing personal data, to ensure the accuracy and completeness of personal data, and to implement appropriate security measures to prevent unauthorized access to personal data.\n\n**"
       }
     ]
+  },
+  {
+    "sessionId": null,
+    "agentId": "DPDP",
+    "agentName": "DPDP Knowledge Agent",
+    "answerId": null,
+    "documentChunkIds": null,
+    "rating": 5,
+    "feedbackText": "Doing good work",
+    "stars": 5,
+    "suggestion": "",
+    "userId": "user_pyl8ybysd",
+    "userEmail": "dhruv.mendiratta187@gmail.com",
+    "timestamp": "2025-08-04T14:52:11.184Z",
+    "feedbackType": "positive",
+    "category": "helpfulness",
+    "severity": "low",
+    "modelUsed": "Gemini 2.5 Flash",
+    "modelIcon": "🤖",
+    "responseTime": 2.475019991833693,
+    "sessionDuration": 12,
+    "answerText": "मैं आपके प्रश्न की सराहना करता हूँ।\n\nडिजिटल व्यक्तिगत डेटा संरक्षण अधिनियम, 2023, डिजिटल व्यक्तिगत डेटा के प्रसंस्करण के लिए एक कानून है। इसका उद्देश्य व्यक्तियों के अपने व्यक्तिगत डेटा की सुरक्षा के अधिकार और वैध उद्देश्यों के लिए ऐसे व्यक्तिगत डेटा को संसाधित करने की आवश्यकता, दोनों को पहचानना है। यह अधिनियम भारत गणराज्य के चौहत्तरवें वर्ष में संसद द्वारा अधिनियमित किया गया था।\n\n**Sources**\n*   **[THE DIGITAL PERSONAL DATA PROTECTION ACT, 2023]** (pdf://DPDP_act.pdf/page/1)\n\nयदि आपके कोई और प्रश्न हैं तो कृपया पूछें।",
+    "sessionTranscript": [
+      {
+        "id": 1754319071049,
+        "sender": "user",
+        "content": "What is data protection act?"
+      },
+      {
+        "sender": "assistant",
+        "content": "Thanks for asking.\nThe Digital Personal Data Protection Act, 2023, is an Act enacted by Parliament to provide for the **__processing of digital personal data__** in a manner that recognizes both the **right of individuals to protect their personal data** and the **need to process such personal data for lawful purposes**. It also addresses matters connected therewith or incidental thereto.\n\n**Sources**\n*   **[An Act to provide for the processing of digital personal data...]** (pdf://DPDP_act.pdf/page/1)\n\nPlease feel free to ask if you have more questions."
+      },
+      {
+        "id": 1754319090492,
+        "sender": "user",
+        "content": "डेटा संरक्षण अधिनियम क्या है?"
+      },
+      {
+        "sender": "assistant",
+        "content": "मैं आपके प्रश्न की सराहना करता हूँ।\n\nडिजिटल व्यक्तिगत डेटा संरक्षण अधिनियम, 2023, डिजिटल व्यक्तिगत डेटा के प्रसंस्करण के लिए एक कानून है। इसका उद्देश्य व्यक्तियों के अपने व्यक्तिगत डेटा की सुरक्षा के अधिकार और वैध उद्देश्यों के लिए ऐसे व्यक्तिगत डेटा को संसाधित करने की आवश्यकता, दोनों को पहचानना है। यह अधिनियम भारत गणराज्य के चौहत्तरवें वर्ष में संसद द्वारा अधिनियमित किया गया था।\n\n**Sources**\n*   **[THE DIGITAL PERSONAL DATA PROTECTION ACT, 2023]** (pdf://DPDP_act.pdf/page/1)\n\nयदि आपके कोई और प्रश्न हैं तो कृपया पूछें।"
+      }
+    ]
+  },
+  {
+    "sessionId": null,
+    "agentId": "DPDP",
+    "agentName": "DPDP Knowledge Agent",
+    "answerId": null,
+    "documentChunkIds": null,
+    "rating": 5,
+    "feedbackText": "DOING GOOD",
+    "stars": 5,
+    "suggestion": "",
+    "userId": "user_pyl8ybysd",
+    "userEmail": "dhruv.mendiratta4@gmail.com",
+    "timestamp": "2025-08-04T15:00:41.638Z",
+    "feedbackType": "positive",
+    "category": "helpfulness",
+    "severity": "low",
+    "modelUsed": "Gemini 2.5 Flash",
+    "modelIcon": "🤖",
+    "responseTime": 1.8468653837522084,
+    "sessionDuration": 32,
+    "answerText": "Thanks for asking.\n\nThe Digital Personal Data Protection Act, 2023, is an Act that provides for the **processing of digital personal data** in a manner that recognizes both the __right of individuals to protect their personal data__ and the __need to process such personal data for lawful purposes__. It also covers matters connected therewith or incidental thereto.\n\n**Sources**\n*   **[Page 1]** (pdf://DPDP_act.pdf/page/1)\n\nPlease let me know if you have any further questions.",
+    "sessionTranscript": [
+      {
+        "sender": "user",
+        "content": "What is data protection act?"
+      },
+      {
+        "sender": "assistant",
+        "content": "Thanks for asking.\n\nThe Digital Personal Data Protection Act, 2023, is an Act that provides for the **processing of digital personal data** in a manner that recognizes both the __right of individuals to protect their personal data__ and the __need to process such personal data for lawful purposes__. It also covers matters connected therewith or incidental thereto.\n\n**Sources**\n*   **[Page 1]** (pdf://DPDP_act.pdf/page/1)\n\nPlease let me know if you have any further questions."
+      }
+    ]
   }
 ]
