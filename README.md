@@ -36,7 +36,12 @@
     </tr>
   </table>
 
-
+  <!-- YouTube Demo Button -->
+  <p align="center">
+    <a href="https://www.youtube.com/watch?v=V0kFZVpRcI4" target="_blank">
+      <img src="https://img.shields.io/badge/YouTube-Watch%20Demo-red?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch Demo on YouTube">
+    </a>
+  </p>
 
 </div>
 
@@ -180,19 +185,7 @@ Our platform offers an incredible array of features that will revolutionize how 
 
 </div>
 
----
 
-## 🎬 **Video Demo**
-
-<div align="center">
-
-### 🚀 **Unified Knowledge Platform Demo**
-
-[![Unified Knowledge Platform Demo](https://img.youtube.com/vi/V0kFZVpRcI4/maxresdefault.jpg)](https://www.youtube.com/watch?v=V0kFZVpRcI4)
-
-*🎬 Click the image above to watch our comprehensive demo showcasing all the amazing features of the Unified Knowledge Platform!*
-
-</div>
 
 ---
 
