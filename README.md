@@ -1,7 +1,7 @@
 # Unified Knowledge Platform (Unified®)
 
 <div align="center">
-  <img src="/unified-knowledge-platform.png" alt="Unified Logo" width="200" height="200">
+  <img src="public/unified-knowledge-platform.png" alt="Unified Logo" width="200" height="200">
   <h1>Unified® Knowledge Platform</h1>
   <p><strong>AI-Powered Knowledge Management & Retrieval System</strong></p>
   
