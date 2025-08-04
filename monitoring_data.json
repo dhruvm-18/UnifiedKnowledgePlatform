@@ -1701,6 +1701,17 @@
                 "userName": "Dhruv Mendiratta"
             },
             "timestamp": "2025-08-04T12:34:10.666392"
+        },
+        {
+            "id": "1eab473f-8bf9-4765-b943-3da04a48a76e",
+            "user_email": "dhruv.mendiratta4@gmail.com",
+            "action": "login",
+            "session_id": null,
+            "agent_id": null,
+            "details": {
+                "userName": "Dhruv Mendiratta"
+            },
+            "timestamp": "2025-08-04T12:38:13.488029"
         }
     ],
     "session_metrics": [

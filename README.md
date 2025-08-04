@@ -303,12 +303,15 @@ EY_RAG_Project/
 *Modern chat interface with multi-session support and voice features*
 
 ### 🎨 **Welcome Overlay**
+![Welcome Overlay](Welcome.png)
 *Interactive welcome tour for new users with profile setup*
 
 ### 👤 **Profile Management**
+![Profile Management](profile.png)
 *Complete profile customization with GIF support*
 
 ### 🔧 **Admin Dashboard**
+![Admin Dashboard](admin.png)
 *Comprehensive admin panel with user management*
 
 ---
