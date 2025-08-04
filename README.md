@@ -1,7 +1,7 @@
 # 🚀 Unified Knowledge Platform (Unified®) 🚀
 
 <div align="center">
-  <img src="react-frontend/public/unified-knowledge-platform.png" alt="Unified Logo" width="200" height="200">
+  <img src="assets/images/unified-knowledge-platform.png" alt="Unified Logo" width="200" height="200">
   
   <h1>Unified® Knowledge Platform</h1>
   <p><strong>AI-Powered Knowledge Management & Retrieval System</strong></p>
@@ -154,31 +154,31 @@ Our platform offers an incredible array of features that will revolutionize how 
 <div align="center">
 
 ### 🏠 **Login & Authentication**
-![Login Interface](Loginpage.png)
+![Login Interface](assets/images/Loginpage.png)
 *Secure authentication with email/password and OTP verification*
 
 ### 💬 **Chat Interface**
-![Chat Interface](Chatinterface.png)
+![Chat Interface](assets/images/Chatinterface.png)
 *Modern chat interface with multi-session support and voice features*
 
 ### 🎨 **Welcome Overlay**
-![Welcome Overlay](Welcome.png)
+![Welcome Overlay](assets/images/Welcome.png)
 *Interactive welcome tour for new users with profile setup*
 
 ### 👤 **Profile Management**
-![Profile Management](profile.png)
+![Profile Management](assets/images/profile.png)
 *Complete profile customization with GIF support*
 
 ### 🔧 **Admin Dashboard**
-![Admin Dashboard](admin.png)
+![Admin Dashboard](assets/images/admin.png)
 *Comprehensive admin panel with user management*
 
 ### 🎯 **Knowledge Sources**
-![Knowledge Sources](knowledge.png)
+![Knowledge Sources](assets/images/knowledge.png)
 *Browse and interact with different knowledge agents*
 
 ### 🏗️ **Application Structure**
-![Project Structure](Techstack.png)
+![Project Structure](assets/images/Techstack.png)
 *Complete project structure and organization*
 
 </div>
@@ -411,28 +411,7 @@ EY_RAG_Project/
 
 ---
 
-## 🎯 Key Screenshots
 
-### 🏠 **Login & Authentication**
-![Login Interface](Loginpage.png)
-*Secure authentication with email/password and OTP verification*
-
-### 💬 **Chat Interface**
-![Chat Interface](Chatinterface.png)
-*Modern chat interface with multi-session support and voice features*
-
-### 🎨 **Welcome Overlay**
-![Welcome Overlay](Welcome.png)
-*Interactive welcome tour for new users with profile setup*
-
-### 👤 **Profile Management**
-![Profile Management](profile.png)
-
-*Complete profile customization with GIF support*
-
-### 🔧 **Admin Dashboard**
-![Admin Dashboard](admin.png)
-*Comprehensive admin panel with user management*
 
 ---
 
