@@ -178,7 +178,11 @@ Our platform offers an incredible array of features that will revolutionize how 
 *Browse and interact with different knowledge agents*
 
 ### 🏗️ **Application Structure**
-![Project Structure](assets/images/Techstack.png)
+
+<div align="center">
+  <img src="assets/images/Techstack.png" alt="Project Structure" width="800">
+</div>
+
 *Complete project structure and organization*
 
 </div>
