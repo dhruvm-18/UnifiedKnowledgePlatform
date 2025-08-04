@@ -40,9 +40,9 @@
   <p>
     <a href="#overview">🚀 Overview</a> •
     <a href="#features">✨ Features</a> •
-    <a href="#installation">📦 Installation</a> •
-    <a href="#usage">🎮 Usage</a> •
-    <a href="#demo">🎬 Demo</a>
+    <a href="#screenshots">📸 Screenshots</a> •
+    <a href="#tech-stack">🛠️ Tech Stack</a> •
+    <a href="#installation">📦 Installation</a>
   </p>
 
 </div>
@@ -51,7 +51,7 @@
 
 ---
 
-## 🌟 Overview
+## 🌟 Overview {#overview}
 
 The **Unified Knowledge Platform (Unified®)** is a revolutionary AI-powered web application that transforms how you interact with knowledge. Built with cutting-edge technologies, it provides seamless access to internal knowledge sources through natural language queries with mind-blowing features!
 
@@ -104,7 +104,7 @@ Our revolutionary system architecture combines cutting-edge technologies to deli
 
 ---
 
-## 🎯 Core Features
+## 🎯 Core Features {#features}
 
 Our platform offers an incredible array of features that will revolutionize how you interact with knowledge!
 
@@ -149,7 +149,7 @@ Our platform offers an incredible array of features that will revolutionize how 
 
 ---
 
-## 📸 **UI Screenshots & Demo**
+## 📸 **UI Screenshots & Demo** {#screenshots}
 
 <div align="center">
 
@@ -189,7 +189,7 @@ Our platform offers an incredible array of features that will revolutionize how 
 
 ---
 
-## 🛠️ **Technology Stack**
+## 🛠️ **Technology Stack** {#tech-stack}
 
 <div align="center">
 
@@ -240,7 +240,7 @@ Our platform offers an incredible array of features that will revolutionize how 
 
 ---
 
-## 📦 Installation & Setup
+## 📦 Installation & Setup {#installation}
 
 ### Prerequisites
 - **Python 3.9+** with pip
